@@ -90,7 +90,9 @@ function sortOrder(){
 }
 function usage(){const m=new Map();BOOK.spreads.forEach((sp,i)=>sp.cells.forEach(c=>{if(c.ph){const u=m.get(c.ph.img);if(u)u.n++;else m.set(c.ph.img,{n:1,sp:i});}}));return m;}
 function realCount(){let n=0;for(const e of LIB.values())if(!e.sample)n++;return n;}
-function progress(label,done,total){const p=$('#prog');if(total==null){p.hidden=true;return;}p.hidden=false;$('#progL').textContent=label;$('#progB').style.width=(total?100*done/total:0)+'%';}
+function progress(label,done,total){const p=$('#prog');START.prog=total==null?null:{label,done,total};
+  const sp=document.getElementById('sprog');if(sp&&total!=null){sp.firstChild.textContent=label;sp.querySelector('.pb i').style.width=(total?100*done/total:0)+'%';const sb=document.querySelector('#sbar .ssum b');if(sb)sb.textContent=label;}
+  if(total==null){p.hidden=true;return;}p.hidden=false;$('#progL').textContent=label;$('#progB').style.width=(total?100*done/total:0)+'%';}
 async function importFiles(files){
   const arr=[...files].filter(isImgFile);const nonImg=files.length-arr.length;
   if(!arr.length){if(nonImg)toast('Nessuna immagine tra i file scelti.');return[];}
@@ -109,7 +111,7 @@ async function importFiles(files){
     const worker=async()=>{while(idx<todo.length){const[f,keep]=todo[idx++];
       try{out.push(await ingest(f,keep));}catch(err){bad++;}
       done++;progress(`Importo ${done} / ${todo.length}`,done,todo.length);
-      if(done%12===0){sortOrder();renderLeft();if(START.open)renderStart();}}};
+      if(done%12===0){sortOrder();if(START.open)renderStartLive();else renderLeft();}}};
     await Promise.all([worker(),worker(),worker()]);
     progress(null);
   }
@@ -137,7 +139,7 @@ function freshBookKeepingSettings(newJob){const nb=newBook();for(const k of['pag
 function bookHasRealPhotos(){return BOOK.spreads.some(sp=>sp.cells.some(c=>c.ph&&LIB.has(c.ph.img)&&!LIB.get(c.ph.img).sample));}
 async function afterImport(ids){
   if(!ids.length){syncAll();return;}
-  if(!bookHasRealPhotos()){commit();syncAll();if(START.open)renderStart();else openStart(2);return;}
+  if(!bookHasRealPhotos()){applySuggestions();commit();syncAll();if(START.open)renderStart();else openStart(2);return;}
   UI.filter='unused';UI.tab='photos';commit();syncAll();
   toast(`${ids.length} foto aggiunte: le trovi in “Non usate”. Trascinale sulle pagine o premi Crea libro automatico.`,5000);
 }

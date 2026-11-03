@@ -247,9 +247,9 @@ function buildBook(o){
 async function addEffectAfterBuild(ids){
   try{progress('Cerco le foto migliori per la pagina effetto…',0,1);
     const best=await fxFindBest(ids,(a,b)=>progress('Cerco le foto migliori per la pagina effetto…',a,b));
-    progress(null);if(!best.length){toast('Pagina effetto non creata: nessuna foto adatta (serve una persona o un animale ben visibile).',4500);return;}
+    progress(null);if(!best.length){toast('Pagina effetto saltata: nessuna foto con una persona o un animale ben visibile. Il resto del libro è pronto.',4500);return;}
     const inn=BOOK.spreads.map((s,i)=>[s,i]).filter(([s,i])=>isInner(s)&&i!==firstInnerIdx()&&i!==lastInnerIdx()&&!isSpecial(s,'L')&&!isSpecial(s,'R')&&s.mode!=='spread');
-    if(!inn.length){toast('Pagina effetto non creata: il libro è troppo corto.');return;}
+    if(!inn.length){toast('Pagina effetto saltata: il libro è troppo corto per ospitarla.');return;}
     const mid=(firstInnerIdx()+lastInnerIdx())/2,[sp,i]=inn.sort((a,b)=>Math.abs(a[1]-mid)-Math.abs(b[1]-mid))[0];
     const phs=[...clearSide(sp,'L'),...clearSide(sp,'R')].filter(ph=>!usedInInterior(ph.img,sp));
     const fx=makeEffectSpread(best[0],best[1]||null);fx.id=sp.id+'x';BOOK.spreads.splice(i,1,fx);normalizeOrder();

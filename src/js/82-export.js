@@ -212,8 +212,8 @@ function renderExport(){
     const cov=BOOK.spreads.find(isCover),E=BOOK.endp,gC=expGeom(EXP.bleed+BOOK.cover.wrap),gE=expGeom(E.bleed),gI=expGeom(EXP.bleed),N=bookPages(),ir=interiorRange(),V=versoOn();
     const dims=(w,h,g)=>`${nf(w+2*g.ext)} × ${nf(h+2*g.ext)} mm`;
     if(EXP.from<ir[0]||EXP.from>ir[1])EXP.from=ir[0];if(EXP.to>ir[1]||EXP.to<EXP.from)EXP.to=ir[1];
-    const rng=el('div',{class:'row'},el('span',{class:'u'},'da pag.'),el('input',{type:'number',class:'num',min:ir[0],max:ir[1],value:EXP.from,onchange:e=>{EXP.from=clamp(parseInt(e.target.value)||ir[0],ir[0],ir[1]);EXP.to=Math.max(EXP.to,EXP.from);renderExport();}}),
-      el('span',{class:'u'},'a pag.'),el('input',{type:'number',class:'num',min:ir[0],max:ir[1],value:EXP.to,onchange:e=>{EXP.to=clamp(parseInt(e.target.value)||ir[1],EXP.from,ir[1]);renderExport();}}),
+    const rng=el('div',{class:'row'},el('span',{class:'u'},'da pag.'),el('input',{type:'number',class:'num','aria-label':'Dalla pagina',min:ir[0],max:ir[1],value:EXP.from,onchange:e=>{EXP.from=clamp(parseInt(e.target.value)||ir[0],ir[0],ir[1]);EXP.to=Math.max(EXP.to,EXP.from);renderExport();}}),
+      el('span',{class:'u'},'a pag.'),el('input',{type:'number',class:'num','aria-label':'Alla pagina',min:ir[0],max:ir[1],value:EXP.to,onchange:e=>{EXP.to=clamp(parseInt(e.target.value)||ir[1],EXP.from,ir[1]);renderExport();}}),
       btn('Tutte',()=>{EXP.from=ir[0];EXP.to=ir[1];renderExport();}));
     const covF={cmyk:'JPEG · CMYK FOGRA39',jpg:'JPEG · RGB',pdf:'PDF · RGB'};
     body=[el('div',{class:'dlg-s'},'Tre file per la tipografia. Tutto viene renderizzato dalle foto originali.'),

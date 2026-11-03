@@ -60,6 +60,7 @@ $('#bNew').onclick=e=>{
   const b=e.currentTarget;if(Date.now()-newArmed>3000){newArmed=Date.now();b.textContent='Confermi? Clicca ancora';setTimeout(()=>b.textContent='Nuovo',3000);return;}
   newArmed=0;b.textContent='Nuovo';clearLibrary();idbClear('kv');idbClear('prev');
   BOOK=freshBookKeepingSettings(true);UI.cur=0;sel=null;UI.tab='photos';UI.filter='all';UI.folder='*';WZ.userGroup=false;
+  Object.assign(START,{userTheme:false,titleSrc:'theme',sugg:null});WZ.title='';WZ.sub='';WZ.dedica='';
   resetHistory();hideBanner();syncAll();openStart();
 };
 function clearLibrary(){for(const e of LIB.values()){closeSrc(e.thumbBmp);if(e.thumbURL)URL.revokeObjectURL(e.thumbURL);}for(const b of PREV.values())closeSrc(b);PREV.clear();LIB.clear();ORDER=[];SIMS=[];TSEL.clear();THUMBS.clear();}
@@ -77,10 +78,12 @@ $('#projIn').addEventListener('change',async e=>{
 });
 async function loadProject(d){
   clearLibrary();progress('Apro il progetto…',0,d.photos.length);let i=0;
-  for(const p of d.photos){const e={...p,file:null,prevBlob:null,thumbBmp:null,thumbURL:null,sample:false};
-    const pb=await idbGet('prev',p.id);
+  /* anteprime lette in parallelo (4 alla volta), l'ordine originale resta quello del progetto */
+  const ents=d.photos.map(p=>({...p,file:null,prevBlob:null,thumbBmp:null,thumbURL:null,sample:false}));let k=0;
+  const work=async()=>{while(k<ents.length){const e=ents[k++];const pb=await idbGet('prev',e.id);
     if(pb){try{const b=await createImageBitmap(pb);const tc=canvasOf(b,320);closeSrc(b);e.prevBlob=pb;await setThumb(e,tc);}catch(err){}}
-    LIB.set(e.id,e);progress('Apro il progetto…',++i,d.photos.length);}
+    progress('Apro il progetto…',++i,d.photos.length);}};
+  await Promise.all([work(),work(),work(),work()]);for(const e of ents)LIB.set(e.id,e);
   progress(null);
   BOOK=normBook(d.book);if(d.v!==2)upgradeV1();Object.assign(EXP,d.exp||{});if(EXP.fmt==='zip')EXP.fmt='jpg';Object.assign(DRAFT,d.draft||{});ensureStructure();UI.sort=(d.ui&&d.ui.sort)||'date';UI.cur=Math.max(0,BOOK.spreads.findIndex(isInner));sel=null;TPREV.clear();THUMBS.clear();
   sortOrder();SIMS=findSimilar();syncChapters();resetHistory();updateBanner();syncAll();

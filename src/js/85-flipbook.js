@@ -41,12 +41,20 @@ footer input{width:min(420px,50vw);accent-color:var(--acc)}
 #idx .pr img{display:block;object-fit:cover;background:#fff}
 #idx .x{position:sticky;top:0;float:right}
 .hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:var(--mut);font-size:12px;opacity:.8;pointer-events:none}
+.rot{display:none;text-align:center;color:var(--mut);font-size:12.5px;padding:0 16px 6px}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (max-width:700px){header{flex-wrap:wrap;gap:8px 10px;padding:10px 12px}header h1{font-size:15px;flex-basis:100%}header .sp{display:none}
+  header button{padding:6px 10px;font-size:13px}#bf{display:none}.nav{top:auto;bottom:6px;transform:none;width:44px;height:44px}.nav.p{left:10px}.nav.n{right:10px}
+  .hint{display:none}footer{padding:8px 64px 12px}footer input{width:100%}#lbl{min-width:0}#idx .g{grid-template-columns:1fr}}
+@media (max-width:700px) and (orientation:portrait){.rot{display:block}}
+@media (prefers-reduced-motion:reduce){.leaf,.book,.shadow{transition:none!important}}
 </style></head><body>
 <header><h1>${esc(o.title)}</h1><span class="tag">Bozza da approvare</span><span class="sp"></span>
 <button id="bi" title="Vedi tutte le pagine">Tutte le pagine</button><button id="bf" title="Schermo intero">Schermo intero</button></header>
 <main id="m"><div class="book" id="book"><div class="shadow" id="sh"></div></div>
 <button class="nav p" id="bp" aria-label="Pagina precedente">‹</button><button class="nav n" id="bn" aria-label="Pagina successiva">›</button>
-<div class="hint" id="hint">Clicca sulle pagine o usa le frecce ← → per sfogliare</div></main>
+<div class="hint" id="hint">Clicca sulle pagine, scorri col dito o usa le frecce ← → per sfogliare</div></main>
+<div class="rot">Ruota il telefono in orizzontale per vedere le pagine più grandi.</div>
 <footer><input type="range" id="rg" min="0" value="0" aria-label="Vai alla pagina"><span id="lbl"></span></footer>
 <div id="idx"><button class="x" id="bx">Chiudi</button><div class="g" id="ig"></div></div>
 <script>
@@ -59,7 +67,7 @@ for(var k=0;k<L;k++){var lf=document.createElement('div');lf.className='leaf';lf
 var MIN=D.cover?0:1,MAX=D.cover?L:L-1;if(!D.cover){leaves[0].classList.add('f');cur=1;}
 function z(){for(var k=0;k<L;k++)leaves[k].style.zIndex=k<cur?(k+1):(2*L-k);}
 var pw=0,ph=0;
-function fit(){var m=document.getElementById('m'),W=m.clientWidth-130,H=m.clientHeight-40;pw=Math.min(W/2,H*D.aspect);ph=pw/D.aspect;book.style.width=2*pw+'px';book.style.height=ph+'px';pos();}
+function fit(){var m=document.getElementById('m'),nw=m.clientWidth<700,W=m.clientWidth-(nw?16:130),H=m.clientHeight-(nw?64:40);pw=Math.min(W/2,H*D.aspect);ph=pw/D.aspect;book.style.width=2*pw+'px';book.style.height=ph+'px';pos();}
 function pos(){var x=0;if(cur===0)x=-pw/2;if(cur===L)x=pw/2;book.style.transform='translateX('+x+'px)';
   sh.style.left=(cur===0?pw:0)+'px';sh.style.right=(cur===L?pw:0)+'px';}
 function lab(){var s;if(cur===0)s=P[0]?P[0].l:'';else if(cur===L)s=P[2*L-1]?P[2*L-1].l:'';else{var a=P[2*cur-1],b=P[2*cur];s=[a&&a.l,b&&b.l].filter(function(x,i,arr){return x&&arr.indexOf(x)===i;}).join('  ·  ');}

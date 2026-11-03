@@ -60,7 +60,7 @@ function openWizard(){
       est),
     el('div',{class:'dlg-f'},el('span',{class:'grow'},has?'Sostituisce le pagine attuali. Ctrl+Z per tornare indietro.':''),
       el('button',{type:'button',class:'btn',onclick:()=>d.close()},'Annulla'),
-      el('button',{type:'button',class:'btn pri',onclick:()=>{if(buildBook(WZ))d.close();}},'Crea il libro')));
+      el('button',{type:'button',class:'btn pri',onclick:()=>{if(buildBook({...WZ,sub:WZ.sub.trim()||autoSub()})){d.close();if(START.open)closeStart();nextStepsBanner();}}},'Crea il libro')));
   vis();upd();if(!d.open)d.showModal();
 }
 $('#bWizard').onclick=openWizard;

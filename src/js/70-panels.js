@@ -290,7 +290,8 @@ function tabText(){
 
 /* ============ libro e stampa ============ */
 const A4L={w:297,h:210,preset:'Orizzontale 29,7×21 cm (A4)'};
-const EP={on:true,w:650,h:330,fold:325,bleed:0,visW:0,visH:0};
+const EP={on:true,w:650,h:330,fold:325,bleed:0,visW:0,visH:0,verso:true,sideF:'L',sideB:'R'};
+const EP_GEOM=['on','w','h','fold','bleed','visW','visH'];
 const BUILTIN_PROFILES=[
   {name:'A4 orizzontale 29,7×21 · copertina rigida',page:A4L,bleed:3,safe:5,margin:10,bind:15,spine:8,wrap:15,over:3,dpi:300,firstRight:false,mult4:true,endp:EP},
   {name:'A4 orizzontale 29,7×21 · copertina morbida',page:A4L,bleed:3,safe:5,margin:10,bind:14,spine:5,wrap:0,over:0,dpi:300,firstRight:false,mult4:true,endp:{...EP,on:false}},
@@ -305,9 +306,9 @@ function saveCustomProfiles(a){try{localStorage.setItem(PROF_KEY,JSON.stringify(
 function allProfiles(){return[...BUILTIN_PROFILES,...customProfiles()];}
 const PROF_KEYS=['bleed','safe','margin','bind','spine','wrap','over','firstRight','mult4'];
 function currentProfile(name){return{name,page:{...BOOK.page},bleed:EXP.bleed,safe:BOOK.safe,margin:BOOK.style.margin,bind:BOOK.style.bind,spine:BOOK.cover.spine,wrap:BOOK.cover.wrap,over:BOOK.cover.over,dpi:EXP.dpi,firstRight:BOOK.firstRight,mult4:BOOK.mult4,endp:{...BOOK.endp}};}
-function matchProfile(){const c=currentProfile('');return allProfiles().find(p=>PROF_KEYS.every(k=>p[k]===c[k])&&Math.abs(p.page.w-c.page.w)<.05&&Math.abs(p.page.h-c.page.h)<.05&&JSON.stringify({...EP,...(p.endp||{})})===JSON.stringify({...EP,...c.endp}));}
+function matchProfile(){const c=currentProfile('');return allProfiles().find(p=>PROF_KEYS.every(k=>p[k]===c[k])&&Math.abs(p.page.w-c.page.w)<.05&&Math.abs(p.page.h-c.page.h)<.05&&EP_GEOM.every(k=>({...EP,...(p.endp||{})})[k]===({...EP,...c.endp})[k]));}
 function setProfileFields(p){BOOK.page={...p.page};BOOK.style.margin=p.margin;BOOK.style.bind=p.bind;BOOK.safe=p.safe;BOOK.cover={...BOOK.cover,spine:p.spine,wrap:p.wrap,over:p.over};
-  BOOK.firstRight=!!p.firstRight;BOOK.mult4=!!p.mult4;EXP.bleed=p.bleed;EXP.dpi=p.dpi||300;BOOK.endp={...EP,...(p.endp||{})};}
+  BOOK.firstRight=!!p.firstRight;BOOK.mult4=!!p.mult4;EXP.bleed=p.bleed;EXP.dpi=p.dpi||300;const keep={verso:BOOK.endp.verso,sideF:BOOK.endp.sideF,sideB:BOOK.endp.sideB};BOOK.endp={...EP,...(p.endp||{})};for(const k in keep)if(keep[k]!=null&&!(p.endp&&k in p.endp))BOOK.endp[k]=keep[k];}
 function applyProfile(p){
   const sizeChanged=Math.abs(BOOK.page.w-p.page.w)>.05||Math.abs(BOOK.page.h-p.page.h)>.05||BOOK.style.margin!==p.margin||BOOK.style.bind!==p.bind;
   setProfileFields(p);ensureStructure();

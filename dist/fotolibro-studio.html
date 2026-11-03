@@ -14,7 +14,7 @@
      interfaccia calda e sobria, le foto restano protagoniste; il palco resta quasi neutro per giudicare i colori */
   --bg:#EFEDE9; --panel:#FAF9F7; --raise:#FFFFFF; --ink:#1C1A17; --muted:#5E5850; --line:#DDD8D0;
   --accent:#A63A1E; --accent-ink:#FFFFFF; --soft:#F5E7E1; --stage:#D3D1CD;
-  --ok:#2E7D4F; --warn:#9A5B00; --bad:#B3261E;
+  --ok:#2E7D4F; --warn:#865000; --bad:#B3261E;
   --f-ui:"Inter","Segoe UI",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
   --f-brand:"Playfair Display",Georgia,serif;
@@ -148,8 +148,9 @@ input[type=checkbox]{accent-color:var(--accent)}
 .chr{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:6px;align-items:center}
 .chr.off .inp{opacity:.5;text-decoration:line-through}
 .chr .inp{padding:3px 6px}
-.chr .mv{display:grid}
-.chr .mv button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:9px;line-height:1;padding:1px 3px}
+.chr .mv{display:flex;gap:0}
+.chr .mv button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:10px;line-height:1;padding:0;width:24px;height:24px;border-radius:4px}
+.chr .mv button:hover:not(:disabled){background:var(--soft);color:var(--ink)}
 .chr .mv button:disabled{opacity:.25;cursor:default}
 .chr .n{border:1px solid var(--line);background:var(--raise);border-radius:9px;font:11px var(--f-mono);color:var(--muted);padding:1px 7px;cursor:pointer;min-width:34px}
 .chr .n.on{border-color:var(--accent);color:var(--accent)}
@@ -332,6 +333,28 @@ details.more summary{cursor:pointer;color:var(--accent);font-size:12px;margin:4p
 .sdrop:focus-visible{outline-offset:3px}
 .scol h2 i{font:600 13px var(--f-ui)}
 
+/* schermata iniziale: suggerimenti, progresso, barra d'azione sempre visibile */
+.startin{padding-bottom:0}
+.shead .sacts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.sres{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.sres span{margin-right:auto}
+.sprog{display:grid;gap:6px;background:var(--soft);border-radius:10px;padding:10px 12px}
+.sprog>span{font-weight:600}
+.sprog .pb{width:100%;height:8px;border-radius:4px}
+.sprog small{color:var(--muted);font-size:11.5px;line-height:1.35}
+.snote{margin:0;color:var(--muted);font-size:12px}
+.ssug{margin:0;background:var(--soft);border-radius:8px;padding:8px 11px;font-size:12.5px;color:var(--ink)}
+.ssug b{color:var(--accent)}
+.thc{position:relative}
+.stag{position:absolute;top:-8px;right:-6px;font:600 10px var(--f-ui);font-style:normal;background:var(--accent);color:var(--accent-ink);padding:2px 7px;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sbar{position:sticky;bottom:0;z-index:2;margin:0 -28px;padding:12px 28px calc(12px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);box-shadow:0 -6px 18px rgba(0,0,0,.06)}
+.ssum{flex:1;min-width:240px;font-size:13.5px;color:var(--muted)}.ssum b{color:var(--ink);font-weight:600}
+.sbar .btn.big{min-width:250px}
+.banner .warn{font-weight:500}
+.banner>span{flex:1;min-width:280px}
+body:has(#start:not([hidden])) .toast{bottom:auto;top:18px}
+
 </style>
 </head>
 <body>
@@ -391,7 +414,7 @@ details.more summary{cursor:pointer;color:var(--accent);font-size:12px;margin:4p
 
   <section class="stagewrap">
     <div class="pbar" id="pbar"></div>
-    <div class="stage" id="stage"><canvas id="cv"></canvas></div>
+    <div class="stage" id="stage"><canvas id="cv" role="img" aria-label="Doppia pagina in modifica: clic per selezionare foto e testi, frecce PagSu/PagGiù per sfogliare"></canvas></div>
     <div class="hint"><span id="hint"></span><span class="dim" id="dimInfo"></span></div>
     <div class="strip" id="strip"></div>
   </section>
@@ -1092,7 +1115,9 @@ function sortOrder(){
 }
 function usage(){const m=new Map();BOOK.spreads.forEach((sp,i)=>sp.cells.forEach(c=>{if(c.ph){const u=m.get(c.ph.img);if(u)u.n++;else m.set(c.ph.img,{n:1,sp:i});}}));return m;}
 function realCount(){let n=0;for(const e of LIB.values())if(!e.sample)n++;return n;}
-function progress(label,done,total){const p=$('#prog');if(total==null){p.hidden=true;return;}p.hidden=false;$('#progL').textContent=label;$('#progB').style.width=(total?100*done/total:0)+'%';}
+function progress(label,done,total){const p=$('#prog');START.prog=total==null?null:{label,done,total};
+  const sp=document.getElementById('sprog');if(sp&&total!=null){sp.firstChild.textContent=label;sp.querySelector('.pb i').style.width=(total?100*done/total:0)+'%';const sb=document.querySelector('#sbar .ssum b');if(sb)sb.textContent=label;}
+  if(total==null){p.hidden=true;return;}p.hidden=false;$('#progL').textContent=label;$('#progB').style.width=(total?100*done/total:0)+'%';}
 async function importFiles(files){
   const arr=[...files].filter(isImgFile);const nonImg=files.length-arr.length;
   if(!arr.length){if(nonImg)toast('Nessuna immagine tra i file scelti.');return[];}
@@ -1111,7 +1136,7 @@ async function importFiles(files){
     const worker=async()=>{while(idx<todo.length){const[f,keep]=todo[idx++];
       try{out.push(await ingest(f,keep));}catch(err){bad++;}
       done++;progress(`Importo ${done} / ${todo.length}`,done,todo.length);
-      if(done%12===0){sortOrder();renderLeft();if(START.open)renderStart();}}};
+      if(done%12===0){sortOrder();if(START.open)renderStartLive();else renderLeft();}}};
     await Promise.all([worker(),worker(),worker()]);
     progress(null);
   }
@@ -1139,7 +1164,7 @@ function freshBookKeepingSettings(newJob){const nb=newBook();for(const k of['pag
 function bookHasRealPhotos(){return BOOK.spreads.some(sp=>sp.cells.some(c=>c.ph&&LIB.has(c.ph.img)&&!LIB.get(c.ph.img).sample));}
 async function afterImport(ids){
   if(!ids.length){syncAll();return;}
-  if(!bookHasRealPhotos()){commit();syncAll();if(START.open)renderStart();else openStart(2);return;}
+  if(!bookHasRealPhotos()){applySuggestions();commit();syncAll();if(START.open)renderStart();else openStart(2);return;}
   UI.filter='unused';UI.tab='photos';commit();syncAll();
   toast(`${ids.length} foto aggiunte: le trovi in “Non usate”. Trascinale sulle pagine o premi Crea libro automatico.`,5000);
 }
@@ -1534,9 +1559,9 @@ function buildBook(o){
 async function addEffectAfterBuild(ids){
   try{progress('Cerco le foto migliori per la pagina effetto…',0,1);
     const best=await fxFindBest(ids,(a,b)=>progress('Cerco le foto migliori per la pagina effetto…',a,b));
-    progress(null);if(!best.length){toast('Pagina effetto non creata: nessuna foto adatta (serve una persona o un animale ben visibile).',4500);return;}
+    progress(null);if(!best.length){toast('Pagina effetto saltata: nessuna foto con una persona o un animale ben visibile. Il resto del libro è pronto.',4500);return;}
     const inn=BOOK.spreads.map((s,i)=>[s,i]).filter(([s,i])=>isInner(s)&&i!==firstInnerIdx()&&i!==lastInnerIdx()&&!isSpecial(s,'L')&&!isSpecial(s,'R')&&s.mode!=='spread');
-    if(!inn.length){toast('Pagina effetto non creata: il libro è troppo corto.');return;}
+    if(!inn.length){toast('Pagina effetto saltata: il libro è troppo corto per ospitarla.');return;}
     const mid=(firstInnerIdx()+lastInnerIdx())/2,[sp,i]=inn.sort((a,b)=>Math.abs(a[1]-mid)-Math.abs(b[1]-mid))[0];
     const phs=[...clearSide(sp,'L'),...clearSide(sp,'R')].filter(ph=>!usedInInterior(ph.img,sp));
     const fx=makeEffectSpread(best[0],best[1]||null);fx.id=sp.id+'x';BOOK.spreads.splice(i,1,fx);normalizeOrder();
@@ -2641,7 +2666,8 @@ function tabText(){
 
 /* ============ libro e stampa ============ */
 const A4L={w:297,h:210,preset:'Orizzontale 29,7×21 cm (A4)'};
-const EP={on:true,w:650,h:330,fold:325,bleed:0,visW:0,visH:0};
+const EP={on:true,w:650,h:330,fold:325,bleed:0,visW:0,visH:0,verso:true,sideF:'L',sideB:'R'};
+const EP_GEOM=['on','w','h','fold','bleed','visW','visH'];
 const BUILTIN_PROFILES=[
   {name:'A4 orizzontale 29,7×21 · copertina rigida',page:A4L,bleed:3,safe:5,margin:10,bind:15,spine:8,wrap:15,over:3,dpi:300,firstRight:false,mult4:true,endp:EP},
   {name:'A4 orizzontale 29,7×21 · copertina morbida',page:A4L,bleed:3,safe:5,margin:10,bind:14,spine:5,wrap:0,over:0,dpi:300,firstRight:false,mult4:true,endp:{...EP,on:false}},
@@ -2656,9 +2682,9 @@ function saveCustomProfiles(a){try{localStorage.setItem(PROF_KEY,JSON.stringify(
 function allProfiles(){return[...BUILTIN_PROFILES,...customProfiles()];}
 const PROF_KEYS=['bleed','safe','margin','bind','spine','wrap','over','firstRight','mult4'];
 function currentProfile(name){return{name,page:{...BOOK.page},bleed:EXP.bleed,safe:BOOK.safe,margin:BOOK.style.margin,bind:BOOK.style.bind,spine:BOOK.cover.spine,wrap:BOOK.cover.wrap,over:BOOK.cover.over,dpi:EXP.dpi,firstRight:BOOK.firstRight,mult4:BOOK.mult4,endp:{...BOOK.endp}};}
-function matchProfile(){const c=currentProfile('');return allProfiles().find(p=>PROF_KEYS.every(k=>p[k]===c[k])&&Math.abs(p.page.w-c.page.w)<.05&&Math.abs(p.page.h-c.page.h)<.05&&JSON.stringify({...EP,...(p.endp||{})})===JSON.stringify({...EP,...c.endp}));}
+function matchProfile(){const c=currentProfile('');return allProfiles().find(p=>PROF_KEYS.every(k=>p[k]===c[k])&&Math.abs(p.page.w-c.page.w)<.05&&Math.abs(p.page.h-c.page.h)<.05&&EP_GEOM.every(k=>({...EP,...(p.endp||{})})[k]===({...EP,...c.endp})[k]));}
 function setProfileFields(p){BOOK.page={...p.page};BOOK.style.margin=p.margin;BOOK.style.bind=p.bind;BOOK.safe=p.safe;BOOK.cover={...BOOK.cover,spine:p.spine,wrap:p.wrap,over:p.over};
-  BOOK.firstRight=!!p.firstRight;BOOK.mult4=!!p.mult4;EXP.bleed=p.bleed;EXP.dpi=p.dpi||300;BOOK.endp={...EP,...(p.endp||{})};}
+  BOOK.firstRight=!!p.firstRight;BOOK.mult4=!!p.mult4;EXP.bleed=p.bleed;EXP.dpi=p.dpi||300;const keep={verso:BOOK.endp.verso,sideF:BOOK.endp.sideF,sideB:BOOK.endp.sideB};BOOK.endp={...EP,...(p.endp||{})};for(const k in keep)if(keep[k]!=null&&!(p.endp&&k in p.endp))BOOK.endp[k]=keep[k];}
 function applyProfile(p){
   const sizeChanged=Math.abs(BOOK.page.w-p.page.w)>.05||Math.abs(BOOK.page.h-p.page.h)>.05||BOOK.style.margin!==p.margin||BOOK.style.bind!==p.bind;
   setProfileFields(p);ensureStructure();
@@ -2977,64 +3003,191 @@ function decoProps(d){
       el('p',{},'Trascina per spostare, il quadratino in basso a destra per ingrandire. Canc per eliminare.'))];
 }
 
+/* ---- js/74-suggest.js ---- */
+/* ============ suggerimenti automatici dalla cartella: tema, titolo, sottotitolo, stima pagine ============ */
+const W_=s=>new RegExp('(?:^|[^\\p{L}\\p{N}])(?:'+s+')(?=$|[^\\p{L}\\p{N}])','iu');
+/* l'ordine conta a parità di punteggio: dal più specifico al più generico */
+const THEME_KEYS=[
+  ['valentino',W_("san ?valentino|valentine'?s?|innamorati")],
+  ['papa',W_("festa del pap[aà]|pap[aà]|father'?s ?day")],
+  ['mamma',W_("festa della mamma|mamma|mother'?s ?day")],
+  ['matrimonio',W_('matrimonio|nozze|sposi|sposa|wedding|anniversario di matrimonio')],
+  ['laurea',W_('laurea|graduation|proclamazione|diploma')],
+  ['bimba',W_('nata|benvenuta|bimba|neonata|battesimo di \\p{L}+a')],
+  ['bimbo',W_('nascita|battesimo|neonato|nato|benvenuto|bimbo|baby|primo anno')],
+  ['compleanno',W_('compleanno|birthday|\\d+ ?anni|\\d+°|festa di compleanno')],
+  ['pasqua',W_('pasqua|pasquetta|easter')],
+  ['natale',W_('natale|natalizi[oae]?|christmas|xmas|vigilia|presepe|capodanno|befana')],
+  ['estate',W_('estate|mare|spiaggia|vacanz[ae]|viaggio|viaggi|summer|holiday|ferie|crociera')],
+  ['autunno',W_('autunno|autumn|vendemmia|castagne|halloween|foliage')],
+  ['nordico',W_('inverno|neve|sci|settimana bianca|winter|snow')]
+];
+const GENERIC_DIR=/^(dcim|foto|photo|photos|pictures?|immagini|camera|camera roll|rullino|download|downloads|desktop|scrivania|documenti|documents|nuova cartella|new folder|export|esportate?|img|images|selezione|selezionate|stampa|\d{3}[a-z_]*|[a-z]?\d+|\d{4}[-_. ]?\d{2}([-_. ]?\d{2})?)$/i;
+const MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+function realPhotos(){return[...LIB.values()].filter(e=>!e.sample&&!e.excl);}
+function cleanDir(s){return String(s||'').replace(/^\s*\d{1,3}\s*[_\-.)\s]\s*/,'').replace(/[_]+/g,' ').replace(/\s+-\s+|\s*-\s*$/g,' ').replace(/\s+/g,' ').trim();}
+/* cartella comune a tutte le foto (la più profonda) */
+function rootDirs(ph){
+  const segs=ph.map(e=>(e.folder||'').split('/').filter(Boolean));if(!segs.length||segs.some(s=>!s.length))return segs[0]||[];
+  const out=[];for(let i=0;;i++){const v=segs[0][i];if(v==null||segs.some(s=>s[i]!==v))break;out.push(v);}return out;}
+function suggestTitle(){
+  const ph=realPhotos();if(!ph.length)return null;
+  const r=rootDirs(ph);for(let i=r.length-1;i>=0;i--){const c=cleanDir(r[i]);if(c&&!GENERIC_DIR.test(c)&&!GENERIC_DIR.test(r[i])&&c.length<=42&&/\p{L}{2}/u.test(c))return c[0].toUpperCase()+c.slice(1);}
+  return null;
+}
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da);}
+function suggestTheme(){
+  const ph=realPhotos();if(!ph.length)return null;
+  const sc=new Map(),why=new Map(),root=rootDirs(ph).join('/');
+  for(const [id,re] of THEME_KEYS){let s=0;
+    if(re.test(root)){s+=ph.length*1.5;why.set(id,'cartella «'+cleanDir(root.split('/').filter(x=>re.test(x)).pop()||root)+'»');}
+    let n=0,f=null;for(const e of ph){const p=(e.folder||'')+'/'+e.name;if(re.test(p)){n++;if(!f)f=(e.folder||'').split('/').filter(x=>re.test(x)).pop();}}
+    s+=n;if(n&&!why.has(id))why.set(id,'cartella «'+cleanDir(f||'')+'»');if(s)sc.set(id,s);}
+  /* bastano poche foto in una sottocartella "Neve" per non cambiare tema a tutto il libro */
+  const best=[...sc].sort((a,b)=>b[1]-a[1])[0];
+  if(best&&best[1]>=ph.length*.3)return{id:best[0],why:why.get(best[0])};
+  /* altrimenti le date degli scatti (solo EXIF) */
+  const ds=ph.filter(e=>e.dateSrc==='exif'&&e.date).map(e=>new Date(e.date));if(ds.length<Math.max(4,ph.length*.5))return null;
+  const share=f=>ds.filter(f).length/ds.length,md=d=>(d.getMonth()+1)*100+d.getDate();
+  const near=(d,t,k)=>Math.abs(d-t)<=k*864e5;
+  const rules=[
+    ['natale',d=>md(d)>=1215||md(d)<=106,'foto scattate tra metà dicembre e l’Epifania'],
+    ['valentino',d=>md(d)>=210&&md(d)<=216,'foto scattate intorno a San Valentino'],
+    ['papa',d=>md(d)>=318&&md(d)<=320,'foto scattate il 19 marzo'],
+    ['pasqua',d=>near(d,easter(d.getFullYear()),1),'foto scattate a Pasqua'],
+    ['mamma',d=>{const f=new Date(d.getFullYear(),4,1);const s2=new Date(d.getFullYear(),4,1+((7-f.getDay())%7)+7);return near(d,s2,1);},'foto scattate alla festa della mamma'],
+    ['estate',d=>md(d)>=620&&md(d)<=915,'foto scattate in estate'],
+    ['autunno',d=>md(d)>=1001&&md(d)<=1120,'foto scattate in autunno']];
+  for(const [id,f,w] of rules)if(share(f)>=.7)return{id,why:w};
+  return null;
+}
+/* sottotitolo dalle date: "14 giugno 2025", "giugno 2025", "giugno – luglio 2025", "2025", "2024 – 2025" */
+function suggestSub(){
+  const ds=realPhotos().filter(e=>e.date).map(e=>e.date).sort((a,b)=>a-b);if(!ds.length)return null;
+  const q=p=>new Date(ds[Math.min(ds.length-1,Math.max(0,Math.round(p*(ds.length-1))))]);const a=q(.03),b=q(.97);
+  const Y=a.getFullYear(),Y2=b.getFullYear(),M=a.getMonth(),M2=b.getMonth();
+  if(Y!==Y2)return Y2-Y>3?null:`${Y} – ${Y2}`;
+  if(M===M2&&a.getDate()===b.getDate())return`${a.getDate()} ${MESI[M]} ${Y}`;
+  if(M===M2)return b.getDate()-a.getDate()<=3?`${a.getDate()}–${b.getDate()} ${MESI[M]} ${Y}`:`${MESI[M][0].toUpperCase()+MESI[M].slice(1)} ${Y}`;
+  if(M2-M===1)return`${MESI[M][0].toUpperCase()+MESI[M].slice(1)} – ${MESI[M2]} ${Y}`;
+  return String(Y);
+}
+/* sottotitolo effettivo: la data precisa vale solo per i temi che di serie mettono l'anno */
+function autoSub(T=TH()){const s=suggestSub();return T.texts.sub==='{anno}'&&s?s:fillTpl(T.texts.sub);}
+/* stima veloce: stesso algoritmo della creazione, senza toccare il libro */
+function estimatePages(o=WZ){
+  try{const g=START.open?(BOOK.chapters.filter(c=>c.on).length>1?'folder':'day'):o.group;
+    const pages=planBook({...o,group:g},o.similar?similarToExclude():null);if(!pages.some(p=>p.ids.length))return null;
+    let n=pages.length+(versoOn()?2:(BOOK.firstRight?1:0));if(n%2)n++;
+    const photos=pages.reduce((a,p)=>a+p.ids.length,0);
+    return{inner:n,total:BOOK.endp.on?n+6:n+(BOOK.cover.on?2:0),photos};}catch(e){console.warn(e);return null;}
+}
+/* applica i suggerimenti senza mai sovrascrivere quello che l'utente ha scelto o scritto */
+function applySuggestions(){
+  if(!realCount())return;
+  const s=suggestTheme();START.sugg=s;
+  if(s&&!START.userTheme&&s.id!==BOOK.theme.id){applyTheme(s.id);TPREV.clear();THUMBS.clear();}
+  if(START.titleSrc!=='user'){const t=suggestTitle();if(t){WZ.title=t;START.titleSrc='folder';}else{WZ.title=fillTpl(TH().texts.title);START.titleSrc='theme';}}
+}
+
 /* ---- js/75-start.js ---- */
 /* ============ schermata iniziale: cartella → tema → formato → crea ============ */
-const START={open:false,saved:null};
+/* titleSrc: da dove viene il titolo ('theme' | 'folder' | 'user'); userTheme: l'utente ha scelto un tema a mano */
+const START={open:false,saved:null,sugg:null,userTheme:false,titleSrc:'theme',prog:null};
 function openStart(){START.open=true;$('#start').hidden=false;renderStart();}
 function closeStart(){START.open=false;$('#start').hidden=true;draw();}
-function renderStart(){
-  if(!START.open)return;
-  const n=realCount(),T=TH(),chs=BOOK.chapters.filter(c=>c.on);
+const startBusy=()=>!!(START.prog&&START.prog.total);
+function startCreate(){
+  if(startBusy())return;
+  if(!realCount()){$('#dirIn').click();return;}
+  WZ.group=BOOK.chapters.filter(c=>c.on).length>1?'folder':'day';WZ.userGroup=false;
+  const o={...WZ,sub:WZ.sub.trim()||autoSub()};
+  if(buildBook(o)){closeStart();nextStepsBanner();}
+}
+/* colonna 1: foto (si aggiorna da sola durante l'importazione senza toccare il resto) */
+function startCol1(){
+  const n=realCount(),chs=BOOK.chapters.filter(c=>c.on),busy=startBusy();
   const reals=ORDER.map(id=>LIB.get(id)).filter(e=>e&&!e.sample);
-  /* 1. foto */
-  const dz=el('div',{class:'sdrop',tabindex:0,role:'button',onclick:()=>$('#dirIn').click(),
+  const dz=el('div',{class:'sdrop',tabindex:0,role:'button','aria-label':n?'Aggiungi un’altra cartella di foto':'Scegli la cartella delle foto',onclick:()=>$('#dirIn').click(),
     onkeydown:e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#dirIn').click();}},
     ondragover:e=>{e.preventDefault();e.currentTarget.classList.add('over');},ondragleave:e=>e.currentTarget.classList.remove('over'),ondrop:e=>e.currentTarget.classList.remove('over')},
-    el('div',{class:'sdi',html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M12 10v6M9 13h6"/></svg>'}),
+    el('div',{class:'sdi',html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M12 10v6M9 13h6"/></svg>'}),
     el('b',{},n?'Aggiungi un’altra cartella':'Scegli la cartella delle foto'),
     el('span',{},'oppure trascinala qui. Le sottocartelle diventano capitoli.'));
+  const P=START.prog;
+  const prog=busy?el('div',{class:'sprog',id:'sprog',role:'status'},el('span',{},P.label),el('div',{class:'pb'},el('i',{style:`width:${100*P.done/P.total}%`})),
+    el('small',{},'Leggo date e nitidezza e cerco gli scatti doppi. Intanto puoi scegliere tema e titolo.')):null;
   const mosaic=n?el('div',{class:'smos'},...reals.slice(0,15).map(e=>e.thumbURL?el('img',{src:e.thumbURL,alt:''}):el('i')),n>15?el('span',{},'+'+(n-15)):null):null;
-  const info=n?el('div',{class:'sinfo'},el('b',{},`${n} foto`),chs.length>1?` · ${chs.length} capitoli: ${chs.slice(0,4).map(c=>c.title).join(', ')}${chs.length>4?'…':''}`:'',
-    SIMS.length?` · ${SIMS.length} gruppi di scatti simili (verrà tenuta la più nitida)`:''):null;
-  const c1=el('section',{class:'scol'},el('h2',{},el('i',{},'1'),'Le foto'),dz,
-    el('div',{class:'row'},btn('Scegli singole foto…',()=>{pickFor=null;$('#fileIn').click();})),mosaic,info);
+  const info=n&&!busy?el('div',{class:'sinfo'},el('b',{},`${n} foto`),chs.length>1?` · ${chs.length} capitoli: ${chs.slice(0,4).map(c=>c.title).join(', ')}${chs.length>4?'…':''}`:'',
+    SIMS.length?` · ${SIMS.length} gruppi di scatti simili: terrò il più nitido di ognuno`:''):null;
+  return el('section',{class:'scol',id:'sc1'},el('h2',{},el('i',{},'1'),'Le foto'),dz,
+    el('div',{class:'row'},btn('Scegli singole foto…',()=>{pickFor=null;$('#fileIn').click();})),prog,mosaic,info,
+    !n?el('p',{class:'snote'},'Le foto restano sul tuo computer: niente viene caricato in rete.'):null);
+}
+/* barra in basso, sempre visibile: riepilogo + azione principale */
+function startBar(){
+  const n=realCount(),busy=startBusy(),T=TH();
+  let sum,cta;
+  if(busy){sum=el('span',{},el('b',{},START.prog.label),' · puoi intanto scegliere tema e titolo');
+    cta=el('button',{type:'button',class:'btn pri big',disabled:true},'Attendi l’importazione…');}
+  else if(!n){sum=el('span',{},el('b',{},'Inizia dalla cartella delle foto.'),' Il resto lo propongo io, e potrai cambiare tutto dopo.');
+    cta=el('button',{type:'button',class:'btn pri big',onclick:()=>$('#dirIn').click()},'Scegli la cartella delle foto');}
+  else{const est=estimatePages(),chs=BOOK.chapters.filter(c=>c.on).length,cm=matchProfile();
+    sum=el('span',{},el('b',{},`${est?est.photos:n} foto`),chs>1?` · ${chs} capitoli`:'',` · tema ${T.name}`,
+      est?el('span',{},' · ',el('b',{},`circa ${est.total} pagine`)):'',cm?` · ${cm.name.split('·')[0].trim()}`:'');
+    cta=el('button',{type:'button',class:'btn pri big',title:'Crea il fotolibro (Ctrl+Invio)',onclick:startCreate},'Crea il fotolibro →');}
+  return el('div',{class:'sbar',id:'sbar'},el('div',{class:'ssum'},sum),
+    el('button',{type:'button',class:'linkb',onclick:()=>openWizard()},'Opzioni avanzate…'),cta);
+}
+function renderStartLive(){if(!START.open)return;const a=$('#sc1'),b=$('#sbar');if(!a||!b){renderStart();return;}a.replaceWith(startCol1());b.replaceWith(startBar());}
+function renderStart(){
+  if(!START.open)return;
+  const T=TH(),S=START.sugg;
   /* 2. tema */
-  const tg=el('div',{class:'sthemes'},...THEMES.map(t=>el('button',{type:'button',class:'thc'+(t.id===BOOK.theme.id?' on':''),title:t.desc,
-    onclick:()=>{const old=TH();if(!WZ.title||WZ.title===fillTpl(old.texts.title))WZ.title='';applyTheme(t.id);if(!WZ.title)WZ.title=fillTpl(TH().texts.title);TPREV.clear();THUMBS.clear();commit();syncAll();renderStart();}},
-    el('div',{class:'thp'},themePreview(t.id,104)),el('b',{},t.name))));
-  const c2=el('section',{class:'scol wide'},el('h2',{},el('i',{},'2'),'Il tema',el('small',{},T.name+' · '+T.desc)),tg);
+  const tg=el('div',{class:'sthemes',role:'group','aria-label':'Tema del fotolibro'},...THEMES.map(t=>el('button',{type:'button',class:'thc'+(t.id===BOOK.theme.id?' on':''),title:t.desc,'aria-pressed':String(t.id===BOOK.theme.id),
+    onclick:()=>{START.userTheme=true;applyTheme(t.id);if(START.titleSrc==='theme')WZ.title=fillTpl(TH().texts.title);TPREV.clear();THUMBS.clear();commit();syncAll();renderStart();}},
+    el('div',{class:'thp'},themePreview(t.id,104)),el('b',{},t.name),S&&S.id===t.id?el('em',{class:'stag'},'Consigliato'):null)));
+  const hint=S?el('p',{class:'ssug'},el('b',{},'✦ Consigliato: '+(THEMES.find(t=>t.id===S.id)||{}).name),` — ${S.why}.`,S.id!==BOOK.theme.id?el('span',{},' ',el('button',{type:'button',class:'linkb',onclick:()=>{START.userTheme=false;applySuggestions();commit();syncAll();renderStart();}},'Usalo')):''):null;
+  const c2=el('section',{class:'scol wide'},el('h2',{},el('i',{},'2'),'Il tema',el('small',{},T.name+' · '+T.desc)),hint,tg);
   /* 3. formato e testi */
   const profs=allProfiles(),cm=matchProfile();
-  const ps=el('select',{'aria-label':'Formato e profilo di stampa',onchange:e=>{const p=profs[+e.target.value];if(p){applyProfile(p);renderStart();}}},
-    el('option',{value:'',selected:!cm},cm?'—':'Impostazioni personalizzate (pannello Libro)'),...profs.map((p,i)=>el('option',{value:String(i),selected:cm===p},p.name)));
+  const ps=el('select',{id:'sProf',onchange:e=>{const p=profs[+e.target.value];if(p){applyProfile(p);renderStart();}}},
+    cm?null:el('option',{value:'',selected:true},'Impostazioni personalizzate (pannello Libro)'),...profs.map((p,i)=>el('option',{value:String(i),selected:cm===p},p.name)));
   if(!WZ.title)WZ.title=fillTpl(T.texts.title);
-  const pm=el('div',{class:'seg full'},...[['auto','In base alle foto'],['fixed','Numero esatto']].map(([v,l])=>el('button',{type:'button',class:WZ.pagesMode===v?'on':'',onclick:()=>{WZ.pagesMode=v;renderStart();}},l)));
+  const seg=(label,key,opts)=>el('div',{class:'lbl'},el('span',{id:'lb-'+key},label),el('div',{class:'seg full',role:'group','aria-labelledby':'lb-'+key},
+    ...opts.map(([v,l])=>el('button',{type:'button','aria-pressed':String(WZ[key]===v),class:WZ[key]===v?'on':'',onclick:()=>{WZ[key]=v;renderStart();}},l))));
+  const fld=(id,label,input)=>el('div',{class:'lbl'},el('label',{for:id},label),input);
   const c3=el('section',{class:'scol'},el('h2',{},el('i',{},'3'),'Formato e testi'),
-    el('label',{class:'lbl'},el('span',{},'Formato e tipografia'),ps),
-    el('label',{class:'lbl'},el('span',{},'Titolo in copertina'),el('input',{class:'inp',value:WZ.title,oninput:e=>WZ.title=e.target.value})),
-    el('label',{class:'lbl'},el('span',{},'Sottotitolo'),el('input',{class:'inp',value:WZ.sub,placeholder:fillTpl(T.texts.sub),oninput:e=>WZ.sub=e.target.value})),
-    el('label',{class:'lbl'},el('span',{},'Dedica (facoltativa, sulla prima pagina)'),el('input',{class:'inp',value:WZ.dedica,placeholder:'Es. Per la nonna, con amore',oninput:e=>WZ.dedica=e.target.value})),
-    el('div',{class:'lbl'},el('span',{},'Numero di pagine'),pm,
-      WZ.pagesMode==='fixed'?el('div',{class:'row'},el('input',{type:'number',class:'num',min:4,max:400,step:2,value:WZ.pages,oninput:e=>WZ.pages=clamp(parseInt(e.target.value)||4,4,400)}),
-        ...[20,24,30,40].map(v=>btn(String(v),()=>{WZ.pages=v;renderStart();},WZ.pages===v?'on':null))):el('p',{class:'u'},'Circa 4 foto per pagina, layout variati.')),
-    chk('Risguardi stampati (pag. 2 e penultima)',()=>BOOK.endp.on,v=>{BOOK.endp.on=v;ensureStructure();syncAll();}),
-    el('div',{class:'lbl'},el('span',{},'Pagine con frasi e citazioni'),el('div',{class:'seg full'},...[[0,'Nessuna'],[1,'Qualcuna'],[2,'Di più']].map(([v,l])=>el('button',{type:'button',class:WZ.quotes===v?'on':'',onclick:()=>{WZ.quotes=v;renderStart();}},l)))),
-    el('div',{class:'lbl'},el('span',{},'Sticker a tema tra le foto'),el('div',{class:'seg full'},...[[0,'Nessuno'],[1,'Pochi'],[2,'Tanti']].map(([v,l])=>el('button',{type:'button',class:WZ.stickers===v?'on':'',onclick:()=>{WZ.stickers=v;renderStart();}},l)))),
-    chk('Pagina effetto con le foto migliori (soggetto scontornato)',()=>WZ.effect,v=>{WZ.effect=v;}),
-    el('div',{class:'sgo'},
-      el('button',{type:'button',class:'btn pri big',disabled:!n,onclick:()=>{
-        WZ.group=BOOK.chapters.filter(c=>c.on).length>1?'folder':'day';WZ.userGroup=false;
-        if(buildBook(WZ)){closeStart();}}},n?'Crea il fotolibro':'Prima scegli le foto'),
-      el('button',{type:'button',class:'linkb',onclick:()=>{openWizard();}},'Opzioni avanzate…')));
-  const foot=el('div',{class:'sfoot'},
-    START.saved?el('span',{},el('b',{},'Lavoro in corso: '),`${START.saved.photos.length} foto, salvato ${new Date(START.saved.saved).toLocaleString('it-IT',{dateStyle:'medium',timeStyle:'short'})} `,
-      btn('Riprendi',async()=>{const s=START.saved;START.saved=null;closeStart();await loadProject(s);toast('Lavoro ripreso');},'pri')):null,
-    btn('Apri un progetto salvato…',()=>$('#projIn').click()),
-    btn(n?'Vai all’editor':'Guarda l’esempio nell’editor',()=>closeStart()));
-  $('#startBody').replaceChildren(el('div',{class:'shead'},el('div',{class:'brand big',html:BRAND_SVG+'<span>Fotolibro Studio</span>'}),
-    el('p',{},'Dalla cartella al fotolibro pronto per la stampa in tre passi. Tutto resta modificabile.')),
-    el('div',{class:'sgrid'},c1,c2,c3),foot);
+    fld('sProf','Formato e tipografia',ps),
+    fld('sTitle','Titolo in copertina',el('input',{id:'sTitle',class:'inp',value:WZ.title,maxlength:80,oninput:e=>{WZ.title=e.target.value;START.titleSrc='user';},
+      onkeydown:e=>{if(e.key==='Enter')startCreate();}})),
+    fld('sSub','Sottotitolo',el('input',{id:'sSub',class:'inp',value:WZ.sub,placeholder:autoSub(T),maxlength:80,oninput:e=>WZ.sub=e.target.value})),
+    fld('sDed','Dedica (facoltativa, sulla prima pagina)',el('input',{id:'sDed',class:'inp',value:WZ.dedica,placeholder:'Es. Per la nonna, con amore',maxlength:160,oninput:e=>WZ.dedica=e.target.value})),
+    seg('Numero di pagine','pagesMode',[['auto','In base alle foto'],['fixed','Numero esatto']]),
+    WZ.pagesMode==='fixed'?el('div',{class:'row'},el('input',{type:'number',class:'num','aria-label':'Numero di pagine interne',min:4,max:400,step:2,value:WZ.pages,onchange:e=>{WZ.pages=clamp(parseInt(e.target.value)||4,4,400);renderStartLive();}}),
+        ...[20,24,30,40].map(v=>btn(String(v),()=>{WZ.pages=v;renderStart();},WZ.pages===v?'on':null))):el('p',{class:'u'},'Circa 4 foto per pagina, impaginazioni variate.'),
+    chk('Risguardi stampati (pag. 2 e penultima)',()=>BOOK.endp.on,v=>{BOOK.endp.on=v;ensureStructure();syncAll();renderStartLive();}),
+    seg('Pagine con frasi e citazioni','quotes',[[0,'Nessuna'],[1,'Qualcuna'],[2,'Di più']]),
+    seg('Sticker a tema tra le foto','stickers',[[0,'Nessuno'],[1,'Pochi'],[2,'Tanti']]),
+    chk('Pagina effetto con le foto migliori (soggetto scontornato, solo se ci sono foto adatte)',()=>WZ.effect,v=>{WZ.effect=v;}));
+  const saved=START.saved?el('div',{class:'sres'},el('span',{},el('b',{},'Lavoro in corso: '),`${START.saved.photos.length} foto, salvato ${new Date(START.saved.saved).toLocaleString('it-IT',{dateStyle:'medium',timeStyle:'short'})}`),
+      btn('Riprendi',async()=>{const s=START.saved;START.saved=null;closeStart();await loadProject(s);toast('Lavoro ripreso');},'pri')):null;
+  const head=el('div',{class:'shead'},el('div',{class:'brand big',html:BRAND_SVG+'<span>Fotolibro Studio</span>'}),
+    el('p',{},'Dalla cartella al fotolibro pronto per la stampa in tre passi. Tutto resta modificabile.'),
+    el('div',{class:'sacts'},btn('Apri un progetto salvato…',()=>$('#projIn').click()),
+      btn(realCount()?'Vai all’editor':'Guarda l’esempio nell’editor',()=>closeStart())));
+  $('#startBody').replaceChildren(head,saved||'',el('div',{class:'sgrid'},startCol1(),c2,c3),startBar());
 }
+/* dopo la creazione: i prossimi passi in una riga, con i controlli che contano */
+function nextStepsBanner(){
+  let lowN=0,txt=0;try{const b=bookIssues();lowN=b.low.length;txt=b.txt.length;}catch(e){}
+  showBanner(el('span',{},el('b',{},'Il libro è pronto. '),'Scorri le pagine con le frecce o la striscia in basso: clic su una foto per inquadrarla, trascinala per scambiarla.',
+      lowN||txt?el('span',{class:'warn'},` Da controllare: ${[lowN?`${lowN} foto a bassa risoluzione`:'',txt?`${txt} testi vicini al taglio`:''].filter(Boolean).join(' e ')} (li trovi elencati nella finestra Stampa).`):''),
+    btn('Scegli la copertina',()=>{goSpread(Math.max(0,BOOK.spreads.findIndex(isCover)));UI.tab='theme';renderLeft();}),btn('Sfoglia il libro',()=>previewFlipbook()),btn('Bozza per il cliente',()=>openExport('draft')),btn('File per la stampa',()=>openExport('print'),'pri'),
+    el('button',{type:'button',class:'btn ib','aria-label':'Chiudi',title:'Chiudi',onclick:hideBanner},'×'));
+}
+/* Ctrl+Invio crea il libro dalla schermata iniziale */
+document.addEventListener('keydown',e=>{if(START.open&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();startCreate();}});
 const BRAND_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5.5C9.5 4 6 3.6 2.5 4.2v14.6C6 18.2 9.5 18.6 12 20.1c2.5-1.5 6-1.9 9.5-1.3V4.2C18 3.6 14.5 4 12 5.5Z"/><path d="M12 5.5v14.6"/><rect x="4.6" y="7.2" width="5.2" height="4.4" rx=".4" fill="currentColor" stroke="none" opacity=".55"/><rect x="14.2" y="7.2" width="5.2" height="8.6" rx=".4" fill="currentColor" stroke="none"/></svg>';
 
 /* ---- js/78-wizard.js ---- */
@@ -3100,7 +3253,7 @@ function openWizard(){
       est),
     el('div',{class:'dlg-f'},el('span',{class:'grow'},has?'Sostituisce le pagine attuali. Ctrl+Z per tornare indietro.':''),
       el('button',{type:'button',class:'btn',onclick:()=>d.close()},'Annulla'),
-      el('button',{type:'button',class:'btn pri',onclick:()=>{if(buildBook(WZ))d.close();}},'Crea il libro')));
+      el('button',{type:'button',class:'btn pri',onclick:()=>{if(buildBook({...WZ,sub:WZ.sub.trim()||autoSub()})){d.close();if(START.open)closeStart();nextStepsBanner();}}},'Crea il libro')));
   vis();upd();if(!d.open)d.showModal();
 }
 $('#bWizard').onclick=openWizard;
@@ -3460,8 +3613,8 @@ function renderExport(){
     const cov=BOOK.spreads.find(isCover),E=BOOK.endp,gC=expGeom(EXP.bleed+BOOK.cover.wrap),gE=expGeom(E.bleed),gI=expGeom(EXP.bleed),N=bookPages(),ir=interiorRange(),V=versoOn();
     const dims=(w,h,g)=>`${nf(w+2*g.ext)} × ${nf(h+2*g.ext)} mm`;
     if(EXP.from<ir[0]||EXP.from>ir[1])EXP.from=ir[0];if(EXP.to>ir[1]||EXP.to<EXP.from)EXP.to=ir[1];
-    const rng=el('div',{class:'row'},el('span',{class:'u'},'da pag.'),el('input',{type:'number',class:'num',min:ir[0],max:ir[1],value:EXP.from,onchange:e=>{EXP.from=clamp(parseInt(e.target.value)||ir[0],ir[0],ir[1]);EXP.to=Math.max(EXP.to,EXP.from);renderExport();}}),
-      el('span',{class:'u'},'a pag.'),el('input',{type:'number',class:'num',min:ir[0],max:ir[1],value:EXP.to,onchange:e=>{EXP.to=clamp(parseInt(e.target.value)||ir[1],EXP.from,ir[1]);renderExport();}}),
+    const rng=el('div',{class:'row'},el('span',{class:'u'},'da pag.'),el('input',{type:'number',class:'num','aria-label':'Dalla pagina',min:ir[0],max:ir[1],value:EXP.from,onchange:e=>{EXP.from=clamp(parseInt(e.target.value)||ir[0],ir[0],ir[1]);EXP.to=Math.max(EXP.to,EXP.from);renderExport();}}),
+      el('span',{class:'u'},'a pag.'),el('input',{type:'number',class:'num','aria-label':'Alla pagina',min:ir[0],max:ir[1],value:EXP.to,onchange:e=>{EXP.to=clamp(parseInt(e.target.value)||ir[1],EXP.from,ir[1]);renderExport();}}),
       btn('Tutte',()=>{EXP.from=ir[0];EXP.to=ir[1];renderExport();}));
     const covF={cmyk:'JPEG · CMYK FOGRA39',jpg:'JPEG · RGB',pdf:'PDF · RGB'};
     body=[el('div',{class:'dlg-s'},'Tre file per la tipografia. Tutto viene renderizzato dalle foto originali.'),
@@ -3545,12 +3698,20 @@ footer input{width:min(420px,50vw);accent-color:var(--acc)}
 #idx .pr img{display:block;object-fit:cover;background:#fff}
 #idx .x{position:sticky;top:0;float:right}
 .hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:var(--mut);font-size:12px;opacity:.8;pointer-events:none}
+.rot{display:none;text-align:center;color:var(--mut);font-size:12.5px;padding:0 16px 6px}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (max-width:700px){header{flex-wrap:wrap;gap:8px 10px;padding:10px 12px}header h1{font-size:15px;flex-basis:100%}header .sp{display:none}
+  header button{padding:6px 10px;font-size:13px}#bf{display:none}.nav{top:auto;bottom:6px;transform:none;width:44px;height:44px}.nav.p{left:10px}.nav.n{right:10px}
+  .hint{display:none}footer{padding:8px 64px 12px}footer input{width:100%}#lbl{min-width:0}#idx .g{grid-template-columns:1fr}}
+@media (max-width:700px) and (orientation:portrait){.rot{display:block}}
+@media (prefers-reduced-motion:reduce){.leaf,.book,.shadow{transition:none!important}}
 </style></head><body>
 <header><h1>${esc(o.title)}</h1><span class="tag">Bozza da approvare</span><span class="sp"></span>
 <button id="bi" title="Vedi tutte le pagine">Tutte le pagine</button><button id="bf" title="Schermo intero">Schermo intero</button></header>
 <main id="m"><div class="book" id="book"><div class="shadow" id="sh"></div></div>
 <button class="nav p" id="bp" aria-label="Pagina precedente">‹</button><button class="nav n" id="bn" aria-label="Pagina successiva">›</button>
-<div class="hint" id="hint">Clicca sulle pagine o usa le frecce ← → per sfogliare</div></main>
+<div class="hint" id="hint">Clicca sulle pagine, scorri col dito o usa le frecce ← → per sfogliare</div></main>
+<div class="rot">Ruota il telefono in orizzontale per vedere le pagine più grandi.</div>
 <footer><input type="range" id="rg" min="0" value="0" aria-label="Vai alla pagina"><span id="lbl"></span></footer>
 <div id="idx"><button class="x" id="bx">Chiudi</button><div class="g" id="ig"></div></div>
 <script>
@@ -3563,7 +3724,7 @@ for(var k=0;k<L;k++){var lf=document.createElement('div');lf.className='leaf';lf
 var MIN=D.cover?0:1,MAX=D.cover?L:L-1;if(!D.cover){leaves[0].classList.add('f');cur=1;}
 function z(){for(var k=0;k<L;k++)leaves[k].style.zIndex=k<cur?(k+1):(2*L-k);}
 var pw=0,ph=0;
-function fit(){var m=document.getElementById('m'),W=m.clientWidth-130,H=m.clientHeight-40;pw=Math.min(W/2,H*D.aspect);ph=pw/D.aspect;book.style.width=2*pw+'px';book.style.height=ph+'px';pos();}
+function fit(){var m=document.getElementById('m'),nw=m.clientWidth<700,W=m.clientWidth-(nw?16:130),H=m.clientHeight-(nw?64:40);pw=Math.min(W/2,H*D.aspect);ph=pw/D.aspect;book.style.width=2*pw+'px';book.style.height=ph+'px';pos();}
 function pos(){var x=0;if(cur===0)x=-pw/2;if(cur===L)x=pw/2;book.style.transform='translateX('+x+'px)';
   sh.style.left=(cur===0?pw:0)+'px';sh.style.right=(cur===L?pw:0)+'px';}
 function lab(){var s;if(cur===0)s=P[0]?P[0].l:'';else if(cur===L)s=P[2*L-1]?P[2*L-1].l:'';else{var a=P[2*cur-1],b=P[2*cur];s=[a&&a.l,b&&b.l].filter(function(x,i,arr){return x&&arr.indexOf(x)===i;}).join('  ·  ');}
@@ -3651,6 +3812,7 @@ $('#bNew').onclick=e=>{
   const b=e.currentTarget;if(Date.now()-newArmed>3000){newArmed=Date.now();b.textContent='Confermi? Clicca ancora';setTimeout(()=>b.textContent='Nuovo',3000);return;}
   newArmed=0;b.textContent='Nuovo';clearLibrary();idbClear('kv');idbClear('prev');
   BOOK=freshBookKeepingSettings(true);UI.cur=0;sel=null;UI.tab='photos';UI.filter='all';UI.folder='*';WZ.userGroup=false;
+  Object.assign(START,{userTheme:false,titleSrc:'theme',sugg:null});WZ.title='';WZ.sub='';WZ.dedica='';
   resetHistory();hideBanner();syncAll();openStart();
 };
 function clearLibrary(){for(const e of LIB.values()){closeSrc(e.thumbBmp);if(e.thumbURL)URL.revokeObjectURL(e.thumbURL);}for(const b of PREV.values())closeSrc(b);PREV.clear();LIB.clear();ORDER=[];SIMS=[];TSEL.clear();THUMBS.clear();}
@@ -3668,10 +3830,12 @@ $('#projIn').addEventListener('change',async e=>{
 });
 async function loadProject(d){
   clearLibrary();progress('Apro il progetto…',0,d.photos.length);let i=0;
-  for(const p of d.photos){const e={...p,file:null,prevBlob:null,thumbBmp:null,thumbURL:null,sample:false};
-    const pb=await idbGet('prev',p.id);
+  /* anteprime lette in parallelo (4 alla volta), l'ordine originale resta quello del progetto */
+  const ents=d.photos.map(p=>({...p,file:null,prevBlob:null,thumbBmp:null,thumbURL:null,sample:false}));let k=0;
+  const work=async()=>{while(k<ents.length){const e=ents[k++];const pb=await idbGet('prev',e.id);
     if(pb){try{const b=await createImageBitmap(pb);const tc=canvasOf(b,320);closeSrc(b);e.prevBlob=pb;await setThumb(e,tc);}catch(err){}}
-    LIB.set(e.id,e);progress('Apro il progetto…',++i,d.photos.length);}
+    progress('Apro il progetto…',++i,d.photos.length);}};
+  await Promise.all([work(),work(),work(),work()]);for(const e of ents)LIB.set(e.id,e);
   progress(null);
   BOOK=normBook(d.book);if(d.v!==2)upgradeV1();Object.assign(EXP,d.exp||{});if(EXP.fmt==='zip')EXP.fmt='jpg';Object.assign(DRAFT,d.draft||{});ensureStructure();UI.sort=(d.ui&&d.ui.sort)||'date';UI.cur=Math.max(0,BOOK.spreads.findIndex(isInner));sel=null;TPREV.clear();THUMBS.clear();
   sortOrder();SIMS=findSimilar();syncChapters();resetHistory();updateBanner();syncAll();

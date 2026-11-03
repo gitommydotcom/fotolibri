@@ -11,7 +11,16 @@ Accanto all'app devono stare `fotolibro-effetti.js` (pagina effetto) e `fotolibr
 
 1. **Le foto** – scegli o trascina una cartella. Le sottocartelle diventano capitoli, le foto si ordinano per data di scatto (EXIF), i doppioni e le raffiche vengono riconosciuti.
 2. **Il tema** – Neutro bianco, Avorio elegante, Nero galleria, Natale, Natale nordico, San Valentino, Festa del papà, Festa della mamma, Compleanno, Pasqua, Matrimonio, Nascita (azzurro / rosa), Estate e viaggi, Laurea, Autunno.
-3. **Formato e testi** – profilo di stampa, titolo, sottotitolo, dedica → **Crea il fotolibro**.
+3. **Formato e testi** – profilo di stampa, titolo, sottotitolo, dedica → **Crea il fotolibro** (o Ctrl+Invio).
+
+Mentre importi, l'app propone da sola, senza mai sovrascrivere quello che scegli o scrivi tu:
+- **il tema**, dal nome delle cartelle («Matrimonio…», «Natale 2025», «Mare 2024», «Battesimo di Sofia»…) oppure dalle date di scatto (dicembre, San Valentino, Pasqua, estate…). Il tema consigliato ha l'etichetta «Consigliato»;
+- **il titolo**, dal nome della cartella principale, se non è generico («DCIM», «Foto», «Download»…);
+- **il sottotitolo**, dalle date: «14 giugno 2025», «Giugno 2025», «2024 – 2025».
+
+La barra in basso resta sempre visibile e mostra il riepilogo (foto, capitoli, tema, pagine stimate, formato) con il pulsante per creare il libro. Durante l'importazione indica l'avanzamento.
+
+Dopo la creazione, una barra in alto suggerisce i passi successivi: scegliere la copertina, sfogliare il libro, preparare la bozza per il cliente o i file per la stampa. Se ci sono foto a bassa risoluzione o testi vicini al taglio, lo segnala lì.
 
 Poi tutto è modificabile nell'editor:
 
@@ -81,6 +90,8 @@ node build.mjs        → dist/fotolibro-studio.html (file unico)
 node tests/smoke.mjs  prova automatica (temi + tutte le esportazioni)
 node tests/flow.mjs <out> <cartella>   prova con una cartella vera
 node tests/flow2.mjs <out> <cartella>  pagine speciali, effetto, export di stampa
+node tests/full.mjs <out> <cartella>   controllo completo: creazione guidata, 16 temi, pagine speciali senza perdita di foto,
+                                       conferma e annullamento, tastiera, export, salva/riapri, finestre da 1024 a 1920 px
 ```
 Durante lo sviluppo si può aprire direttamente `src/index.html`.
 
