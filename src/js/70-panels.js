@@ -22,7 +22,7 @@ function numIn(label,get,set,min,max,step=1){const i=el('input',{type:'number',c
 /* ============ pannello sinistro ============ */
 function renderLeft(){
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===UI.tab));
-  const L=$('#leftBody'),y=L.scrollTop;L.replaceChildren(...({photos:tabPhotos,theme:tabTheme,layout:tabLayout,text:tabText,deco:tabDeco,book:tabBook}[UI.tab])().filter(Boolean));L.scrollTop=y;
+  const L=$('#leftBody'),y=L.scrollTop;L.replaceChildren(...({photos:tabPhotos,theme:tabTheme,pages:tabPages,layout:tabLayout,text:tabText,deco:tabDeco,book:tabBook}[UI.tab])().filter(Boolean));L.scrollTop=y;
 }
 function tabPhotos(){
   const U=usage(),all=ORDER.map(id=>LIB.get(id)).filter(Boolean);
@@ -114,6 +114,8 @@ function layThumb(defs,A,phs,perm,box=66){
 }
 function tabLayout(){
   const sp=cur(),side=activeSide(sp),M=meta(sp,side),phs=pagePhs(sp,side),n=phs.length,I=areaOf(sp,side),A=I.w/I.h;
+  if(isInner(sp)&&isSpecial(sp,side)){const K=SPECIALS.find(k=>k[0]===M.special);return[sec(pageLabel(UI.cur,side),el('p',{},`Pagina speciale${K?': '+K[1].toLowerCase():M.special==='effect'?': effetto':''}. Si modifica dal pannello Pagine o direttamente sul foglio.`),
+    el('div',{class:'row'},btn('Apri il pannello Pagine',()=>{UI.tab='pages';renderLeft();},'pri'),btn('Rendi pagina normale',()=>{unspecial(sp,side);sel=null;commit();syncAll();},null,'Tiene le foto e le impagina normalmente')))];}
   const cands=pageCands(sp,side);
   const g=el('div',{class:'lgrid'});
   for(const c of cands)g.append(el('button',{type:'button',class:'lth'+(c.key===M.lay?' on':''),title:c.name,onclick:()=>{relayoutPage(sp,side,{key:c.key});sel=null;commit();syncAll();}},layThumb(c.defs,A,phs,c.perm),c.name));
@@ -135,7 +137,7 @@ function tabLayout(){
         btn('Crea libro automatico…',openWizard,'alt'))),
     sec('Riquadri liberi',
       el('div',{class:'row'},btn('Aggiungi riquadro libero',()=>{const c=mkCell([.3,.3,.4,.4],side);sp.cells.push(c);sel={type:'cell',id:c.id};setMode('layout');commit();syncAll();}),
-        btn('Svuota questa pagina',()=>{sp.cells=sp.cells.filter(c=>c.side!==side);M.lay=null;sel=null;commit();syncAll();},'danger')),
+        btn('Svuota questa pagina',()=>{const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));const r=redistribute(ph,pageNum(UI.cur,side==='S'?'L':side),{afterIdx:UI.cur,exclude:x=>x.sp===sp&&x.side===side});sel=null;commit();syncAll();toast('Pagina svuotata'+redistMsg(r));},'danger','Le foto vengono spostate nelle pagine vicine')),
       chk('Bordi in comune si muovono insieme',()=>UI.link,v=>UI.link=v),
       chk('Aggancio a griglia e bordi',()=>UI.snap,v=>UI.snap=v),
       el('p',{},'In modalità Riquadri (tasto M) trascina un riquadro per spostarlo e i bordi o gli angoli per ridimensionarlo.'))
@@ -144,11 +146,11 @@ function tabLayout(){
 
 /* ============ tema ============ */
 const TPREV=new Map();
-function themePreview(id,w=118){
+function themePreview(id,w=118,ov){
   const ph=ORDER.find(i=>LIB.get(i)&&LIB.get(i).fav)||ORDER.find(i=>{const e=LIB.get(i);return e&&e.w>=e.h;})||ORDER[0]||null;
-  const key=id+'|'+ph+'|'+BOOK.page.w+'x'+BOOK.page.h+'|'+thumbGen+'|'+(id===BOOK.theme.id?JSON.stringify(BOOK.theme):'');
-  const c0=TPREV.get(id);if(c0&&c0.key===key)return c0.cv;
-  const save=BOOK.theme;BOOK.theme=id===save.id?save:{id,colors:{},fonts:{},deco:save.deco==null?1:save.deco,coverLayout:null};
+  const pk=id+(ov?JSON.stringify(ov):''),key=pk+'|'+ph+'|'+BOOK.page.w+'x'+BOOK.page.h+'|'+thumbGen+'|'+(id===BOOK.theme.id?JSON.stringify(BOOK.theme):'');
+  const c0=TPREV.get(pk);if(c0&&c0.key===key)return c0.cv;
+  const save=BOOK.theme;BOOK.theme={...(id===save.id?save:{id,colors:{},fonts:{},deco:save.deco==null?1:save.deco,coverLayout:null}),...(ov||{})};
   const c=c0?c0.cv:document.createElement('canvas');
   try{const sp=makeCover({},ph?[ph]:[]);
     const P=pageBox(sp,'R'),H=pgH(sp),s=w/P.w,h=Math.round(H*s),dpr=window.devicePixelRatio||1;
@@ -156,7 +158,7 @@ function themePreview(id,w=118){
     const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
     renderSpread(x,sp,{s,ox:-P.x*s,oy:0,q:'thumb'});
   }finally{BOOK.theme=save;}
-  TPREV.set(id,{key,cv:c});return c;
+  TPREV.set(pk,{key,cv:c});return c;
 }
 function restyleTexts(){const T=TH();for(const sp of BOOK.spreads)for(const t of sp.texts){if(!t.role||t.custom)continue;const st=roleStyle(t.role,T,bgOf(sp));
   if(isCover(sp)&&T.coverLayout==='full'&&(t.role==='cover-title'||t.role==='cover-sub')){st.color='#ffffff';st.shadow=true;}const of=t.font;Object.assign(t,st);if(of!==t.font)t.size=+(t.size/fScale(of)*fScale(t.font)).toFixed(1);}}
@@ -185,9 +187,13 @@ function tabTheme(){
   return[
     sec(`Tema del libro · ${T.name}`,el('p',{},T.desc+'. Il tema imposta copertina, retro, dorso, risguardi, titoli e decorazioni. Le tue foto e l’impaginazione restano.')),
     ...groups,
-    sec('Copertina',
-      el('div',{class:'covl'},...COVER_LAYOUTS.map(([v,l,tip])=>el('button',{type:'button',class:'cl'+(T.coverLayout===v?' on':''),title:tip,onclick:()=>{bt.coverLayout=v;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},covIcon(v),l))),
-      el('p',{},'Cambiando stile la copertina viene ricreata con le stesse foto e lo stesso titolo.')),
+    sec('Copertina · proposte per questo tema',
+      el('div',{class:'themes'},...coverProposals(T).map(v=>el('button',{type:'button',class:'thc'+(T.coverLayout===v.coverLayout&&T.coverBg===v.coverBg?' on':''),title:v.name,
+        onclick:()=>{bt.coverLayout=v.coverLayout;bt.coverBg=v.coverBg;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},el('div',{class:'thp'},themePreview(T.id,118,v)),el('b',{},v.name)))),
+      el('div',{class:'lbl'},el('span',{},'Impaginazione'),el('div',{class:'covl'},...COVER_LAYOUTS.map(([v,l,tip])=>el('button',{type:'button',class:'cl'+(T.coverLayout===v?' on':''),title:tip,onclick:()=>{bt.coverLayout=v;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},covIcon(v),l)))),
+      el('label',{class:'lbl'},el('span',{},'Sfondo'),el('select',{onchange:e=>{bt.coverBg=e.target.value;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},...COVER_BGS.map(([v,l])=>el('option',{value:v,selected:T.coverBg===v},l)))),
+      el('p',{},'La copertina viene ricreata con le stesse foto e lo stesso titolo. Poi puoi spostare e cambiare tutto.')),
+    BOOK.endp.on?tabEndpapers(T):null,
     sec('Decorazioni del tema',
       seg([['0','Nessuna'],['1','Leggere'],['2','Ricche']],String(T.deco),v=>{bt.deco=+v;themeChanged({decos:true});},true),
       chk('Motivo sullo sfondo della copertina',()=>bt.coverPattern!==false,v=>{bt.coverPattern=v;THUMBS.clear();syncAll();}),
@@ -318,7 +324,7 @@ function tabBook(){
   const s=el('select',{'aria-label':'Formato pagina'});
   for(const[n] of PAGE_PRESETS)s.append(el('option',{value:n},n));
   s.append(el('option',{value:'custom'},'Personalizzato'));s.value=P.preset;
-  const reflow=()=>{relayoutAll(true);rebuildCover();TPREV.clear();};
+  const reflow=()=>{relayoutAll(true);rebuildCover();for(const x of BOOK.spreads)for(const c of x.cells)if(c.fx==='pop')fxPopFrame(x,c);TPREV.clear();};
   s.onchange=()=>{const pr=PAGE_PRESETS.find(p=>p[0]===s.value);if(!pr){P.preset='custom';syncAll();return;}P.preset=pr[0];P.w=pr[1];P.h=pr[2];reflow();THUMBS.clear();commit();syncAll();};
   const pageMM=(lab,key)=>mmField(lab+' (mm)',()=>P[key],v=>{P[key]=v;const m=PAGE_PRESETS.find(p=>Math.abs(p[1]-P.w)<.05&&Math.abs(p[2]-P.h)<.05);P.preset=m?m[0]:'custom';},50,1000,.1,reflow);
   const pxAt=d=>`${Math.round(P.w/25.4*d)} × ${Math.round(P.h/25.4*d)} px`;
@@ -366,6 +372,7 @@ function tabBook(){
         mmField('Abbondanza (mm)',()=>E.bleed,v=>E.bleed=v,0,20,.5),
         mmField('Zona visibile, largh. (0 = pagina)',()=>E.visW,v=>E.visW=v,0,1000,.5),
         mmField('Zona visibile, alt. (0 = pagina)',()=>E.visH,v=>E.visH=v,0,1000,.5)):null,
+      E.on?chk(`Stampa sul foglio dei risguardi anche pag. 4 e pag. ${bookPages()-3} (retro dei fogli)`,()=>E.verso!==false,v=>{E.verso=v;THUMBS.clear();syncAll();},'Pag. 4 e la terzultima finiscono nel PDF dei risguardi invece che nell’interno'):null,
       E.on?el('p',{},'Ogni risguardo è un foglio a sé (anteriore e posteriore) ed esce in un file dedicato. Il riquadro verde mostra la parte che si vede a libro finito: tienici dentro testi e foto importanti.'):null,
       E.on&&endF>=0?btn('Vai al risguardo anteriore',()=>goSpread(endF)):null),
     sec('Sicurezza di stampa',
@@ -379,3 +386,107 @@ function tabBook(){
       el('div',{class:'srow'},el('span',{class:'k'},'a 300 dpi'),el('span',{class:'v'},pxAt(300)))))
   ];
 }
+
+/* proposte di copertina: combinazioni di impaginazione e sfondo adatte al tema */
+function coverProposals(T){const b=baseTheme(T.id),base=b.coverLayout,alt=base==='arch'?'circle':base==='circle'?'heart':base==='heart'?'arch':'arch';
+  const L=[[base,b.coverBg||'motivo'],['full','motivo'],['framed','chiaro'],[base,'tinta'],['framed','sfocata'],['collage',b.coverPattern?'motivo':'fitto'],['type','fitto'],[alt,'chiaro']];
+  const nm={full:'Foto piena',framed:'Incorniciata',arch:'Arco',circle:'Tonda',heart:'Cuore',collage:'Collage',type:'Solo titolo'},bn=Object.fromEntries(COVER_BGS);
+  const seen=new Set();return L.filter(([l,g])=>{const k=l+g;if(seen.has(k))return false;seen.add(k);return true;}).map(([l,g])=>({coverLayout:l,coverBg:g,name:l==='full'?nm[l]:`${nm[l]} · ${bn[g].toLowerCase()}`}));}
+/* varianti dei risguardi: del tema, a tinta, motivi semplici, foto, e i risguardi degli altri temi */
+function endpVariants(T){const C=T.colors,mc=T.motifColors&&T.motifColors.length?T.motifColors:[C.accent],dk=lum(C.endpaper)<140,ac=dk?mix(mc[0],'#ffffff',.25):mc[0];
+  const v=[{id:'tema',name:'Del tema',bg:null,pat:null},
+    {id:'chiaro',name:'Chiaro con motivi',bg:C.paper,pat:T.endPattern?{...clone(T.endPattern),colors:mc,op:.45}:'none'},
+    {id:'cop',name:'Come la copertina',bg:C.cover,pat:T.coverPattern?clone(T.coverPattern):'none'},
+    {id:'pois',name:'Pois',bg:C.endpaper,pat:{type:'dots',motifs:['dot'],colors:[ac],size:3.2,gap:13,op:.55}},
+    {id:'righe',name:'Righe',bg:C.endpaper,pat:{type:'stripes',colors:[ac],size:7,gap:16,op:.35}},
+    {id:'scozzese',name:'Scozzese',bg:C.endpaper,pat:{type:'plaid',colors:[mc[0],mc[1%mc.length]],size:8,gap:40,op:.5}},
+    {id:'tinta',name:'Tinta unita',bg:C.endpaper,pat:'none'},
+    {id:'tinta2',name:'Tinta copertina',bg:C.cover,pat:'none'},
+    {id:'bianco',name:'Bianco',bg:'#ffffff',pat:'none'},
+    {id:'foto',name:'Foto in bianco e nero',bg:'#222222',pat:'none',photo:true}];
+  for(const o of THEMES)if(o.id!==T.id&&o.endPattern)v.push({id:'t:'+o.id,name:o.name,bg:o.colors.endpaper,pat:clone(o.endPattern),other:true});
+  return v;}
+function applyEndpVariant(sp,v){
+  sp.cells=sp.cells.filter(c=>!c.epPh);sp.bg=v.bg;sp.pat=v.pat;sp.endv=v.id;
+  if(v.photo){const ids=[...usage().keys()],e=ids.map(id=>LIB.get(id)).filter(Boolean).sort((a,b)=>(b.fav-a.fav)||((b.w/b.h)-(a.w/a.h)))[0];
+    if(e){sp.mode='spread';const M=meta(sp,'S');M.full=true;const c=mkCell([0,0,1,1],'S');c.epPh=true;c.ph={...newPh(e.id),gray:100,br:105,ct:95};sp.cells.unshift(c);}}
+  else if(sp.mode==='spread'&&!sp.cells.length)sp.mode='pages';
+}
+UI.endpTarget='both';
+function endpPreview(v,w=132){const tpl=BOOK.spreads.find(s=>s.kind==='endF')||mkSpread('endF');const sp={...clone(tpl),cells:[],texts:[],decos:[],id:tpl.id};applyEndpVariant(sp,v);
+  const H=pgH(sp),s=w/spW(sp),h=Math.round(H*s),dpr=window.devicePixelRatio||1,c=el('canvas',{width:Math.round(w*dpr),height:Math.round(h*dpr),style:`width:${w}px;height:${h}px`}),x=c.getContext('2d');x.scale(dpr,dpr);
+  renderSpread(x,sp,{s,ox:0,oy:0,q:'thumb'});x.fillStyle='rgba(0,0,0,.18)';x.fillRect(foldX(sp)*s-.5,0,1,h);return c;}
+function tabEndpapers(T){
+  const vs=endpVariants(T),F=BOOK.spreads.find(s=>s.kind==='endF'),B=BOOK.spreads.find(s=>s.kind==='endB');
+  const curId=sp=>sp?(sp.endv||(sp.bg==null&&sp.pat==null?'tema':'')):'';
+  const apply=v=>{const tg=UI.endpTarget;for(const sp of[F,B]){if(!sp)continue;if(tg==='both'||(tg==='F'&&sp===F)||(tg==='B'&&sp===B))applyEndpVariant(sp,v);}
+    THUMBS.clear();commit();syncAll();goSpread(BOOK.spreads.indexOf(UI.endpTarget==='B'?B:F));};
+  const grid=list=>el('div',{class:'themes'},...list.map(v=>el('button',{type:'button',class:'thc'+((curId(F)===v.id&&UI.endpTarget!=='B')||(curId(B)===v.id&&UI.endpTarget==='B')?' on':''),title:v.name,onclick:()=>apply(v)},
+    el('div',{class:'thp'},endpPreview(v)),el('b',{},v.name))));
+  return sec('Risguardi',
+    seg([['both','Entrambi'],['F','Solo anteriore'],['B','Solo posteriore']],UI.endpTarget,v=>{UI.endpTarget=v;renderLeft();},true),
+    grid(vs.filter(v=>!v.other)),
+    el('details',{class:'more'},el('summary',{},'Risguardi degli altri temi'),grid(vs.filter(v=>v.other))),
+    el('p',{},'Il risguardo resta modificabile: puoi aggiungere foto, testi e decorazioni dal foglio.'));
+}
+
+/* ============ pagine speciali ============ */
+UI.spWhere='replace';UI.quoteIdx=0;UI.quoteCustom='';let fxBusy=false;
+function tabPages(){
+  const sp=cur(),side=activeSide(sp),inner=isInner(sp),T=TH(),M=inner?meta(sp,side):null,qs=themeQuotes();
+  const q=()=>UI.quoteCustom.trim()?[UI.quoteCustom.trim(),'']:qs[UI.quoteIdx%qs.length];
+  const out=[];
+  if(!inner)out.push(sec('Pagine speciali',el('p',{},'Vai su una pagina interna per inserire frasi, collage o la pagina effetto.'),btn('Vai alla prima pagina interna',()=>goSpread(firstInnerIdx()),'pri')));
+  else{
+    if(M.special&&M.special!=='effect'){const K=SPECIALS.find(k=>k[0]===M.special);
+      out.push(sec(`${pageLabel(UI.cur,side)} · ${K?K[1]:'pagina speciale'}`,
+        M.special.startsWith('quote')||M.special==='photo-quote'?el('div',{class:'row'},btn('Un’altra frase',()=>{const t=sp.texts.find(t=>t.role==='quote'&&(side==='S'||(t.x*spW(sp)<foldX(sp))===(side==='L')));
+          if(t){UI.quoteIdx++;const nq=qs[UI.quoteIdx%qs.length];t.text=nq[0];wrapText(t,visBox(sp,side).w*.72);const a=sp.texts.find(x=>x.role==='quote-author'&&Math.abs(x.x-t.x)<.05);if(a)a.text=nq[1]?'— '+nq[1]:'';commit();syncAll();}},'pri')):null,
+        btn('Rendi pagina normale (tiene le foto)',()=>{unspecial(sp,side);commit();syncAll();})));}
+    const quoteSel=el('select',{'aria-label':'Frase',onchange:e=>{UI.quoteIdx=+e.target.value;UI.quoteCustom='';renderLeft();}},...qs.map((x,k)=>el('option',{value:k,selected:k===UI.quoteIdx%qs.length},(x[0].length>60?x[0].slice(0,58)+'…':x[0])+(x[1]?' — '+x[1]:''))));
+    out.push(sec('Inserisci una pagina speciale',
+      seg([['replace','Al posto di questa pagina'],['after','In una nuova doppia pagina']],UI.spWhere,v=>{UI.spWhere=v;renderLeft();},true),
+      el('p',{},UI.spWhere==='replace'?`Va su ${pageLabel(UI.cur,side)}: le sue foto vengono spostate nelle pagine vicine, nessuna si perde.`:'Si aggiunge una doppia pagina dopo questa: metà delle foto della pagina attuale va accanto alla pagina speciale.'),
+      el('label',{class:'lbl'},el('span',{},'Frase (per le pagine con frase)'),quoteSel),
+      el('textarea',{rows:2,placeholder:'…oppure scrivi la tua frase',oninput:e=>{UI.quoteCustom=e.target.value;}},UI.quoteCustom),
+      el('div',{class:'specials'},...SPECIALS.map(([k,l,d])=>el('button',{type:'button',class:'spc',title:d,onclick:()=>{
+        const o={quote:q()};if(k==='dedica'){o.text=UI.quoteCustom.trim()||(WZ.dedica||'Con tutto il mio affetto');}if(k==='chapter'){o.text=UI.quoteCustom.trim()||'Nuovo capitolo';}
+        if(isVerso(UI.cur,side)&&UI.spWhere==='replace'&&k==='scrap'){toast('Questa pagina è il retro del risguardo: scegli un’altra pagina per il collage');return;}
+        placeSpecial(k,UI.spWhere,o);}},specIcon(k),el('b',{},l),el('small',{},d))))));
+  }
+  const ei=effectIdx();
+  out.push(sec('Pagina effetto · le foto migliori',
+    el('p',{},'Il programma sceglie le foto migliori con una persona o un animale ben visibile, scontorna il soggetto e crea una doppia pagina con effetto “fuori cornice” e sticker. Al massimo una per libro: se non ci sono foto adatte non viene creata.'),
+    ei>=0?el('div',{class:'row'},btn('Vai alla pagina effetto',()=>goSpread(ei),'pri'),btn('Rifai con le foto migliori',()=>runEffect('same')),
+      btn('Elimina',()=>{const s2=BOOK.spreads[ei];const ph=s2.cells.filter(c=>c.ph&&!c.fx).map(c=>c.ph);BOOK.spreads.splice(ei,1);normalizeOrder();redistribute(ph,pageNum(Math.max(firstInnerIdx(),ei-1),'R'));UI.cur=clamp(UI.cur,0,BOOK.spreads.length-1);commit();syncAll();},'danger'))
+    :el('div',{class:'row'},btn(fxBusy?'Analisi in corso…':'Crea la pagina effetto',()=>runEffect('replace'),'pri','Sostituisce una doppia pagina centrale; le sue foto vanno nelle pagine vicine'),
+      btn('Come doppia pagina in più',()=>runEffect('add'))),
+    FX.failed?el('p',{class:'warn'},'Modulo effetti non disponibile: '+FX.failed+'. Il file fotolibro-effetti.js deve stare accanto all’app.'):null));
+  out.push(sec('Sticker tra le foto',
+    seg([['0','Nessuno'],['1','Pochi'],['2','Tanti']],String(BOOK.theme.stickers||0),v=>{BOOK.theme.stickers=+v;regenDecos();THUMBS.clear();commit();syncAll();},true),
+    el('p',{},`Sticker del tema “${T.name}” (${themeStickers().w.slice(0,3).join(', ')}…) sugli angoli delle foto. Per aggiungerne uno a mano usa il pannello Decori.`)));
+  return out;
+}
+async function runEffect(mode){
+  if(fxBusy)return;fxBusy=true;renderLeft();
+  try{const ids=[...usage().keys()].filter(id=>LIB.get(id));
+    if(mode==='add'){const i=await createEffectPage(ids,{at:UI.cur+1,onProg:(a,b)=>progress('Analizzo le foto…',a,b)});if(i!==false){UI.cur=i;}}
+    else if(mode==='same'){const old=effectIdx();const i=await createEffectPage(ids,{at:old,onProg:(a,b)=>progress('Analizzo le foto…',a,b)});if(i!==false)UI.cur=i;}
+    else{await addEffectAfterBuild(ids);const i=effectIdx();if(i>=0)UI.cur=i;}
+    progress(null);THUMBS.clear();commit();syncAll();
+  }catch(e){progress(null);console.warn(e);toast('Pagina effetto non disponibile: '+(FX.failed||e.message),5000);}
+  finally{fxBusy=false;renderLeft();}
+}
+function specIcon(k){const c=el('canvas',{width:68,height:48,style:'width:34px;height:24px'}),x=c.getContext('2d');x.scale(2,2);const mu=cssVar('--muted')||'#888',ac=cssVar('--accent')||'#c2185b';
+  x.fillStyle=cssVar('--raise')||'#fff';x.fillRect(0,0,34,24);x.strokeStyle=mu;x.globalAlpha=.6;x.strokeRect(.5,.5,33,23);x.globalAlpha=1;
+  const L=(y,w)=>{x.fillStyle=mu;x.fillRect(17-w/2,y,w,1.6);};
+  if(k==='quote'){L(9,18);L(12.5,14);x.fillStyle=ac;x.fillRect(14,5,6,1.2);}
+  else if(k==='quote-color'){x.fillStyle=ac;x.fillRect(1,1,32,22);x.fillStyle='#fff';x.fillRect(8,9,18,1.6);x.fillRect(10,12.5,14,1.6);}
+  else if(k==='quote-frame'){x.fillStyle=ac;for(let i=0;i<6;i++){x.fillRect(3+i*5.4,2.5,2,2);x.fillRect(3+i*5.4,19.5,2,2);}L(10,16);L(13.5,12);}
+  else if(k==='quote-photo'){x.fillStyle=mu;x.globalAlpha=.55;x.fillRect(1,1,32,22);x.globalAlpha=1;x.fillStyle='#fff';x.fillRect(8,10,18,1.6);x.fillRect(10,13.5,14,1.6);}
+  else if(k==='photo-quote'){x.fillStyle=mu;x.globalAlpha=.55;x.fillRect(4,3,26,12);x.globalAlpha=1;L(18,16);}
+  else if(k==='scrap'){x.fillStyle=mu;for(const[a,b,r] of[[5,4,-.15],[18,6,.12],[11,12,-.05]]){x.save();x.translate(a+6,b+4.5);x.rotate(r);x.fillStyle='#fff';x.fillRect(-6.5,-5,13,10);x.strokeStyle=mu;x.strokeRect(-6.5,-5,13,10);x.globalAlpha=.5;x.fillStyle=mu;x.fillRect(-5.5,-4,11,7.5);x.restore();}
+    drawMotif(x,'star',29,19,6,0,ac);}
+  else if(k==='dedica'){x.strokeStyle=ac;x.lineWidth=1.3;x.beginPath();x.moveTo(7,13);x.bezierCurveTo(10,7,13,17,17,11);x.bezierCurveTo(20,7,23,16,27,11);x.stroke();}
+  else{x.fillStyle=mu;x.fillRect(9,10,16,3);x.fillRect(12,15,10,1.2);}
+  return c;}

@@ -132,13 +132,14 @@ const THEMES=[
     endPattern:PAT('scatter',['leaf','pumpkin','branch'],['#C0561E','#D9822B','#7A8B3A'],12,30,.55),
     pagePattern:null,texts:{title:'Autunno',sub:'{anno}'}},
 ];
+const COVER_BGS=[['motivo','Motivo del tema'],['tinta','Tinta unita'],['chiaro','Chiaro'],['fitto','Motivo fitto'],['sfocata','Foto sfocata']];
 const THEME_GROUPS=['Neutri','Feste','Eventi'];
 function baseTheme(id){return THEMES.find(t=>t.id===id)||THEMES[0];}
 /* tema effettivo = tema base + personalizzazioni del libro */
 function resolveTheme(bt){
   bt=bt||BOOK.theme;const b=baseTheme(bt.id);
   const T={...b,colors:{...b.colors,...(bt.colors||{})},fonts:{...b.fonts,...(bt.fonts||{})}};
-  T.deco=bt.deco==null?1:bt.deco;T.coverLayout=bt.coverLayout||b.coverLayout;
+  T.deco=bt.deco==null?1:bt.deco;T.coverLayout=bt.coverLayout||b.coverLayout;T.coverBg=bt.coverBg||b.coverBg||'motivo';
   T.endPatternOn=bt.endPattern!==false;T.coverPatternOn=bt.coverPattern!==false;
   return T;
 }
@@ -151,8 +152,8 @@ function roleStyle(role,T,bg){
   const ttl=bg&&Math.abs(lum(bg)-lum(C.title))<70?contrastInk(bg):C.title;
   const base={font:T.fonts.title,italic:!!T.titleItalic,bold:!!T.titleBold,upper:!!T.titleUpper,ls:T.titleLs||0,shadow:false,boxOp:0,strokeW:0,op:100,lh:1.1};
   switch(role){
-    case'cover-title':return{...base,color:C.coverInk};
-    case'cover-sub':return{font:T.fonts.sub,italic:false,bold:false,upper:!!T.subUpper,ls:T.subUpper?24:4,color:C.coverInk,shadow:false,op:90,lh:1.1};
+    case'cover-title':return{...base,color:bg&&Math.abs(lum(bg)-lum(C.coverInk))<80?C.title:C.coverInk};
+    case'cover-sub':return{font:T.fonts.sub,italic:false,bold:false,upper:!!T.subUpper,ls:T.subUpper?24:4,color:bg&&Math.abs(lum(bg)-lum(C.coverInk))<80?C.ink:C.coverInk,shadow:false,op:90,lh:1.1};
     case'spine':return{font:T.fonts.sub,italic:false,bold:true,upper:true,ls:12,color:C.coverInk,shadow:false,op:100,lh:1};
     case'back':return{font:T.fonts.sub,italic:false,bold:false,upper:!!T.subUpper,ls:T.subUpper?18:2,color:C.coverInk,shadow:false,op:80,lh:1.2};
     case'chapter':return{...base,color:ttl};
@@ -162,6 +163,8 @@ function roleStyle(role,T,bg){
     case'dedica':return{...base,color:ttl,lh:1.25};
     case'caption':return{font:T.fonts.sub,italic:false,bold:false,upper:false,ls:2,color:ink,shadow:false,op:90,lh:1.2};
     case'end':return{...base,color:C.endInk};
+    case'quote':return{...base,color:ttl,lh:1.25,italic:base.italic||!/Vibes|Script|Pacifico|Caveat|Amatic|Bebas/.test(T.fonts.title)};
+    case'quote-author':return{font:T.fonts.sub,italic:false,bold:false,upper:true,ls:16,color:ink,shadow:false,op:70,lh:1.1};
   }
   return{color:ink};
 }

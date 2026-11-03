@@ -288,3 +288,12 @@ dialog.full:not([open]){display:none}
 @media (max-width:1660px){.top .brand span{display:none}#zOut,#zIn{display:none}}
 @media (max-width:1440px){#tF,#zFit{display:none}.job{width:140px}.top .btn{padding:6px 9px}.top .seg button{padding:5px 8px}}
 @media (max-width:1250px){#modeSeg,#bNew{display:none}}
+
+/* pagine speciali */
+.specials{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.spc{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--raise);border-radius:8px;padding:7px 8px;cursor:pointer;color:var(--ink)}
+.spc canvas{grid-row:1/3}.spc b{font-size:12px;font-weight:600}.spc small{font-size:10.5px;color:var(--muted);line-height:1.2}
+.spc:hover{border-color:var(--accent);background:var(--soft)}
+details.more summary{cursor:pointer;color:var(--accent);font-size:12px;margin:4px 0 8px}
+.warn{color:var(--warn)!important}
+.tabs button{font-size:10.5px}

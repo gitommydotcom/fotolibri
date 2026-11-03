@@ -299,6 +299,15 @@ dialog.full:not([open]){display:none}
 @media (max-width:1440px){#tF,#zFit{display:none}.job{width:140px}.top .btn{padding:6px 9px}.top .seg button{padding:5px 8px}}
 @media (max-width:1250px){#modeSeg,#bNew{display:none}}
 
+/* pagine speciali */
+.specials{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.spc{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--raise);border-radius:8px;padding:7px 8px;cursor:pointer;color:var(--ink)}
+.spc canvas{grid-row:1/3}.spc b{font-size:12px;font-weight:600}.spc small{font-size:10.5px;color:var(--muted);line-height:1.2}
+.spc:hover{border-color:var(--accent);background:var(--soft)}
+details.more summary{cursor:pointer;color:var(--accent);font-size:12px;margin:4px 0 8px}
+.warn{color:var(--warn)!important}
+.tabs button{font-size:10.5px}
+
 </style>
 </head>
 <body>
@@ -347,6 +356,7 @@ dialog.full:not([open]){display:none}
     <nav class="tabs" id="tabs">
       <button data-t="photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>Foto</button>
       <button data-t="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.6 0-1.3-1-1.6-1-2.7 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>Tema</button>
+      <button data-t="pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="3" width="13" height="17" rx="1.5"/><path d="M8 8h5M8 11.5h5M8 15h3"/><path d="m18.5 13 1 2.2 2.3.3-1.7 1.5.5 2.3-2.1-1.2-2 1.2.4-2.3-1.7-1.5 2.3-.3Z" fill="currentColor" stroke="none"/></svg>Pagine</button>
       <button data-t="layout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M12 12h9"/></svg>Layout</button>
       <button data-t="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg>Testo</button>
       <button data-t="deco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 2.4 5.6 6 .5-4.6 4 1.4 5.9L12 16l-5.2 3 1.4-5.9-4.6-4 6-.5Z"/></svg>Decori</button>
@@ -739,13 +749,14 @@ const THEMES=[
     endPattern:PAT('scatter',['leaf','pumpkin','branch'],['#C0561E','#D9822B','#7A8B3A'],12,30,.55),
     pagePattern:null,texts:{title:'Autunno',sub:'{anno}'}},
 ];
+const COVER_BGS=[['motivo','Motivo del tema'],['tinta','Tinta unita'],['chiaro','Chiaro'],['fitto','Motivo fitto'],['sfocata','Foto sfocata']];
 const THEME_GROUPS=['Neutri','Feste','Eventi'];
 function baseTheme(id){return THEMES.find(t=>t.id===id)||THEMES[0];}
 /* tema effettivo = tema base + personalizzazioni del libro */
 function resolveTheme(bt){
   bt=bt||BOOK.theme;const b=baseTheme(bt.id);
   const T={...b,colors:{...b.colors,...(bt.colors||{})},fonts:{...b.fonts,...(bt.fonts||{})}};
-  T.deco=bt.deco==null?1:bt.deco;T.coverLayout=bt.coverLayout||b.coverLayout;
+  T.deco=bt.deco==null?1:bt.deco;T.coverLayout=bt.coverLayout||b.coverLayout;T.coverBg=bt.coverBg||b.coverBg||'motivo';
   T.endPatternOn=bt.endPattern!==false;T.coverPatternOn=bt.coverPattern!==false;
   return T;
 }
@@ -758,8 +769,8 @@ function roleStyle(role,T,bg){
   const ttl=bg&&Math.abs(lum(bg)-lum(C.title))<70?contrastInk(bg):C.title;
   const base={font:T.fonts.title,italic:!!T.titleItalic,bold:!!T.titleBold,upper:!!T.titleUpper,ls:T.titleLs||0,shadow:false,boxOp:0,strokeW:0,op:100,lh:1.1};
   switch(role){
-    case'cover-title':return{...base,color:C.coverInk};
-    case'cover-sub':return{font:T.fonts.sub,italic:false,bold:false,upper:!!T.subUpper,ls:T.subUpper?24:4,color:C.coverInk,shadow:false,op:90,lh:1.1};
+    case'cover-title':return{...base,color:bg&&Math.abs(lum(bg)-lum(C.coverInk))<80?C.title:C.coverInk};
+    case'cover-sub':return{font:T.fonts.sub,italic:false,bold:false,upper:!!T.subUpper,ls:T.subUpper?24:4,color:bg&&Math.abs(lum(bg)-lum(C.coverInk))<80?C.ink:C.coverInk,shadow:false,op:90,lh:1.1};
     case'spine':return{font:T.fonts.sub,italic:false,bold:true,upper:true,ls:12,color:C.coverInk,shadow:false,op:100,lh:1};
     case'back':return{font:T.fonts.sub,italic:false,bold:false,upper:!!T.subUpper,ls:T.subUpper?18:2,color:C.coverInk,shadow:false,op:80,lh:1.2};
     case'chapter':return{...base,color:ttl};
@@ -769,6 +780,8 @@ function roleStyle(role,T,bg){
     case'dedica':return{...base,color:ttl,lh:1.25};
     case'caption':return{font:T.fonts.sub,italic:false,bold:false,upper:false,ls:2,color:ink,shadow:false,op:90,lh:1.2};
     case'end':return{...base,color:C.endInk};
+    case'quote':return{...base,color:ttl,lh:1.25,italic:base.italic||!/Vibes|Script|Pacifico|Caveat|Amatic|Bebas/.test(T.fonts.title)};
+    case'quote-author':return{font:T.fonts.sub,italic:false,bold:false,upper:true,ls:16,color:ink,shadow:false,op:70,lh:1.1};
   }
   return{color:ink};
 }
@@ -816,7 +829,7 @@ const SHAPES=[[null,'Rettangolo'],['round','Arrotondato'],['circle','Ovale'],['a
 /* ============ stato ============ */
 const newBook=()=>({v:2,job:{id:uid(),name:'Nuovo fotolibro'},page:{preset:'Orizzontale 29,7×21 cm (A4)',w:297,h:210},
   cover:{on:true,spine:8,wrap:15,over:3},
-  endp:{on:true,w:650,h:330,fold:325,bleed:0,visW:0,visH:0},
+  endp:{on:true,w:650,h:330,fold:325,bleed:0,visW:0,visH:0,verso:true,sideF:'L',sideB:'R'},
   firstRight:false,safe:5,mult4:true,
   style:{margin:10,bind:15,gutter:4,radius:0,borderW:0,borderColor:'#ffffff',shadow:0},
   theme:{id:'neutro',colors:{},fonts:{},deco:1,coverLayout:null},
@@ -831,7 +844,7 @@ function normBook(b){const d=newBook();b.job=b.job||d.job;b.page={...d.page,...(
 let BOOK=newBook();
 const UI={cur:0,side:'R',mode:'photo',tab:'photos',filter:'all',folder:'*',sort:'date',link:true,snap:true,guides:true};
 const view={zoom:1,s:1,ox:0,oy:0,b:0,cw:0,ch:0,dpr:1};
-const EXP={fmt:'pdf',dpi:300,quality:92,bleed:3,marks:false,name:'fotolibro',cover:true,endp:true,inner:true,pages:'single',from:1,to:9999,zipAll:false};
+const EXP={covFmt:'cmyk',endFmt:'pdf',fmt:'pdf',dpi:300,quality:92,bleed:3,marks:false,name:'fotolibro',cover:true,endp:true,inner:true,pages:'single',from:1,to:9999,zipAll:false};
 const DRAFT={pdf:true,flip:true,dpi:120,quality:82,wm:true,wmText:'BOZZA',pages:'spread',name:'fotolibro'};
 const LIB=new Map();let ORDER=[];let SIMS=[];
 const PREV=new Map();const TSEL=new Set();let lastTSel=null;let thumbGen=0;
@@ -841,9 +854,9 @@ const cur=()=>BOOK.spreads[UI.cur];
 const isCover=sp=>!!sp&&sp.kind==='cover';
 const isEnd=sp=>!!sp&&(sp.kind==='endF'||sp.kind==='endB');
 const isInner=sp=>!!sp&&sp.kind==='inner';
-const mkMeta=()=>({lay:null,band:0,full:false});
+const mkMeta=()=>({lay:null,band:0,full:false,special:null,bg:null});
 const mkSpread=kind=>({id:uid(),kind,mode:'pages',bg:null,pat:null,cells:[],texts:[],decos:[],meta:{L:mkMeta(),R:mkMeta(),S:mkMeta()}});
-const mkCell=(d,side)=>({id:uid(),side,x:d[0],y:d[1],w:d[2],h:d[3],fill:null,ph:null,shape:null});
+const mkCell=(d,side)=>({id:uid(),side,x:d[0],y:d[1],w:d[2],h:d[3],fill:null,ph:null,shape:null,rot:0,fx:null});
 const newPh=img=>({img,zoom:1,ox:0,oy:0,rot:0,flip:false,flipV:false,fit:'cover',br:100,ct:100,sat:100,gray:0,sepia:0,blur:0});
 const T0={rot:0,ls:0,lh:1.15,op:100,boxColor:'#000000',boxOp:0,strokeW:0,strokeColor:'#000000',shadow:false,bold:false,italic:false,upper:false,align:'center'};
 const mkText=o=>({...T0,id:uid(),text:'Testo',font:'Montserrat',size:24,color:'#222222',x:.5,y:.5,...o});
@@ -933,11 +946,22 @@ function innerIdx(i){let k=0;for(let j=0;j<i;j++)if(isInner(BOOK.spreads[j]))k++
 function pageLabel(i,side){const sp=BOOK.spreads[i];if(!sp)return'';
   if(isCover(sp))return side==='L'?'Retro':side==='R'?'Fronte':'Copertina';
   if(isEnd(sp)){const n=sp.kind==='endF'?'Risguardo anteriore':'Risguardo posteriore';return side==='L'?n+' · sinistra':side==='R'?n+' · destra':n;}
-  const a=2*innerIdx(i)+1;return side==='L'?`pag. ${a}`:side==='R'?`pag. ${a+1}`:`pag. ${a}–${a+1}`;}
+  const a=pageNum(i,'L'),v=s=>isVerso(i,s)?' · retro risguardo':'';return side==='L'?`pag. ${a}${v('L')}`:side==='R'?`pag. ${a+1}${v('R')}`:`pag. ${a}–${a+1}`;}
 function spreadLabel(i){const sp=BOOK.spreads[i];if(!sp)return'';if(isCover(sp))return'Copertina';if(sp.kind==='endF')return'Risg. ant.';if(sp.kind==='endB')return'Risg. post.';
-  const k=innerIdx(i);return`${2*k+1}–${2*k+2}`;}
+  const a=pageNum(i,'L');return`${a}–${a+1}`;}
 function innerPages(){return BOOK.spreads.filter(isInner).length*2;}
-function bgOf(sp){if(sp.bg)return sp.bg;const C=TH().colors;return isCover(sp)?C.cover:isEnd(sp)?C.endpaper:C.paper;}
+/* pag. 4 e terzultima: retro dei fogli di risguardo, stampate nel file risguardi */
+const versoOn=()=>BOOK.endp.on&&BOOK.endp.verso!==false;
+function firstInnerIdx(){return BOOK.spreads.findIndex(isInner);}
+function lastInnerIdx(){let k=-1;BOOK.spreads.forEach((s,i)=>{if(isInner(s))k=i;});return k;}
+function isVerso(i,side){if(!versoOn())return false;return(side==='L'&&i===firstInnerIdx())||(side==='R'&&i===lastInnerIdx());}
+function printPages(){return innerPages()-(versoOn()?2:0);}
+function bookPages(){return BOOK.endp.on?innerPages()+6:innerPages()+(BOOK.cover.on?2:0);}
+/* numero di pagina nel libro: copertina = 1, risguardo = 2-3, interno da 4 */
+function pageNum(i,side){const k=innerIdx(i),base=BOOK.endp.on?4:1;return base+2*k+(side==='R'?1:0);}
+function isSpecial(sp,side){return!!(meta(sp,side).special||(sp.mode==='spread'&&sp.meta.S&&sp.meta.S.special));}
+function sideBg(sp,side){const M=sp.meta&&sp.meta[side];return M&&M.bg||null;}
+function bgOf(sp,side){if(side){const b=sideBg(sp,side);if(b)return b;}if(sp.bg)return sp.bg;const C=TH().colors;return isCover(sp)?C.cover:isEnd(sp)?C.endpaper:C.paper;}
 function patOf(sp){
   if(sp.pat==='none')return null;if(sp.pat&&typeof sp.pat==='object')return sp.pat;
   const T=TH();if(isCover(sp))return T.coverPatternOn?T.coverPattern||null:null;if(isEnd(sp))return T.endPatternOn?T.endPattern||null:null;
@@ -1226,12 +1250,12 @@ function activeSide(sp){sp=sp||cur();if(!sp)return'L';if(sp.mode==='spread')retu
 function relayoutAll(keepKeys){
   const R=rng(Date.now());let prev=null;
   for(const sp of BOOK.spreads){if(isCover(sp))continue;for(const side of(sp.mode==='spread'?['S']:['L','R'])){
-    if(!sp.cells.some(c=>c.side===side))continue;const ch=relayoutPage(sp,side,keepKeys?{key:meta(sp,side).lay}:{rng:R,avoid:prev&&prev.key,avoidSig:prev&&shapeSig(prev.defs)});prev=ch;}}
+    if(!sp.cells.some(c=>c.side===side)||isSpecial(sp,side))continue;const ch=relayoutPage(sp,side,keepKeys?{key:meta(sp,side).lay}:{rng:R,avoid:prev&&prev.key,avoidSig:prev&&shapeSig(prev.defs)});prev=ch;}}
 }
 
 /* ---- js/45-auto.js ---- */
 /* ============ impaginazione automatica ============ */
-const WZ={sub:'',dedica:'',title:'I nostri ricordi',min:2,target:4,max:6,group:'day',gapH:3,subDay:false,newSpread:false,titles:true,opener:'band',favFull:true,similar:true,cover:true,order:'date',pagesMode:'auto',pages:40,userGroup:false};
+const WZ={effect:true,quotes:1,stickers:1,sub:'',dedica:'',title:'I nostri ricordi',min:2,target:4,max:6,group:'day',gapH:3,subDay:false,newSpread:false,titles:true,opener:'band',favFull:true,similar:true,cover:true,order:'date',pagesMode:'auto',pages:40,userGroup:false};
 function splitSizes(k,o,R){
   const mn=Math.max(1,o.min|0),mx=Math.max(mn,o.max|0),t=clamp(o.target|0||mn,mn,mx);
   let p=Math.max(Math.ceil(k/mx),Math.round(k/t)||1);p=Math.min(p,Math.max(1,Math.floor(k/mn)));p=Math.max(p,Math.ceil(k/mx));
@@ -1282,10 +1306,11 @@ function planBook(o,exclSet){
       if(split&&g.length)push();g.push(id);if(d!=null)prev=d;}
     if(g.length)push();}
   const useTitles=o.titles&&(groups.length>1||o.group==='folder');
-  const off=BOOK.firstRight?1:0,pages=[],ded=o.dedica&&o.dedica.trim()?1:0;if(ded)pages.push({ids:[],dedica:true});
+  const qEvery=o.quotes>=2?1:o.quotes===1?2:0,nq=qEvery&&groups.length>1?Math.floor((groups.length-1)/qEvery):0;
+  const off=versoOn()?0:(BOOK.firstRight?1:0),pages=[],ded=!versoOn()&&o.dedica&&o.dedica.trim()?1:0;if(ded)pages.push({ids:[],dedica:true});
   let alloc=null;
   if(o.pagesMode==='fixed'&&groups.length){
-    const tp=useTitles&&o.opener==='page'?groups.filter(g=>g.title).length:0;
+    const tp=(useTitles&&o.opener==='page'?groups.filter(g=>g.title).length:0)+nq;
     const avail=Math.max(groups.length,o.pages-off-tp-ded);
     const tot=groups.reduce((a,g)=>a+g.ids.length,0)||1;
     const raw=groups.map(g=>g.ids.length/tot*avail);alloc=raw.map(v=>Math.max(1,Math.floor(v)));
@@ -1295,6 +1320,7 @@ function planBook(o,exclSet){
   }
   groups.forEach((g,gi)=>{
     if(!g.ids.length)return;
+    if(qEvery&&gi>0&&gi%qEvery===0&&groups.length>1)pages.push({ids:[],quote:true});
     if(o.newSpread&&g.start&&pages.length&&(pages.length+off)%2===1){if(!splitLargest(pages))pages.push({ids:[],blank:true});}
     const titled=useTitles&&!!g.title;
     if(titled&&o.opener==='page')pages.push({ids:[],titlePage:true,title:g.title,sub:o.group==='folder'?g.sub:null});
@@ -1317,6 +1343,7 @@ function planBook(o,exclSet){
     }
     if(titled&&o.opener==='band'&&pages[start])pages[start].title=g.title;
   });
+  if(qEvery&&groups.length<=1){const step=o.quotes>=2?8:16;for(let k=step;k<pages.length-2;k+=step+1)pages.splice(k,0,{ids:[],quote:true});}
   let guard=0;
   if(o.pagesMode==='fixed'){while(pages.length+off<o.pages&&guard++<600){if(!splitLargest(pages))pages.push({ids:[],blank:true});}}
   else if(BOOK.mult4&&pages.length){const want=Math.ceil((pages.length+off)/4)*4;while(pages.length+off<want&&guard++<8){if(!splitLargest(pages))pages.push({ids:[],blank:true});}}
@@ -1338,10 +1365,15 @@ function coverPicks(ids,n){const favs=ids.filter(id=>LIB.get(id)&&LIB.get(id).fa
 function makeCover(o,ids,keep){
   const T=TH(),sp=mkSpread('cover'),W=spW(sp),H=pgH(sp),pw=coverPW(),sv=BOOK.cover.spine,P=pageBox(sp,'R'),sf=BOOK.safe+2,L=T.coverLayout;
   const M=meta(sp,'R');M.full=true;M.lay='cover:'+L;
+  const bgS=T.coverBg||'motivo';
+  if(bgS==='tinta')sp.pat='none';
+  else if(bgS==='fitto')sp.pat=T.endPattern?clone(T.endPattern):(T.coverPattern?{...clone(T.coverPattern),gap:(T.coverPattern.gap||20)*.7}:'none');
+  else if(bgS==='chiaro'){sp.bg=T.colors.paper;const pp=T.pagePattern||T.coverPattern;sp.pat=pp?{...clone(pp),op:Math.min(.3,Math.max(.12,(pp.op||.1)*2))}:'none';}
   const want=L==='collage'?3:L==='type'?0:1;
   const phs=(keep&&keep.phs&&keep.phs.length?keep.phs:coverPicks(ids,want).map(newPh)).slice(0,want);
   while(phs.length<want)phs.push(null);
   const fx=mm=>mm/W,fy=mm=>mm/H,cx=fx(P.x+P.w/2),minD=Math.min(P.w,H);
+  if(bgS==='sfocata'&&phs[0]&&L!=='full'){meta(sp,'L').full=true;for(const side of['L','R']){const c=mkCell([0,0,1,1],side);c.bgPh=true;c.ph={...phs[0],blur:24,br:78,sat:90,ox:side==='L'?-.6:.6,oy:0,zoom:1.15};sp.cells.push(c);}}
   const add=(d,shape,ph,border)=>{const c=mkCell(d,'R');c.shape=shape||null;c.ph=ph||null;if(c.ph){c.ph.ox=0;c.ph.oy=0;c.ph.zoom=1;}if(border){c.bw=border;c.bc=T.colors.paper==='#151515'?'#ffffff':'#ffffff';}sp.cells.push(c);return c;};
   let ty=.8,sy=.89;/* posizione titolo e sottotitolo (frazione dell'altezza) */
   const sq=(dmm,top)=>{const w=dmm/P.w,h=dmm/H;return[(1-w)/2,top,w,h];};
@@ -1354,18 +1386,18 @@ function makeCover(o,ids,keep){
   const title=keep&&keep.title!=null?keep.title:fillTpl(o.title||T.texts.title),sub=keep&&keep.sub!=null?keep.sub:fillTpl(o.sub!=null&&o.sub!==''?o.sub:T.texts.sub);
   const big=L==='type'?.13:L==='full'?.1:.085;
   const tt=roleText(sp,'cover-title',title,cx,ty,clamp(ptOf(minD*big)*fScale(T.fonts.title),18,140));
-  if(L==='full'){tt.color='#ffffff';tt.shadow=true;}
+  if(L==='full'||(bgS==='sfocata'&&phs[0])){tt.color='#ffffff';tt.shadow=true;}
   fitText(tt,P.w-2*sf-6);sp.texts.push(tt);
-  if(sub){const st=roleText(sp,'cover-sub',sub,cx,sy,clamp(ptOf(minD*.03)*fScale(T.fonts.sub),8,30));if(L==='full'){st.color='#ffffff';st.shadow=true;}fitText(st,P.w-2*sf-6);sp.texts.push(st);}
+  if(sub){const st=roleText(sp,'cover-sub',sub,cx,sy,clamp(ptOf(minD*.03)*fScale(T.fonts.sub),8,30));if(L==='full'||(bgS==='sfocata'&&phs[0])){st.color='#ffffff';st.shadow=true;}fitText(st,P.w-2*sf-6);sp.texts.push(st);}
   if(sv>=6){const s=roleText(sp,'spine',title,fx(pw+sv/2),.5,clamp(ptOf(sv*.42),5,28),{rot:90});fitText(s,H-2*sf-10);sp.texts.push(s);}
   if(sub)sp.texts.push(roleText(sp,'back',sub,fx(pw/2),1-fy(sf+8),clamp(ptOf(minD*.022),7,14)));
   themeDecos(sp);
   return sp;
 }
 function coverKeep(sp){if(!sp)return null;const g=r=>{const t=sp.texts.find(t=>t.role===r);return t?t.text:null;};
-  return{phs:sp.cells.filter(c=>c.ph).map(c=>({...c.ph,ox:0,oy:0,zoom:1})),title:g('cover-title'),sub:g('cover-sub')};}
+  return{phs:sp.cells.filter(c=>c.ph&&!c.bgPh).map(c=>({...c.ph,ox:0,oy:0,zoom:1})),title:g('cover-title'),sub:g('cover-sub')};}
 function rebuildCover(){const i=BOOK.spreads.findIndex(isCover);if(i<0)return;const old=BOOK.spreads[i],keep=coverKeep(old);
-  const used=[...usage().keys()];const sp=makeCover({},used,keep);sp.id=old.id;sp.bg=old.bg;sp.pat=old.pat;
+  const used=[...usage().keys()];const sp=makeCover({},used,keep);sp.id=old.id;
   if(keep.phs.length<(TH().coverLayout==='collage'?3:1)){const more=coverPicks(used.filter(id=>!keep.phs.some(p=>p.img===id)),3);let k=0;for(const c of sp.cells)if(!c.ph&&more[k])c.ph=newPh(more[k++]);}
   BOOK.spreads[i]=sp;}
 function titleText(sp,side,txt){
@@ -1391,7 +1423,7 @@ function overlayText(sp,side,txt){const V=visBox(sp,side),W=spW(sp),H=pgH(sp);
   return fitText(t,V.w-2*BOOK.safe-10);}
 /* decorazioni automatiche del tema (contrassegnate auto: si rigenerano cambiando tema) */
 function themeDecos(sp){
-  const T=TH();sp.decos=(sp.decos||[]).filter(d=>!d.auto);if(T.deco<1)return;
+  const T=TH();sp.decos=(sp.decos||[]).filter(d=>!d.auto);autoStickers(sp);if(T.deco<1)return;
   const W=spW(sp),H=pgH(sp),orn=T.ornament,mc=T.motifColors&&T.motifColors.length?T.motifColors:[T.colors.accent],acc=T.colors.accent;
   const put=(m,xmm,ymm,smm,o={})=>{if(!MOTIFS[m])return;sp.decos.push(mkDeco({m,x:xmm/W,y:ymm/H,s:smm,c:o.c||acc,c2:o.c2||T.c2||T.colors.accent2,rot:o.rot||0,op:o.op==null?1:o.op,flip:!!o.flip,auto:true}));};
   const tb=t=>{const b=textBox(sp,t);return b;};
@@ -1406,8 +1438,8 @@ function themeDecos(sp){
       else{put(orn,b.x0-s*.9,b.cy,s,{c:mc[0],rot:-12});put(orn,b.x1+s*.9,b.cy,s,{c:mc[0],rot:12,flip:true});}}
   }
   if(isCover(sp)){
-    const P=pageBox(sp,'R'),L=T.coverLayout,ttl=sp.texts.find(t=>t.role==='cover-title'),cell=sp.cells.find(c=>c.side==='R');
-    const minD=Math.min(P.w,H),onC=lum(T.colors.cover)<140?mix(mc[0],'#ffffff',.15):mc[0];
+    const P=pageBox(sp,'R'),L=T.coverLayout,ttl=sp.texts.find(t=>t.role==='cover-title'),cell=sp.cells.find(c=>c.side==='R'&&!c.bgPh);
+    const minD=Math.min(P.w,H),onC=lum(bgOf(sp))<140?mix(mc[0],'#ffffff',.15):mc[0];
     if(ttl&&L!=='full'&&orn){const b=tb(ttl),s=clamp((b.y1-b.y0)*.55,6,22);
       if(orn==='flourish'||orn==='rule')put(orn,b.cx,b.y1+s*.6,Math.min(80,(b.x1-b.x0)*.7),{c:T.colors.accent2&&lum(T.colors.cover)<140?T.colors.accent2:acc});
       else if(L==='type')put(orn,b.cx,b.y0-s*1.3,s*1.5,{c:onC});}
@@ -1422,10 +1454,10 @@ function themeDecos(sp){
 }
 function applyTheme(id,opts={}){
   const oldT=TH();const keepDeco=BOOK.theme.deco==null?1:BOOK.theme.deco;
-  BOOK.theme={id,colors:{},fonts:{},deco:keepDeco,coverLayout:null};
+  BOOK.theme={id,colors:{},fonts:{},deco:keepDeco,coverLayout:null,stickers:BOOK.theme.stickers||0};
   const T=TH();
   Object.assign(BOOK.style,{radius:0,borderW:0,shadow:0,borderColor:'#ffffff',...(T.frame||{})});
-  for(const sp of BOOK.spreads){if(!opts.keepBg)sp.bg=null;
+  for(const sp of BOOK.spreads){if(!opts.keepBg){sp.bg=null;if(isEnd(sp)){sp.pat=null;sp.endv=null;sp.cells=sp.cells.filter(c=>!c.epPh);if(!sp.cells.length)sp.mode='pages';}}
     for(const t of sp.texts){if(!t.role)continue;
       const st=roleStyle(t.role,T,bgOf(sp));const of=t.font;Object.assign(t,st);
       t.size=+(t.size/fScale(of)*fScale(t.font)).toFixed(1);
@@ -1438,16 +1470,21 @@ function buildBook(o){
   if(o.similar)applySimilar();
   const pages=planBook(o);
   if(!pages.some(p=>p.ids.length)){toast('Non ci sono foto da impaginare: aggiungine qualcuna.');return false;}
-  const seq=(BOOK.firstRight?[{ids:[],blank:true}]:[]).concat(pages);if(seq.length%2)seq.push({ids:[],blank:true});
+  const seq=versoOn()?[{ids:[],frontis:true},...pages,{ids:[],closing:true}]:(BOOK.firstRight?[{ids:[],blank:true}]:[]).concat(pages);if(seq.length%2)seq.push({ids:[],blank:true});
+  let qk=0;
   const R=rng(777);BOOK.spreads=[];
   const used=pages.flatMap(p=>p.ids);
   BOOK.cover.on=!!o.cover;
+  BOOK.theme.stickers=o.stickers==null?(BOOK.theme.stickers||0):o.stickers;
   if(o.cover)BOOK.spreads.push(makeCover(o,used));
   let prev=null;
   for(let i=0;i<seq.length;i+=2){const sp=mkSpread('inner');BOOK.spreads.push(sp);
     [['L',seq[i]],['R',seq[i+1]]].forEach(([side,pg])=>{if(!pg||pg.blank)return;
-      if(pg.dedica){sp.texts.push(...dedicaTexts(sp,side,o.dedica.trim()));return;}
-      if(pg.titlePage){sp.texts.push(...titlePageTexts(sp,side,pg));return;}
+      if(pg.dedica){sp.texts.push(...dedicaTexts(sp,side,o.dedica.trim()));meta(sp,side).special='dedica';return;}
+      if(pg.frontis){if(o.dedica&&o.dedica.trim())buildSpecial(sp,side,'dedica',{text:o.dedica.trim()});else buildSpecial(sp,side,'chapter',{text:fillTpl(o.title||TH().texts.title),sub:fillTpl(o.sub||TH().texts.sub)});meta(sp,side).special='frontis';return;}
+      if(pg.closing){buildSpecial(sp,side,'quote',{quote:QUOTES.fine[Math.floor(rng(hashStr(BOOK.job.id))()*QUOTES.fine.length)]});return;}
+      if(pg.quote){buildSpecial(sp,side,(qk++)%2?'quote-color':'quote');return;}
+      if(pg.titlePage){sp.texts.push(...titlePageTexts(sp,side,pg));meta(sp,side).special='chapter';return;}
       if(!pg.ids.length)return;const M=meta(sp,side);
       M.full=!!pg.full&&!pg.title;if(pg.title)M.band=.13;
       const ch=relayoutPage(sp,side,{phs:pg.ids.map(newPh),rng:R,avoid:prev&&prev.key,avoidSig:prev&&shapeSig(prev.defs)});prev=ch;
@@ -1457,7 +1494,247 @@ function buildBook(o){
   ensureStructure();
   if(o.title&&(!BOOK.job.name||BOOK.job.name==='Nuovo fotolibro'))BOOK.job.name=o.title;
   UI.cur=Math.max(0,BOOK.spreads.findIndex(isInner));UI.side='L';sel=null;commit();syncAll();
-  toast(`Libro creato: ${used.length} foto su ${innerPages()} pagine. Tutto si può modificare.`,4500);return true;
+  toast(`Libro creato: ${used.length} foto, ${bookPages()} pagine in tutto. Tutto si può modificare.`,4500);
+  if(o.effect)addEffectAfterBuild(used);
+  return true;
+}
+
+/* dopo la creazione: cerca le foto migliori e sostituisce una doppia pagina centrale con la pagina effetto (foto ridistribuite) */
+async function addEffectAfterBuild(ids){
+  try{progress('Cerco le foto migliori per la pagina effetto…',0,1);
+    const best=await fxFindBest(ids,(a,b)=>progress('Cerco le foto migliori per la pagina effetto…',a,b));
+    progress(null);if(!best.length){toast('Pagina effetto non creata: nessuna foto adatta (serve una persona o un animale ben visibile).',4500);return;}
+    const inn=BOOK.spreads.map((s,i)=>[s,i]).filter(([s,i])=>isInner(s)&&i!==firstInnerIdx()&&i!==lastInnerIdx()&&!isSpecial(s,'L')&&!isSpecial(s,'R')&&s.mode!=='spread');
+    if(!inn.length){toast('Pagina effetto non creata: il libro è troppo corto.');return;}
+    const mid=(firstInnerIdx()+lastInnerIdx())/2,[sp,i]=inn.sort((a,b)=>Math.abs(a[1]-mid)-Math.abs(b[1]-mid))[0];
+    const phs=[...clearSide(sp,'L'),...clearSide(sp,'R')].filter(ph=>!usedInInterior(ph.img,sp));
+    const fx=makeEffectSpread(best[0],best[1]||null);fx.id=sp.id+'x';BOOK.spreads.splice(i,1,fx);normalizeOrder();
+    for(const c of fx.cells)if(c.fx==='pop')fxPopFrame(fx,c);themeDecos(fx);
+    const r=redistribute(phs,pageNum(BOOK.spreads.indexOf(fx),'L'));
+    THUMBS.clear();commit();syncAll();toast(`Pagina effetto creata (pag. ${spreadLabel(BOOK.spreads.indexOf(fx))})${redistMsg(r)}`,5000);
+  }catch(e){progress(null);console.warn(e);toast('Pagina effetto non disponibile: '+(FX.failed||e.message),5000);}
+}
+
+/* ---- js/47-pages.js ---- */
+/* ============ frasi, sticker, pagine speciali e ridistribuzione delle foto ============ */
+const QUOTES={
+  generico:[['Le cose più belle non si raccontano: si ricordano.',''],['La felicità è fatta di piccoli momenti come questi.',''],['Ogni foto è un piccolo viaggio nel tempo.',''],
+    ['Carpe diem.','Orazio'],['Ci sono ricordi che il tempo non cancella.',''],['Chi trova un amico trova un tesoro.','Proverbio'],['Il vero viaggio di scoperta non consiste nel cercare nuove terre, ma nell’avere nuovi occhi.','Marcel Proust'],
+    ['Casa è dove sono le persone che ami.',''],['Raccogliamo momenti, non cose.',''],['La bellezza salverà il mondo.','Fëdor Dostoevskij']],
+  natale:[['A Natale si accendono le luci, ma soprattutto i cuori.',''],['Il regalo più bello è stare insieme.',''],['Profumo di biscotti, risate e lucine: è Natale.',''],
+    ['Che la magia di queste feste resti con noi tutto l’anno.',''],['Pace in terra agli uomini di buona volontà.','Vangelo di Luca'],['Il Natale non è un momento né una stagione, ma uno stato d’animo.','Calvin Coolidge'],['Non c’è neve più calda di quella vista da casa, insieme.','']],
+  valentino:[['Amor, ch’a nullo amato amar perdona.','Dante Alighieri'],['Con te anche i giorni normali diventano speciali.',''],['Il posto più bello del mondo è accanto a te.',''],
+    ['Due cuori, una sola storia.',''],['L’amore non guarda con gli occhi, ma con l’anima.','William Shakespeare'],['Amare è trovare nella felicità altrui la propria felicità.','Gottfried Leibniz'],['Tu sei il mio posto preferito.','']],
+  papa:[['Papà: il primo eroe, per sempre.',''],['Grazie per avermi insegnato a camminare, e poi a correre da solo.',''],['Non c’è supereroe più forte di un papà.',''],
+    ['Le mani più grandi, il cuore più grande.',''],['Un padre vale più di cento maestri.','George Herbert'],['Tutto quello che so fare bene, l’ho imparato guardando te.','']],
+  mamma:[['Dove c’è una mamma, c’è casa.',''],['Mamma: la prima parola, l’amore più grande.',''],['Grazie per ogni abbraccio, anche quelli che non ho chiesto.',''],
+    ['Il cuore di una madre è un abisso in fondo al quale si trova sempre il perdono.','Honoré de Balzac'],['Dio non poteva essere ovunque, perciò creò le madri.','Proverbio ebraico'],['Sei il mio primo amore e la mia casa per sempre.','']],
+  compleanno:[['Un anno in più di sorrisi, avventure e ricordi.',''],['Gli anni non contano: contano i momenti.',''],['Esprimi un desiderio: il resto lo facciamo insieme.',''],
+    ['Tanti auguri a chi rende speciale ogni giorno!',''],['La torta passa, i ricordi restano.',''],['Che sia l’anno più bello di sempre!','']],
+  matrimonio:[['L’amor che move il sole e l’altre stelle.','Dante Alighieri'],['Il giorno in cui due strade sono diventate una.',''],['E vissero felici, a cominciare da oggi.',''],
+    ['Sposarsi è promettersi il futuro, un giorno alla volta.',''],['L’amore è paziente, l’amore è benigno.','San Paolo'],['Sì, per sempre.','']],
+  nascita:[['Benvenuto al mondo, piccolo grande amore.',''],['Dieci ditini e un cuore che ha cambiato tutto.',''],['Ogni bambino che nasce porta il messaggio che Dio non è ancora stanco degli uomini.','Rabindranath Tagore'],
+    ['Sei arrivato e il mondo ha cambiato colore.',''],['Le cose più grandi arrivano in piccole mani.',''],['La felicità ha il tuo profumo.','']],
+  estate:[['Il mondo è un libro, e chi non viaggia ne legge solo una pagina.','Sant’Agostino'],['Sale sulla pelle, sole nel cuore.',''],['Partire è un po’ come rinascere.',''],
+    ['Il vero viaggio di scoperta non consiste nel cercare nuove terre, ma nell’avere nuovi occhi.','Marcel Proust'],['Collezioniamo tramonti.',''],['L’estate è uno stato d’animo.','']],
+  pasqua:[['Che la Pasqua porti pace, gioia e primavera nel cuore.',''],['Rinascere ogni primavera, insieme.',''],['Uova colorate, sorrisi e campane a festa.',''],['La primavera è la stagione della speranza.','']],
+  laurea:[['Fatti non foste a viver come bruti, ma per seguir virtute e canoscenza.','Dante Alighieri'],['Ce l’hai fatta: ora inizia il bello.',''],['Ogni traguardo è l’inizio di un nuovo viaggio.',''],
+    ['Il sapere è l’unico tesoro che cresce quando lo si condivide.',''],['Sapere aude.','Orazio']],
+  autunno:[['Foglie che cadono, ricordi che restano.',''],['Colori caldi, cuori ancora più caldi.',''],['L’autunno è la stagione in cui tutto diventa oro.',''],['Castagne, coperte e chiacchiere lunghe.','']],
+  fine:[['Fine… o forse solo l’inizio.',''],['Il resto lo scriveremo insieme.',''],['Alla prossima avventura!',''],['Grazie per tutti questi ricordi.',''],['Continua…','']],
+};
+const QUOTE_SET={neutro:'generico',avorio:'generico',galleria:'generico',natale:'natale',nordico:'natale',valentino:'valentino',papa:'papa',mamma:'mamma',
+  compleanno:'compleanno',matrimonio:'matrimonio',bimbo:'nascita',bimba:'nascita',estate:'estate',pasqua:'pasqua',laurea:'laurea',autunno:'autunno'};
+function themeQuotes(){const k=QUOTE_SET[BOOK.theme.id]||'generico';return[...(QUOTES[k]||[]),...(k!=='generico'?QUOTES.generico.slice(0,4):[])];}
+let quoteCursor=0;
+function nextQuote(R){const q=themeQuotes();if(R)return q[Math.floor(R()*q.length)];return q[(quoteCursor++)%q.length];}
+/* sticker a tema: motivi con bordo bianco + scritte */
+const STICKERS={
+  neutro:{w:['Wow','Che bello!','Ricordi','Ti voglio bene'],m:['heart','star','sparkle']},
+  avorio:{w:['Ricordi','Che bello','Sempre'],m:['flourish','leaf','heart']},
+  galleria:{w:['Wow','Mood','Ricordi'],m:['star','sparkle','circle']},
+  natale:{w:['Ho ho ho!','Buone feste','Magia','Auguri!'],m:['holly','bauble','gift','tree','candy','bell','star','snowflake']},
+  nordico:{w:['Let it snow','Inverno','Auguri!'],m:['snowflake','tree','star']},
+  valentino:{w:['Ti amo','Love','Noi due','Per sempre'],m:['heart','heartLine','sparkle']},
+  papa:{w:['Super papà','N° 1','Grazie papà','Eroe'],m:['tie','mustache','bowtie','star']},
+  mamma:{w:['Mamma ♥','Grazie','Unica','Love'],m:['flower','tulip','butterfly','daisy','heart']},
+  compleanno:{w:['Auguri!','Party!','Yeah!','Wow'],m:['balloon','partyhat','confetti','star','gift']},
+  matrimonio:{w:['Sì!','Just married','Per sempre','Amore'],m:['rings','heart','branch','leaf']},
+  bimbo:{w:['Ciao!','Benvenuto','Nanna','Piccolo amore'],m:['star','moon','cloud','heart']},
+  bimba:{w:['Ciao!','Benvenuta','Nanna','Piccolo amore'],m:['star','heart','cloud','butterfly']},
+  estate:{w:['Summer','Mare','Relax','Viaggio!'],m:['sun','shell','palm','plane','wave']},
+  pasqua:{w:['Buona Pasqua','Primavera','Auguri!'],m:['egg','bunny','tulip','flower']},
+  laurea:{w:['Dottore!','Ce l’ho fatta','110 e lode','Brava!'],m:['cap','laurel','star']},
+  autunno:{w:['Autunno','Cozy','Castagne'],m:['leaf','pumpkin','branch']},
+};
+const BADGES=['badge','ribbon','stamp','bubble','tag'];
+function themeStickers(){return STICKERS[BOOK.theme.id]||STICKERS.neutro;}
+function stickerDeco(sp,xmm,ymm,smm,R,kind){
+  const T=TH(),S=themeStickers(),W=spW(sp),H=pgH(sp),cols=T.motifColors&&T.motifColors.length?T.motifColors:[T.colors.accent];
+  const word=kind==='word'||(kind!=='motif'&&R()<.32);
+  if(word){const c=cols[Math.floor(R()*cols.length)];
+    return mkDeco({m:BADGES[Math.floor(R()*BADGES.length)],txt:S.w[Math.floor(R()*S.w.length)],f:T.fonts.sub==='Montserrat'||T.fonts.sub==='Josefin Sans'?'Fredoka':T.fonts.sub,
+      x:xmm/W,y:ymm/H,s:Math.max(7,smm*.5),rot:(R()*30-15),c,c2:contrastInk(c),auto:true,sk:1});}
+  const m=S.m[Math.floor(R()*S.m.length)];
+  return mkDeco({m,x:xmm/W,y:ymm/H,s:smm,rot:(R()*36-18),c:cols[Math.floor(R()*cols.length)],c2:T.c2||T.colors.accent2,st:true,auto:true,sk:1,flip:R()<.5});
+}
+/* sticker automatici tra le foto: sugli angoli dei riquadri, lontano dai testi */
+function autoStickers(sp){
+  const lvl=BOOK.theme.stickers||0;if(!lvl||!isInner(sp))return;
+  const R=rng(hashStr(sp.id+'st')),i=BOOK.spreads.indexOf(sp);
+  for(const side of(sp.mode==='spread'?['S']:['L','R'])){
+    if(isSpecial(sp,side)||(i>=0&&isVerso(i,side)))continue;
+    const cells=sp.cells.filter(c=>c.side===side&&c.ph);if(!cells.length)continue;
+    const want=lvl>=2?(R()<.55?2:1):(R()<.5?1:0);if(!want)continue;
+    const V=visBox(sp,side),smm=Math.min(V.w,V.h)*(.13+R()*.04),tb=sp.texts.map(t=>textBox(sp,t));
+    const pts=[];for(const c of cells){const r=cellRect(sp,c);pts.push([r.x+r.w,r.y],[r.x,r.y+r.h],[r.x+r.w,r.y+r.h],[r.x,r.y]);}
+    const ok=([x,y])=>x>V.x+smm*.7&&x<V.x+V.w-smm*.7&&y>V.y+smm*.7&&y<V.y+V.h-smm*.7&&!tb.some(b=>x>b.x0-smm&&x<b.x1+smm&&y>b.y0-smm&&y<b.y1+smm);
+    const cand=pts.filter(ok);for(let k=0;k<want&&cand.length;k++){const j=Math.floor(R()*cand.length),[x,y]=cand.splice(j,1)[0];
+      const jx=(R()-.5)*smm*.3,jy=(R()-.5)*smm*.3;sp.decos.push(stickerDeco(sp,x+jx,y+jy,smm,R));
+      for(let q=cand.length-1;q>=0;q--)if(Math.hypot(cand[q][0]-x,cand[q][1]-y)<smm*3)cand.splice(q,1);}
+  }
+}
+
+/* ---------- ridistribuzione: le foto di una pagina sostituita o eliminata non si perdono ---------- */
+function pageSlots(){const out=[];BOOK.spreads.forEach((sp,i)=>{if(!isInner(sp))return;
+  for(const side of(sp.mode==='spread'?['S']:['L','R']))out.push({sp,i,side,pos:pageNum(i,side==='S'?'L':side)});});return out;}
+function canHost(sl){return!isSpecial(sl.sp,sl.side)&&!isVerso(sl.i,sl.side==='S'?'L':sl.side)&&!isVerso(sl.i,sl.side==='S'?'R':sl.side);}
+/* foto ancora usate altrove nel libro: non vanno duplicate */
+function usedInInterior(img,exceptSp,exceptSide){for(const sp of BOOK.spreads){if(!isInner(sp))continue;for(const c of sp.cells){if(!c.ph||c.ph.img!==img)continue;if(sp===exceptSp&&(exceptSide==null||c.side===exceptSide))continue;if(c.fx)continue;return true;}}return false;}
+function redistribute(phs,fromPos,opts={}){
+  phs=phs.filter(ph=>ph&&LIB.has(ph.img)).map(ph=>({...ph,ox:0,oy:0,zoom:1}));if(!phs.length)return{n:0,pages:[]};
+  const cap=Math.max(6,(WZ&&WZ.max)||6),slots=pageSlots().filter(s=>canHost(s)&&!(opts.exclude&&opts.exclude(s)));
+  const add=new Map(),touched=new Set();
+  for(const ph of phs){let best=null,bv=Infinity;
+    for(const sl of slots){const n=sl.sp.cells.filter(c=>c.side===sl.side).length+(add.get(sl)||[]).length;if(n>=cap)continue;
+      const v=Math.abs(sl.pos-fromPos)+1.6*(add.get(sl)||[]).length+.25*n;if(v<bv){bv=v;best=sl;}}
+    if(!best)break;if(!add.has(best))add.set(best,[]);add.get(best).push(ph);}
+  let placed=0;
+  for(const[sl,list] of add){const cur0=pagePhs(sl.sp,sl.side);relayoutPage(sl.sp,sl.side,{phs:cur0.concat(list)});placed+=list.length;touched.add(pageLabel(sl.i,sl.side));
+    themeDecos(sl.sp);}
+  const rest=phs.slice(placed);
+  if(rest.length){/* niente spazio: una doppia pagina nuova */const sp=mkSpread('inner'),h=Math.ceil(rest.length/2);
+    const at=Math.min(BOOK.spreads.length,(opts.afterIdx!=null?opts.afterIdx:lastInnerIdx())+1);BOOK.spreads.splice(at,0,sp);normalizeOrder();
+    relayoutPage(sp,'L',{phs:rest.slice(0,h)});if(rest.length>h)relayoutPage(sp,'R',{phs:rest.slice(h)});themeDecos(sp);touched.add('nuova doppia pagina');}
+  return{n:phs.length,pages:[...touched]};
+}
+function redistMsg(r){return r.n?` · ${r.n} ${r.n>1?'foto spostate':'foto spostata'} in ${r.pages.slice(0,3).join(', ')}${r.pages.length>3?'…':''}`:'';}
+/* toglie tutto da una pagina e restituisce le foto che c'erano */
+function clearSide(sp,side){
+  const phs=sp.cells.filter(c=>c.side===side&&c.ph&&!c.fx&&!c.bgPh).map(c=>c.ph);
+  const f=foldX(sp),onSide=x=>side==='S'||(side==='L'?x*spW(sp)<f:x*spW(sp)>=f);
+  sp.cells=sp.cells.filter(c=>c.side!==side);sp.texts=sp.texts.filter(t=>!onSide(t.x));sp.decos=(sp.decos||[]).filter(d=>!onSide(d.x));
+  const M=meta(sp,side);Object.assign(M,mkMeta());return phs;
+}
+/* ---------- costruttori di pagine speciali (agiscono su un lato della doppia pagina) ---------- */
+const SPECIALS=[
+  ['quote','Frase','Una frase o citazione al centro, con ornamento'],
+  ['quote-color','Frase su colore','Pagina a tinta piena con la frase in evidenza'],
+  ['quote-frame','Frase con cornice','Frase incorniciata da motivi del tema'],
+  ['quote-photo','Frase sulla foto','Foto a tutta pagina, frase sovrapposta'],
+  ['photo-quote','Foto e frase','Una foto grande e una frase sotto'],
+  ['scrap','Collage con sticker','Le foto come polaroid inclinate, con sticker del tema'],
+  ['dedica','Dedica','Una dedica scritta a mano'],
+  ['chapter','Titolo di capitolo','Pagina di apertura con titolo'],
+];
+function quoteTexts(sp,side,q,y,opts={}){
+  const V=visBox(sp,side),W=spW(sp),H=pgH(sp),T=TH(),x=(V.x+V.w/2)/W,bg=opts.bg||bgOf(sp,side);
+  const t=roleText(sp,'quote',q[0],x,(V.y+V.h*y)/H,clamp(Math.round(ptOf(Math.min(V.h,V.w)*(q[0].length>70?.04:.05))*fScale(T.fonts.title)),13,40),{...roleStyle('quote',T,bg),...(opts.style||{})});
+  wrapText(t,V.w*(opts.wf||.72));fitText(t,V.w-2*BOOK.safe-12);const out=[t];
+  if(q[1]){const b=textBox(sp,t);out.push(roleText(sp,'quote-author','— '+q[1],x,(b.y1+6)/H,9,{...roleStyle('quote-author',T,bg),...(opts.style2||{})}));}
+  return out;}
+/* va a capo per stare nella larghezza (mm) */
+function wrapText(t,maxW){const words=String(t.text).replace(/\n/g,' ').split(/\s+/);if(words.length<4)return t;
+  for(let n=1;n<=5;n++){const per=Math.ceil(words.length/n),lines=[];for(let i=0;i<words.length;i+=per)lines.push(words.slice(i,i+per).join(' '));
+    const tt={...t,text:lines.join('\n')};if(measureText(mctx,tt,1).w<=maxW||n===5){t.text=tt.text;break;}}return t;}
+function buildSpecial(sp,side,kind,o={}){
+  const T=TH(),V=visBox(sp,side),W=spW(sp),H=pgH(sp),M=meta(sp,side),R=rng(hashStr(sp.id+side+kind)),q=o.quote||nextQuote();
+  const phs=o.phs||[];let used=0;M.special=kind;
+  const orn=(y,sz)=>{const m=T.ornament&&MOTIFS[T.ornament]?T.ornament:(T.motifs&&T.motifs[0])||'flourish';const s=sz||Math.min(V.w,V.h)*.07;
+    sp.decos.push(mkDeco({m,x:(V.x+V.w/2)/W,y:(V.y+V.h*y)/H,s:['flourish','rule'].includes(m)?s*3:s,c:(T.motifColors&&T.motifColors[0])||T.colors.accent,c2:T.c2||T.colors.accent2,auto:false}));};
+  if(kind==='quote'){sp.texts.push(...quoteTexts(sp,side,q,.47));orn(.3);}
+  else if(kind==='quote-color'){M.bg=o.color||T.colors.cover;const ink=lum(M.bg)<150?'#ffffff':T.colors.title;
+    sp.texts.push(...quoteTexts(sp,side,q,.48,{bg:M.bg,style:{color:ink},style2:{color:ink,op:85}}));orn(.3,Math.min(V.w,V.h)*.06);sp.decos[sp.decos.length-1].c=ink;}
+  else if(kind==='quote-frame'){const mot=(T.motifs||[]).filter(m=>!['flourish','rule'].includes(m));
+    if(mot.length)M.pat={type:'frame',motifs:mot,colors:T.motifColors||[T.colors.accent],size:Math.min(V.w,V.h)*.05,gap:Math.min(V.w,V.h)*.085,op:.9,rot:true,band:BOOK.safe+Math.min(V.w,V.h)*.06,c2:T.c2||null};
+    else{sp.decos.push(mkDeco({m:'rule',x:(V.x+V.w/2)/W,y:(V.y+V.h*.2)/H,s:V.w*.4,c:T.colors.accent}),mkDeco({m:'rule',x:(V.x+V.w/2)/W,y:(V.y+V.h*.8)/H,s:V.w*.4,c:T.colors.accent}));}
+    sp.texts.push(...quoteTexts(sp,side,q,.47,{wf:.6}));}
+  else if(kind==='quote-photo'){M.full=true;if(phs[0]){const c=mkCell([0,0,1,1],side);c.ph={...phs[0],br:68,ox:0,oy:0,zoom:1};sp.cells.push(c);used=1;}
+    sp.texts.push(...quoteTexts(sp,side,q,.5,{bg:'#333333',style:{color:'#ffffff',shadow:true},style2:{color:'#ffffff',shadow:true,op:90}}));}
+  else if(kind==='photo-quote'){if(phs[0]){const c=mkCell([0,0,1,.66],side);c.ph={...phs[0],ox:0,oy:0,zoom:1};sp.cells.push(c);used=1;}
+    sp.texts.push(...quoteTexts(sp,side,q,.84,{wf:.8}));}
+  else if(kind==='scrap'){const n=Math.min(5,phs.length);used=n;M.full=true;
+    const spots=[[[.2,.18,.6,.62]],[[.06,.12,.48,.5],[.46,.4,.48,.5]],[[.05,.08,.44,.42],[.52,.12,.42,.4],[.26,.52,.46,.42]],
+      [[.05,.06,.42,.4],[.53,.08,.42,.4],[.07,.53,.42,.4],[.51,.52,.42,.4]],[[.04,.05,.38,.36],[.56,.05,.38,.36],[.3,.33,.4,.36],[.04,.6,.38,.36],[.58,.6,.37,.36]]][n-1]||[];
+    spots.forEach((d,k)=>{const c=mkCell(d,side);c.ph={...phs[k],ox:0,oy:0,zoom:1};c.rot=Math.round((R()*14-7)*10)/10;c.bw=Math.max(2.5,Math.min(V.w,V.h)*.014);c.bc='#ffffff';c.sh=1.6;sp.cells.push(c);});
+    for(let k=0;k<Math.max(2,n);k++){const d=spots[k%Math.max(1,spots.length)]||[.5,.5,.1,.1],A=areaOf(sp,side);
+      const x=A.x+(d[0]+(k%2?d[2]:0))*A.w,y=A.y+(d[1]+(k%2?d[3]:0))*A.h;sp.decos.push(stickerDeco(sp,clamp(x,V.x+14,V.x+V.w-14),clamp(y,V.y+14,V.y+V.h-14),Math.min(V.w,V.h)*.15,R,k===0?'word':null));}
+    sp.decos.forEach(d=>{if(d.sk)d.auto=false;});}
+  else if(kind==='dedica'){sp.texts.push(...dedicaTexts(sp,side,o.text||'Con tutto il mio affetto'));}
+  else if(kind==='chapter'){sp.texts.push(...titlePageTexts(sp,side,{title:o.text||'Titolo',sub:o.sub||null}));}
+  themeDecos(sp);
+  return phs.slice(used);
+}
+/* applica una pagina speciale: al posto della pagina attiva o in una nuova doppia pagina dopo */
+function placeSpecial(kind,where,o={}){
+  let sp=cur(),i=UI.cur,side=activeSide(sp);
+  if(!isInner(sp)){toast('Le pagine speciali vanno nelle pagine interne');return;}
+  if(sp.mode==='spread'){setSpreadMode(sp,'pages');side='L';}
+  const pos=pageNum(i,side);let msg='';
+  if(where==='replace'){
+    const needPh=['quote-photo','photo-quote','scrap'].includes(kind),old=clearSide(sp,side);
+    const left=buildSpecial(sp,side,kind,{...o,phs:needPh?old:[]}),back=(needPh?left:old).filter(ph=>!usedInInterior(ph.img,sp,side));
+    const r=redistribute(back,pos,{afterIdx:i});msg=redistMsg(r);
+  }else{/* nuova doppia pagina dopo: speciale a sinistra, a destra metà delle foto della pagina attiva */
+    const ns=mkSpread('inner');BOOK.spreads.splice(i+1,0,ns);normalizeOrder();
+    const phs=pagePhs(sp,side).filter(Boolean),take=Math.floor(phs.length/2);
+    const needPh=['quote-photo','photo-quote','scrap'].includes(kind);
+    let moved=[];if(phs.length&&(take>0||needPh)){moved=phs.slice(phs.length-Math.max(take,needPh?1:0));relayoutPage(sp,side,{phs:phs.slice(0,phs.length-moved.length)});}
+    const left=buildSpecial(ns,'L',kind,{...o,phs:moved});
+    if(left.length)relayoutPage(ns,'R',{phs:left});else balanceInto(ns,'R');
+    themeDecos(sp);themeDecos(ns);UI.cur=BOOK.spreads.indexOf(ns);UI.side='L';
+    msg=left.length?` · ${left.length} foto spostate accanto`:'';
+  }
+  sel=null;THUMBS.clear();commit();syncAll();toast(`Pagina speciale inserita${msg}. Ctrl+Z per annullare.`,4500);
+}
+/* riempie una pagina vuota prendendo qualche foto dalle pagine vicine più piene (senza svuotarle) */
+function balanceInto(sp,side,want=3){
+  const i=BOOK.spreads.indexOf(sp),pos=pageNum(i,side),got=[];
+  const src=pageSlots().filter(sl=>canHost(sl)&&!(sl.sp===sp&&sl.side===side)).map(sl=>({sl,n:sl.sp.cells.filter(c=>c.side===sl.side&&c.ph).length}))
+    .filter(x=>x.n>=4).sort((a,b)=>Math.abs(a.sl.pos-pos)-Math.abs(b.sl.pos-pos));
+  for(const x of src){if(got.length>=want)break;const phs=pagePhs(x.sl.sp,x.sl.side).filter(Boolean),k=Math.min(want-got.length,phs.length-3);if(k<=0)continue;
+    got.push(...phs.slice(phs.length-k));relayoutPage(x.sl.sp,x.sl.side,{phs:phs.slice(0,phs.length-k)});themeDecos(x.sl.sp);}
+  if(got.length)relayoutPage(sp,side,{phs:got});return got.length;
+}
+/* rende di nuovo normale una pagina speciale tenendo le foto */
+function unspecial(sp,side){const phs=sp.cells.filter(c=>c.side===side&&c.ph).map(c=>({...c.ph,br:100,ox:0,oy:0,zoom:1}));clearSide(sp,side);if(phs.length)relayoutPage(sp,side,{phs});themeDecos(sp);}
+
+/* ---------- pagina effetto (al massimo una doppia pagina per libro) ---------- */
+function effectIdx(){return BOOK.spreads.findIndex(sp=>isInner(sp)&&(meta(sp,'L').special==='effect'||meta(sp,'R').special==='effect'));}
+function makeEffectSpread(p1,p2){
+  const T=TH(),sp=mkSpread('inner'),C=T.colors;
+  /* sinistra: foto "fuori cornice" su colore del tema */
+  const ML=meta(sp,'L');ML.special='effect';ML.full=true;ML.bg=C.cover;ML.pat=T.coverPattern||T.endPattern||null;
+  const a=mkCell([.13,.36,.74,.54],'L');a.ph=newPh(p1.id);a.fx='pop';a.bw=Math.max(3,BOOK.page.h*.016);a.bc='#ffffff';a.sh=2;sp.cells.push(a);
+  fxPopFrame(sp,a);
+  /* destra: secondo soggetto come sticker, oppure la stessa foto in bianco e nero con il soggetto a colori */
+  const MR=meta(sp,'R');MR.special='effect';
+  if(p2){MR.full=true;MR.pat=T.pagePattern||null;const b=mkCell([.1,.08,.8,.64],'R');b.ph=newPh(p2.id);b.fx='sticker';b.rot=-3;sp.cells.push(b);
+    const q=nextQuote();sp.texts.push(...quoteTexts(sp,'R',q,.84,{wf:.78}));}
+  else{MR.full=true;const b=mkCell([0,0,1,1],'R');b.ph=newPh(p1.id);b.fx='splash';sp.cells.push(b);}
+  const R=rng(hashStr(sp.id));const V=visBox(sp,'L');
+  sp.decos.push(stickerDeco(sp,V.x+V.w*.2,V.y+V.h*.88,Math.min(V.w,V.h)*.16,R,'word'));sp.decos[sp.decos.length-1].auto=false;
+  return sp;
+}
+async function createEffectPage(ids,{at,silent,onProg}={}){
+  const best=await fxFindBest(ids,onProg);
+  if(!best.length){if(!silent)toast('Nessuna foto adatta alla pagina effetto: servono foto con una persona o un animale ben visibile.',5000);return false;}
+  const old=effectIdx();if(old>=0)BOOK.spreads.splice(old,1);
+  const sp=makeEffectSpread(best[0],best[1]||null);
+  const pos=at!=null?at:(old>=0?old:Math.max(firstInnerIdx()+1,Math.round((firstInnerIdx()+lastInnerIdx())/2)));
+  BOOK.spreads.splice(clamp(pos,firstInnerIdx()+1,Math.max(firstInnerIdx()+1,lastInnerIdx())),0,sp);normalizeOrder();
+  for(const c of sp.cells)if(c.fx==='pop')fxPopFrame(sp,c);
+  themeDecos(sp);return BOOK.spreads.indexOf(sp);
 }
 
 /* ---- js/50-render.js ---- */
@@ -1509,34 +1786,77 @@ function drawText(ctx,t,s,ox,oy,W,H){
     ctx.fillStyle=t.color;ctx.fillText(l,tx,y);});
   ctx.restore();
 }
-function drawDeco(ctx,d,s,ox,oy,W,H){drawMotif(ctx,d.m,ox+d.x*W*s,oy+d.y*H*s,d.s*s,d.rot,d.c,d.c2||d.c,d.op,d.flip);}
+function drawDeco(ctx,d,s,ox,oy,W,H){
+  const x=ox+d.x*W*s,y=oy+d.y*H*s;
+  if(d.txt){drawBadge(ctx,d,x,y,s);return;}
+  if(d.st){/* stile sticker: contorno bianco fustellato e ombra */
+    const r=Math.max(.8,d.s*s*.045);ctx.save();ctx.shadowColor='rgba(0,0,0,.3)';ctx.shadowBlur=r*1.6;ctx.shadowOffsetY=r*.5;
+    drawMotif(ctx,d.m,x,y,d.s*s,d.rot,'#ffffff','#ffffff',d.op,d.flip);ctx.restore();
+    for(let a=0;a<12;a++){const t=a/12*TAU;drawMotif(ctx,d.m,x+Math.cos(t)*r,y+Math.sin(t)*r,d.s*s,d.rot,'#ffffff','#ffffff',d.op,d.flip);}}
+  drawMotif(ctx,d.m,x,y,d.s*s,d.rot,d.c,d.c2||d.c,d.op,d.flip);}
+/* sticker con scritta: etichetta, nastro, timbro, fumetto */
+function badgeBox(d,s){const fs=d.s*s*.42,f=`${d.bold===false?400:700} ${fs}px "${d.f||'Fredoka'}", "Segoe UI", sans-serif`;mctx.save();mctx.font=f;const tw=mctx.measureText(d.txt).width;mctx.restore();
+  const h=d.s*s,w=d.m==='stamp'?h*1.9:Math.max(h*1.6,tw+h*.9);return{fs,f,tw,w,h:d.m==='stamp'?h*1.9:h};}
+function drawBadge(ctx,d,x,y,s){
+  const B=badgeBox(d,s),w=B.w,h=B.h,c=d.c||'#C2185B',ink=d.c2&&d.c2!==c?d.c2:contrastInk(c);
+  ctx.save();ctx.translate(x,y);if(d.rot)ctx.rotate(d.rot*Math.PI/180);ctx.globalAlpha*=d.op==null?1:d.op;
+  ctx.shadowColor='rgba(0,0,0,.25)';ctx.shadowBlur=h*.12;ctx.shadowOffsetY=h*.05;
+  const white=()=>{ctx.fillStyle='#ffffff';};
+  if(d.m==='ribbon'){const e=h*.55;white();_poly(ctx,[[-w/2-e-h*.12,-h/2+h*.12],[w/2+e+h*.12,-h/2+h*.12],[w/2+e*.55+h*.12,h*.1],[w/2+e+h*.12,h/2+h*.12],[-w/2-e-h*.12,h/2+h*.12],[-w/2-e*.55-h*.12,h*.1]]);ctx.fill();
+    ctx.shadowColor='transparent';ctx.fillStyle=mix(c,'#000000',.2);_poly(ctx,[[-w/2-e,-h/2+h*.2],[-w/2+2,-h/2+h*.2],[-w/2+2,h/2+h*.2],[-w/2-e,h/2+h*.2],[-w/2-e*.55,h*.2]]);ctx.fill();_poly(ctx,[[w/2+e,-h/2+h*.2],[w/2-2,-h/2+h*.2],[w/2-2,h/2+h*.2],[w/2+e,h/2+h*.2],[w/2+e*.55,h*.2]]);ctx.fill();
+    ctx.fillStyle=c;ctx.fillRect(-w/2,-h/2,w,h);}
+  else if(d.m==='stamp'){white();ctx.beginPath();ctx.arc(0,0,w/2+h*.06,0,TAU);ctx.fill();ctx.shadowColor='transparent';ctx.fillStyle=c;ctx.beginPath();ctx.arc(0,0,w/2,0,TAU);ctx.fill();
+    ctx.strokeStyle=ink;ctx.globalAlpha*=.8;ctx.setLineDash([h*.08,h*.06]);ctx.lineWidth=h*.035;ctx.beginPath();ctx.arc(0,0,w/2-h*.12,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha/=.8;}
+  else if(d.m==='bubble'){white();rrect(ctx,-w/2-h*.08,-h/2-h*.08,w+h*.16,h+h*.16,h*.5);ctx.fill();_poly(ctx,[[-w*.2,h/2],[-w*.34,h*1.02],[-w*.02,h/2]]);ctx.fill();ctx.shadowColor='transparent';
+    ctx.fillStyle=c;rrect(ctx,-w/2,-h/2,w,h,h*.45);ctx.fill();_poly(ctx,[[-w*.18,h/2-1],[-w*.3,h*.9],[-w*.05,h/2-1]]);ctx.fill();}
+  else if(d.m==='tag'){const n=h*.45;white();_poly(ctx,[[-w/2-n-h*.08,0],[-w/2-h*.06,-h/2-h*.08],[w/2+h*.08,-h/2-h*.08],[w/2+h*.08,h/2+h*.08],[-w/2-h*.06,h/2+h*.08]]);ctx.fill();ctx.shadowColor='transparent';
+    ctx.fillStyle=c;_poly(ctx,[[-w/2-n,0],[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]]);ctx.fill();white();ctx.beginPath();ctx.arc(-w/2-n*.25,0,h*.09,0,TAU);ctx.fill();}
+  else{white();rrect(ctx,-w/2-h*.08,-h/2-h*.08,w+h*.16,h+h*.16,h*.58);ctx.fill();ctx.shadowColor='transparent';ctx.fillStyle=c;rrect(ctx,-w/2,-h/2,w,h,h*.5);ctx.fill();}
+  ctx.shadowColor='transparent';ctx.fillStyle=ink;ctx.font=B.f;ctx.textAlign='center';ctx.textBaseline='middle';
+  if(d.m==='stamp'){const words=d.txt.split(' ');const lines=words.length>1?[words.slice(0,Math.ceil(words.length/2)).join(' '),words.slice(Math.ceil(words.length/2)).join(' ')]:[d.txt];
+    let fs=B.fs;mctx.save();mctx.font=B.f;const mw=Math.max(...lines.map(l=>mctx.measureText(l).width));mctx.restore();if(mw>w*.74)fs*=w*.74/mw;ctx.font=B.f.replace(/[\d.]+px/,fs+'px');
+    lines.forEach((l,i)=>ctx.fillText(l,0,(i-(lines.length-1)/2)*fs*1.05+fs*.05));}
+  else ctx.fillText(d.txt,0,h*.04);
+  ctx.restore();
+}
 /* o: {s, ox, oy, bleed, q:'preview'|'thumb'|'full', map, sides, spineBleed, noBg} */
 function renderSpread(ctx,sp,o){
   const st=BOOK.style,s=o.s,ox=o.ox,oy=o.oy,b=o.bleed||0,W=spW(sp),H=pgH(sp),bg=bgOf(sp);
   ctx.save();
   ctx.fillStyle=bg;ctx.fillRect(ox-b*s,oy-b*s,(W+2*b)*s,(H+2*b)*s);
+  /* sfondo proprio di una singola pagina (pagine speciali) */
+  for(const side of['L','R','S']){const sb=sideBg(sp,side);if(!sb||(side==='S'&&sp.mode!=='spread')||(side!=='S'&&sp.mode==='spread'))continue;
+    const pb=pageBox(sp,side),x0=pb.x<=.01?-b:pb.x,x1=pb.x+pb.w>=W-.01?W+b:pb.x+pb.w;ctx.fillStyle=sb;ctx.fillRect(ox+x0*s,oy-b*s,(x1-x0)*s,(H+2*b)*s);}
   const P=patOf(sp);
   if(P){const seed=hashStr(sp.id);
-    if(isCover(sp)&&sp.meta.R&&sp.meta.R.full&&sp.cells.some(c=>c.side==='R'&&c.w>.98&&c.h>.98)){
+    if(isCover(sp)&&sp.meta.R&&sp.meta.R.full&&sp.cells.some(c=>c.side==='R'&&c.w>.98&&c.h>.98&&!c.bgPh)){
       const pb=pageBox(sp,'L');drawPattern(ctx,P,{x:ox/s-b,y:oy/s-b,w:pb.w+BOOK.cover.spine+b,h:H+2*b},s,seed);
     }else drawPattern(ctx,P,{x:ox/s-b,y:oy/s-b,w:W+2*b,h:H+2*b},s,seed);}
+  for(const side of['L','R']){const M=sp.meta&&sp.meta[side];if(!M||!M.pat||sp.mode==='spread')continue;const pb=pageBox(sp,side);
+    drawPattern(ctx,M.pat,{x:(pb.x<=.01?-b:pb.x)+ox/s,y:oy/s-b,w:pb.w+b,h:H+2*b},s,hashStr(sp.id+side));}
   const back=(sp.decos||[]).filter(d=>d.back),front=(sp.decos||[]).filter(d=>!d.back);
   for(const d of back)drawDeco(ctx,d,s,ox,oy,W,H);
   sp.cells.forEach(c=>{
     if(o.sides&&!o.sides.includes(c.side))return;
-    const r=cellRect(sp,c,c.shape&&c.shape!=='round'?0:b,o.spineBleed),X=ox+r.x*s,Y=oy+r.y*s,Wc=r.w*s,Hc=r.h*s;if(Wc<=0||Hc<=0)return;
+    const r=cellRect(sp,c,(c.shape&&c.shape!=='round')||c.rot||c.fx==='sticker'?0:b,o.spineBleed),X=ox+r.x*s,Y=oy+r.y*s,Wc=r.w*s,Hc=r.h*s;if(Wc<=0||Hc<=0)return;
+    const has=c.ph&&LIB.has(c.ph.img);
+    if(c.fx==='sticker'){if(has&&drawFxCell(ctx,sp,c,o,X,Y,Wc,Hc,s))return;}
     const rad=(c.shape==='round'?Math.max(st.radius,3):st.radius)*s,shape=c.shape;
-    const bw=(c.bw!=null?c.bw:st.borderW)*s,bc=c.bc||st.borderColor;
-    if(st.shadow>0){ctx.save();ctx.shadowColor='rgba(0,0,0,.34)';ctx.shadowBlur=st.shadow*s*1.2;ctx.shadowOffsetY=st.shadow*s*.4;ctx.fillStyle=c.fill||bg;shapePath(ctx,shape,X,Y,Wc,Hc,rad);ctx.fill();ctx.restore();}
+    const bw=(c.bw!=null?c.bw:st.borderW)*s,bc=c.bc||st.borderColor,shd=c.sh!=null?c.sh:st.shadow;
+    ctx.save();
+    if(c.rot){ctx.translate(X+Wc/2,Y+Hc/2);ctx.rotate(c.rot*Math.PI/180);ctx.translate(-X-Wc/2,-Y-Hc/2);}
+    if(shd>0){ctx.save();ctx.shadowColor='rgba(0,0,0,.34)';ctx.shadowBlur=shd*s*1.2;ctx.shadowOffsetY=shd*s*.4;ctx.fillStyle=bw>0?bc:(c.fill||bg);shapePath(ctx,shape,X,Y,Wc,Hc,rad);ctx.fill();ctx.restore();}
     ctx.save();shapePath(ctx,shape,X,Y,Wc,Hc,rad);ctx.clip();
     if(c.fill){ctx.fillStyle=c.fill;ctx.fillRect(X,Y,Wc,Hc);}
-    const has=c.ph&&LIB.has(c.ph.img),src=has?srcFor(c.ph.img,o):null;
-    if(src)drawPhoto(ctx,c.ph,src,{x:X,y:Y,w:Wc,h:Hc},s);
+    const src=has?srcFor(c.ph.img,o):null;
+    if(src){if(c.fx==='splash'){const g=c.ph.gray;c.ph.gray=100;drawPhoto(ctx,c.ph,src,{x:X,y:Y,w:Wc,h:Hc},s);c.ph.gray=g;}else drawPhoto(ctx,c.ph,src,{x:X,y:Y,w:Wc,h:Hc},s);}
     else if(o.q==='preview'&&!c.fill)drawPlaceholder(ctx,X,Y,Wc,Hc,c.ph?'Foto da ricollegare':'Trascina qui una foto');
     else if(o.q==='thumb'&&!c.fill){ctx.fillStyle='rgba(128,136,148,.3)';ctx.fillRect(X,Y,Wc,Hc);}
     ctx.restore();
     if(bw>0){ctx.save();if(shape&&shape!=='round'){shapePath(ctx,shape,X,Y,Wc,Hc,rad);ctx.lineWidth=bw*2;ctx.strokeStyle=bc;ctx.save();ctx.clip();ctx.stroke();ctx.restore();}
       else{rrect(ctx,X+bw/2,Y+bw/2,Wc-bw,Hc-bw,Math.max(0,rad-bw/2));ctx.lineWidth=bw;ctx.strokeStyle=bc;ctx.stroke();}ctx.restore();}
+    if(c.fx&&has&&src)drawFxCell(ctx,sp,c,o,X,Y,Wc,Hc,s);
+    ctx.restore();
   });
   for(const d of front)drawDeco(ctx,d,s,ox,oy,W,H);
   for(const t of sp.texts)drawText(ctx,t,s,ox,oy,W,H);
@@ -1547,10 +1867,10 @@ async function renderRegion(sp,x,y,w,h,pxPerMm,q,opts={}){
   const W=Math.max(1,Math.round(w*pxPerMm)),H=Math.max(1,Math.round(h*pxPerMm));
   const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);ctx.imageSmoothingQuality='high';
-  const map=q==='full'?await loadOriginals(sp,opts.maxPx):await loadPreviews(sp);
+  const map=q==='full'?await loadOriginals(sp,opts.maxPx):await loadPreviews(sp),fxmap=await loadCutouts(sp,q==='full');
   await loadSpreadFonts(sp);
   ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();
-  renderSpread(ctx,sp,{s:pxPerMm,ox:-x*pxPerMm,oy:-y*pxPerMm,bleed:opts.bleed||0,q:'full',map,sides:opts.sides,spineBleed:opts.spineBleed});
+  renderSpread(ctx,sp,{s:pxPerMm,ox:-x*pxPerMm,oy:-y*pxPerMm,bleed:opts.bleed||0,q:'full',map,fxmap,sides:opts.sides,spineBleed:opts.spineBleed});
   ctx.restore();
   for(const s of map.values())closeSrc(s);
   return c;
@@ -1564,7 +1884,146 @@ async function loadOriginals(sp,maxPx){
 }
 async function loadPreviews(sp){const map=new Map();for(const c of sp.cells){if(!c.ph||map.has(c.ph.img))continue;const e=LIB.get(c.ph.img);if(!e)continue;
   try{if(e.prevBlob)map.set(e.id,await createImageBitmap(e.prevBlob));else if(e.file){const b=await decodeBlob(e.file);map.set(e.id,canvasOf(b,1600));closeSrc(b);}}catch(err){}}return map;}
+async function loadCutouts(sp,full){const m=new Map();for(const c of sp.cells){if(!c.fx||!c.ph||m.has(c.ph.img))continue;const e=LIB.get(c.ph.img);if(!e)continue;
+  try{if(!e.fx||!e.fx.mask)await fxAnalyze(e);const k=await fxCutout(e,full);if(k)m.set(e.id,k);}catch(err){}}return m;}
 async function loadSpreadFonts(sp){if(!document.fonts)return;await Promise.all(sp.texts.map(t=>document.fonts.load(textFont(t,40),textStr(t)).catch(()=>{})));}
+
+/* ---- js/55-effects.js ---- */
+/* ============ effetti speciali: scontorno del soggetto ============
+   Il modello (DeepLab v3, MediaPipe, Apache 2.0) gira nel browser: le foto non escono dal computer.
+   Si carica solo quando serve, dal file fotolibro-effetti.js accanto all'app. */
+const FX={seg:null,loading:null,failed:'',cut:new Map()};
+const FX_CLASSES=[15,8,12,13,3,10,17];/* persona, gatto, cane, cavallo, uccello, mucca, pecora */
+const FX_NAMES={15:'persone',8:'gatto',12:'cane',13:'cavallo',3:'uccello',10:'mucca',17:'pecora'};
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('manca '+src));document.head.appendChild(s);});}
+function b64ToBytes(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+async function fxInit(){
+  if(FX.seg)return FX.seg;if(FX.loading)return FX.loading;
+  FX.loading=(async()=>{
+    if(!window.__FXLIB)await loadScript('fotolibro-effetti.js');
+    const L=window.__FXLIB;if(!L)throw new Error('modulo effetti non valido');
+    const fileset={wasmLoaderPath:URL.createObjectURL(new Blob([b64ToBytes(L.D.loader)],{type:'text/javascript'})),
+      wasmBinaryPath:URL.createObjectURL(new Blob([b64ToBytes(L.D.wasm)],{type:'application/wasm'}))};
+    const seg=await L.V.ImageSegmenter.createFromOptions(fileset,{baseOptions:{modelAssetBuffer:b64ToBytes(L.D.model),delegate:'CPU'},
+      runningMode:'IMAGE',outputCategoryMask:false,outputConfidenceMasks:true});
+    FX.seg=seg;return seg;})();
+  try{return await FX.loading;}catch(e){FX.loading=null;FX.failed=e.message||String(e);throw e;}
+}
+/* box filter con immagine integrale */
+function boxMean(src,w,h,r){const W=w+1,I=new Float64Array(W*(h+1));
+  for(let y=0;y<h;y++){let row=0;for(let x=0;x<w;x++){row+=src[y*w+x];I[(y+1)*W+x+1]=I[y*W+x+1]+row;}}
+  const out=new Float32Array(w*h);
+  for(let y=0;y<h;y++){const y0=Math.max(0,y-r),y1=Math.min(h-1,y+r);for(let x=0;x<w;x++){const x0=Math.max(0,x-r),x1=Math.min(w-1,x+r);
+    const s=I[(y1+1)*W+x1+1]-I[y0*W+x1+1]-I[(y1+1)*W+x0]+I[y0*W+x0];out[y*w+x]=s/((x1-x0+1)*(y1-y0+1));}}
+  return out;}
+/* filtro guidato (He et al.): bordi della maschera allineati ai bordi veri della foto */
+function guidedFilter(I,p,w,h,r,eps){
+  const mI=boxMean(I,w,h,r),mp=boxMean(p,w,h,r),II=new Float32Array(w*h),Ip=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++){II[i]=I[i]*I[i];Ip[i]=I[i]*p[i];}
+  const mII=boxMean(II,w,h,r),mIp=boxMean(Ip,w,h,r),a=new Float32Array(w*h),b=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++){const v=mII[i]-mI[i]*mI[i],c=mIp[i]-mI[i]*mp[i];a[i]=c/(v+eps);b[i]=mp[i]-a[i]*mI[i];}
+  const ma=boxMean(a,w,h,r),mb=boxMean(b,w,h,r),q=new Float32Array(w*h);for(let i=0;i<w*h;i++)q[i]=ma[i]*I[i]+mb[i];return q;}
+function largestComponent(bin,w,h){
+  const lab=new Int32Array(w*h),st=[];let best=0,bestN=0,id=0;
+  for(let i=0;i<w*h;i++){if(!bin[i]||lab[i])continue;id++;let n=0;st.push(i);lab[i]=id;
+    while(st.length){const k=st.pop();n++;const x=k%w,y=(k/w)|0;
+      if(x>0&&bin[k-1]&&!lab[k-1]){lab[k-1]=id;st.push(k-1);}if(x<w-1&&bin[k+1]&&!lab[k+1]){lab[k+1]=id;st.push(k+1);}
+      if(y>0&&bin[k-w]&&!lab[k-w]){lab[k-w]=id;st.push(k-w);}if(y<h-1&&bin[k+w]&&!lab[k+w]){lab[k+w]=id;st.push(k+w);}}
+    if(n>bestN){bestN=n;best=id;}}
+  return{lab,best,n:bestN};}
+/* analizza una foto: trova il soggetto, valuta se è adatta, prepara la maschera ad alta qualità */
+async function fxAnalyze(e){
+  if(e.fx&&e.fx.v===2)return e.fx;
+  if(!e.sample){const saved=await idbGet('prev',e.id+'#fx');if(saved&&saved.v===2){e.fx=saved;return saved;}}
+  const seg=await fxInit();
+  const src=e.prevBlob?await createImageBitmap(e.prevBlob):e.thumbBmp;if(!src)return null;
+  const S=512,r0=S/Math.max(src.width,src.height),sw=Math.max(8,Math.round(src.width*r0)),sh=Math.max(8,Math.round(src.height*r0));
+  const c=document.createElement('canvas');c.width=sw;c.height=sh;c.getContext('2d').drawImage(src,0,0,sw,sh);
+  const res=seg.segment(c);const masks=res.confidenceMasks||[];
+  const mw=masks[0].width,mh=masks[0].height,soft=new Float32Array(mw*mh),cls=new Int8Array(mw*mh).fill(-1);
+  const per={};
+  for(const k of FX_CLASSES){const m=masks[k];if(!m)continue;const a=m.getAsFloat32Array();let n=0;for(let i=0;i<a.length;i++){soft[i]+=a[i];if(a[i]>.5)n++;}per[k]=n;}
+  masks.forEach(m=>m.close&&m.close());if(res.close)res.close();
+  const bin=new Uint8Array(mw*mh);let fg=0;for(let i=0;i<bin.length;i++){if(soft[i]>.5){bin[i]=1;fg++;}}
+  const cov=fg/(mw*mh);
+  const out={v:2,ok:false,cov,score:0,why:''};
+  const mainK=Object.entries(per).sort((a,b)=>b[1]-a[1])[0];out.kind=mainK&&mainK[1]?FX_NAMES[mainK[0]]:'';
+  if(cov<.05){out.why='nessun soggetto riconosciuto';closeSrc(src);return e.fx=out;}
+  const L=largestComponent(bin,mw,mh);
+  let x0=mw,y0=mh,x1=0,y1=0;for(let i=0;i<bin.length;i++)if(L.lab[i]===L.best){const x=i%mw,y=(i/mw)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  out.bbox=[x0/mw,y0/mh,(x1+1)/mw,(y1+1)/mh];
+  const bw=out.bbox[2]-out.bbox[0],bh=out.bbox[3]-out.bbox[1],touchL=x0<=1,touchR=x1>=mw-2,touchT=y0<=1;
+  const frac=L.n/fg;
+  if(cov>.62)out.why='soggetto troppo grande';
+  else if(frac<.72)out.why='troppi soggetti separati';
+  else if(bh<.38)out.why='soggetto troppo piccolo';
+  else if(touchL&&touchR)out.why='soggetto tagliato ai lati';
+  else if(touchT)out.why='soggetto tagliato in alto';
+  else out.ok=true;
+  out.score=(out.ok?1:0)+(e.fav?.6:0)-Math.abs(cov-.28)*1.5+Math.min(.5,Math.log10(1+(e.sharp||0))/8)+(per[15]?.15:0);
+  if(out.ok){/* maschera rifinita a 1024 px */
+    const R=1024/Math.max(src.width,src.height),W=Math.round(src.width*Math.min(1,R)),H=Math.round(src.height*Math.min(1,R));
+    const g=document.createElement('canvas');g.width=W;g.height=H;const gx=g.getContext('2d',{willReadFrequently:true});gx.drawImage(src,0,0,W,H);
+    const px=gx.getImageData(0,0,W,H).data,I=new Float32Array(W*H);for(let i=0;i<W*H;i++)I[i]=(.299*px[i*4]+.587*px[i*4+1]+.114*px[i*4+2])/255;
+    /* maschera morbida della sola componente principale, ingrandita in modo bilineare */
+    const keep=new Float32Array(mw*mh);for(let i=0;i<keep.length;i++)keep[i]=L.lab[i]===L.best?Math.min(1,soft[i]):Math.min(1,soft[i])*.0;
+    const kc=document.createElement('canvas');kc.width=mw;kc.height=mh;const kx=kc.getContext('2d');const kd=kx.createImageData(mw,mh);
+    for(let i=0;i<keep.length;i++){const v=Math.round(keep[i]*255);kd.data[i*4]=kd.data[i*4+1]=kd.data[i*4+2]=v;kd.data[i*4+3]=255;}kx.putImageData(kd,0,0);
+    gx.imageSmoothingQuality='high';gx.drawImage(kc,0,0,W,H);const up=gx.getImageData(0,0,W,H).data,p=new Float32Array(W*H);for(let i=0;i<W*H;i++)p[i]=up[i*4]/255;
+    const q=guidedFilter(I,p,W,H,Math.max(4,Math.round(W/110)),.0008);
+    const md=gx.createImageData(W,H);for(let i=0;i<W*H;i++){let v=(q[i]-.5)*1.6+.5;v=v<.03?0:v>.97?1:v;md.data[i*4]=md.data[i*4+1]=md.data[i*4+2]=255;md.data[i*4+3]=Math.round(v*255);}
+    gx.putImageData(md,0,0);out.mask=await toBlob(g,'image/png');out.mw=W;out.mh=H;
+  }
+  closeSrc(src);e.fx=out;if(!e.sample)idbPut('prev',e.id+'#fx',out);return out;
+}
+/* immagine ritagliata (RGBA con trasparenza) e silhouette bianca, per anteprima o stampa */
+async function fxCutout(e,full){
+  const key=e.id+(full?'#f':'#p');if(FX.cut.has(key))return FX.cut.get(key);
+  if(!e.fx||!e.fx.mask)return null;
+  let src;if(full&&e.file){const b=await decodeBlob(e.file);src=canvasOf(b,3200);closeSrc(b);}else src=e.prevBlob?await createImageBitmap(e.prevBlob):null;
+  if(!src)return null;
+  const W=src.width,H=src.height,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.drawImage(src,0,0);
+  const m=await createImageBitmap(e.fx.mask);x.globalCompositeOperation='destination-in';x.imageSmoothingQuality='high';x.drawImage(m,0,0,W,H);closeSrc(m);
+  const s=document.createElement('canvas');s.width=W;s.height=H;const sx=s.getContext('2d');sx.drawImage(c,0,0);sx.globalCompositeOperation='source-in';sx.fillStyle='#ffffff';sx.fillRect(0,0,W,H);
+  closeSrc(src);const out={img:c,sil:s,w:W,h:H};
+  if(!full){FX.cut.set(key,out);if(FX.cut.size>12){const k=FX.cut.keys().next().value;FX.cut.delete(k);}}
+  return out;
+}
+function fxCutoutSync(e){const k=e.id+'#p';if(FX.cut.has(k))return FX.cut.get(k);if(!e._cutTried&&!FX.failed){e._cutTried=true;(e.fx&&e.fx.mask?Promise.resolve():fxAnalyze(e)).then(()=>fxCutout(e,false)).then(k=>{if(k){THUMBS.clear();draw();scheduleStrip();}}).catch(()=>{});}return null;}
+/* sceglie le foto migliori per la pagina effetto */
+async function fxFindBest(ids,onProg,max=14){
+  const cand=ids.map(id=>LIB.get(id)).filter(e=>e&&(e.prevBlob||e.thumbBmp))
+    .sort((a,b)=>(b.fav-a.fav)||((b.sharp||0)-(a.sharp||0))).slice(0,max);
+  const ok=[];
+  for(let i=0;i<cand.length;i++){onProg&&onProg(i,cand.length);try{const r=await fxAnalyze(cand[i]);if(r&&r.ok)ok.push(cand[i]);}catch(err){if(FX.failed)throw err;}await sleep(0);}
+  return ok.sort((a,b)=>b.fx.score-a.fx.score);
+}
+/* disegno degli effetti dentro renderSpread */
+function fxSource(c,o){const e=LIB.get(c.ph&&c.ph.img);if(!e)return null;if(o.q==='full'){return(o.fxmap&&o.fxmap.get(e.id))||null;}return fxCutoutSync(e);}
+function drawFxCell(ctx,sp,c,o,X,Y,Wc,Hc,s){
+  const e=LIB.get(c.ph.img),cut=fxSource(c,o);if(!e||!cut||!e.fx||!e.fx.bbox)return false;
+  if(c.fx==='sticker'){/* soggetto ritagliato con bordo bianco, centrato nel riquadro */
+    const[b0,b1,b2,b3]=e.fx.bbox,bw=(b2-b0)*cut.w,bh=(b3-b1)*cut.h,k=Math.min(Wc/bw,Hc/bh);
+    const dx=X+Wc/2-(b0*cut.w+bw/2)*k,dy=Y+Hc/2-(b1*cut.h+bh/2)*k,dw=cut.w*k,dh=cut.h*k,ring=Math.max(1.2,2.2*s);
+    ctx.save();if(c.rot){ctx.translate(X+Wc/2,Y+Hc/2);ctx.rotate(c.rot*Math.PI/180);ctx.translate(-X-Wc/2,-Y-Hc/2);}
+    ctx.save();ctx.shadowColor='rgba(0,0,0,.28)';ctx.shadowBlur=3*s;ctx.shadowOffsetY=1.2*s;ctx.drawImage(cut.sil,dx,dy,dw,dh);ctx.restore();
+    for(let a=0;a<16;a++){const t=a/16*TAU;ctx.drawImage(cut.sil,dx+Math.cos(t)*ring,dy+Math.sin(t)*ring,dw,dh);}
+    ctx.drawImage(cut.img,dx,dy,dw,dh);ctx.restore();return true;}
+  const g=photoGeom(c.ph,{x:X,y:Y,w:Wc,h:Hc});if(!g)return false;
+  const put=(img)=>{ctx.save();ctx.translate(g.cx,g.cy);ctx.rotate(g.rot*Math.PI/180);ctx.scale(c.ph.flip?-1:1,1);ctx.drawImage(img,-g.iw*g.k/2,-g.ih*g.k/2,g.iw*g.k,g.ih*g.k);ctx.restore();};
+  if(c.fx==='pop'){ctx.save();ctx.beginPath();ctx.rect(X-Wc*.12,Y-Hc*.6,Wc*1.24,Hc*1.6);ctx.clip();put(cut.img);ctx.restore();return true;}
+  if(c.fx==='splash'){ctx.save();shapePath(ctx,c.shape,X,Y,Wc,Hc,0);ctx.clip();put(cut.img);ctx.restore();return true;}
+  return false;
+}
+/* inquadratura "fuori cornice": il bordo superiore taglia il soggetto, la testa esce dal riquadro */
+function fxPopFrame(sp,c){
+  const e=LIB.get(c.ph.img);if(!e||!e.fx||!e.fx.bbox)return;const r=cellRect(sp,c),ph=c.ph;ph.fit='cover';ph.rot=0;
+  const[b0,b1,b2,b3]=e.fx.bbox,f=b1+(b3-b1)*.3,base=Math.max(r.w/e.w,r.h/e.h);
+  let dh=Math.max(e.h*base,r.h/Math.max(.2,1-f)),z=dh/(e.h*base);z=clamp(z,1,4);dh=e.h*base*z;const dw=e.w*base*z;
+  ph.zoom=z;const my=(dh-r.h)/2,mx=(dw-r.w)/2;
+  const imgTop=r.y-f*dh;ph.oy=my>.01?clamp((imgTop+dh/2-r.y-r.h/2)/my,-1,1):0;
+  const cxs=(b0+b2)/2,imgLeft=r.x+r.w/2-cxs*dw;ph.ox=mx>.01?clamp((imgLeft+dw/2-r.x-r.w/2)/mx,-1,1):0;
+}
 
 /* ---- js/60-editor.js ---- */
 /* ============ anteprima ============ */
@@ -1672,7 +2131,6 @@ function renderStrip(){
   S.replaceChildren(...items);
   S.scrollLeft=y;const on=S.querySelector('.sth.on');if(on){const r=on.getBoundingClientRect(),R=S.getBoundingClientRect();if(r.left<R.left||r.right>R.right)on.scrollIntoView({block:'nearest',inline:'center'});}
 }
-function lastInnerIdx(){let k=-1;BOOK.spreads.forEach((s,i)=>{if(isInner(s))k=i;});return k;}
 function goSpread(i){if(i<0||i>=BOOK.spreads.length)return;UI.cur=i;sel=null;UI.side=BOOK.spreads[i].mode==='spread'?'S':'L';syncAll();}
 function moveSpread(a,b){const sps=BOOK.spreads;if(a===b||!isInner(sps[a]))return;
   const[x]=sps.splice(a,1);sps.splice(Math.min(b,sps.length),0,x);normalizeOrder();UI.cur=sps.indexOf(x);UI.cur=BOOK.spreads.indexOf(x);commit();syncAll();}
@@ -1683,9 +2141,12 @@ let delArmed=0;
 function renderPbar(){
   const sp=cur(),i=UI.cur,n=BOOK.spreads.length;if(!sp)return;
   const ttl=isCover(sp)?'Copertina':isEnd(sp)?(sp.kind==='endF'?'Risguardo anteriore':'Risguardo posteriore'):`Pagine ${spreadLabel(i)}`;
-  const sub=isCover(sp)?'retro · dorso · fronte':isEnd(sp)?(sp.kind==='endF'?'pag. 2 · foglio a parte':'penultima pagina · foglio a parte'):`${innerIdx(i)+1} di ${innerPages()/2} doppie · ${innerPages()} pagine`;
+  const N=bookPages(),sub=isCover(sp)?`pag. 1 e ${N} · retro · dorso · fronte`:isEnd(sp)?(sp.kind==='endF'?'pag. 2–3 · foglio dei risguardi':`pag. ${N-2}–${N-1} · foglio dei risguardi`):`${innerIdx(i)+1} di ${innerPages()/2} doppie · libro di ${N} pagine`;
   const del=btn('Elimina',e=>{if(Date.now()-delArmed>3000){delArmed=Date.now();e.currentTarget.textContent='Confermi?';return;}delArmed=0;
-    if(BOOK.spreads.filter(isInner).length<=1){toast('L’interno deve avere almeno una doppia pagina');return;}BOOK.spreads.splice(i,1);UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();},'danger','Elimina questa doppia pagina (clicca due volte)');
+    if(BOOK.spreads.filter(isInner).length<=1){toast('L’interno deve avere almeno una doppia pagina');return;}
+    const old=BOOK.spreads[i],ph=old.cells.filter(c=>c.ph&&!c.fx&&!c.epPh).map(c=>c.ph),pos=pageNum(i,'L');BOOK.spreads.splice(i,1);
+    const keep=ph.filter(p=>!usedInInterior(p.img));const r=redistribute(keep,pos,{afterIdx:Math.max(0,i-1)});
+    UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();toast('Doppia pagina eliminata'+redistMsg(r),4500);},'danger','Elimina questa doppia pagina: le sue foto vanno nelle pagine vicine (clicca due volte)');
   $('#pbar').replaceChildren(...[
     btn('◀',()=>goSpread(i-1),'nav','Doppia pagina precedente (PagSu)'),
     el('div',{class:'ttl'},ttl,el('small',{},sub)),
@@ -1696,7 +2157,7 @@ function renderPbar(){
     isInner(sp)?del:null,
     isCover(sp)?btn('Rigenera copertina dal tema',()=>{rebuildCover();sel=null;commit();syncAll();toast('Copertina ricreata con le stesse foto e titoli (Ctrl+Z per annullare)');},'alt'):null,
     el('div',{class:'sep'}),
-    isCover(sp)?null:el('label',{class:'chk',title:'Una sola impaginazione su entrambe le pagine, anche attraverso la piega'},
+    isCover(sp)||(isInner(sp)&&(isVerso(i,'L')||isVerso(i,'R')))?null:el('label',{class:'chk',title:'Una sola impaginazione su entrambe le pagine, anche attraverso la piega'},
       el('input',{type:'checkbox',checked:sp.mode==='spread',onchange:e=>{setSpreadMode(sp,e.target.checked?'spread':'pages');UI.side=e.target.checked?'S':'L';sel=null;commit();syncAll();}}),'Unisci le due pagine')].filter(Boolean));
 }
 
@@ -1731,7 +2192,7 @@ function hitCell(p){const sp=cur();for(let i=sp.cells.length-1;i>=0;i--){const r
 function hitText(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=sp.texts.length-1;i>=0;i--){const t=sp.texts[i],m=measureText(mctx,t,10);
   const hw=(m.w/2+m.pad)/10,hh=(m.h/2+m.pad*.6)/10,dx=p.x-t.x*W,dy=p.y-t.y*H,a=-t.rot*Math.PI/180;
   const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(lx)<=hw&&Math.abs(ly)<=hh)return t;}return null;}
-function hitDeco(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=(sp.decos||[]).length-1;i>=0;i--){const d=sp.decos[i],r=d.s/2;if(Math.abs(p.x-d.x*W)<=r&&Math.abs(p.y-d.y*H)<=r)return d;}return null;}
+function hitDeco(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=(sp.decos||[]).length-1;i>=0;i--){const d=sp.decos[i];let rx=d.s/2,ry=d.s/2;if(d.txt){const B=badgeBox(d,1);rx=B.w/2+d.s*.3;ry=B.h/2;}if(Math.abs(p.x-d.x*W)<=rx&&Math.abs(p.y-d.y*H)<=ry)return d;}return null;}
 function hitDecoHandle(d,e){const sp=cur(),r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,cx=px(d.x*spW(sp),view.ox),cy=px(d.y*pgH(sp),view.oy),h=d.s*view.s/2;return Math.abs(mx-(cx+h))<=8&&Math.abs(my-(cy+h))<=8;}
 const HCODES=['tl','t','tr','r','br','b','bl','l'];
 function handlePts(c){const r=cellRect(cur(),c),s=view.s,X=px(r.x,view.ox),Y=px(r.y,view.oy),W=r.w*s,H=r.h*s;
@@ -1881,7 +2342,7 @@ function numIn(label,get,set,min,max,step=1){const i=el('input',{type:'number',c
 /* ============ pannello sinistro ============ */
 function renderLeft(){
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===UI.tab));
-  const L=$('#leftBody'),y=L.scrollTop;L.replaceChildren(...({photos:tabPhotos,theme:tabTheme,layout:tabLayout,text:tabText,deco:tabDeco,book:tabBook}[UI.tab])().filter(Boolean));L.scrollTop=y;
+  const L=$('#leftBody'),y=L.scrollTop;L.replaceChildren(...({photos:tabPhotos,theme:tabTheme,pages:tabPages,layout:tabLayout,text:tabText,deco:tabDeco,book:tabBook}[UI.tab])().filter(Boolean));L.scrollTop=y;
 }
 function tabPhotos(){
   const U=usage(),all=ORDER.map(id=>LIB.get(id)).filter(Boolean);
@@ -1973,6 +2434,8 @@ function layThumb(defs,A,phs,perm,box=66){
 }
 function tabLayout(){
   const sp=cur(),side=activeSide(sp),M=meta(sp,side),phs=pagePhs(sp,side),n=phs.length,I=areaOf(sp,side),A=I.w/I.h;
+  if(isInner(sp)&&isSpecial(sp,side)){const K=SPECIALS.find(k=>k[0]===M.special);return[sec(pageLabel(UI.cur,side),el('p',{},`Pagina speciale${K?': '+K[1].toLowerCase():M.special==='effect'?': effetto':''}. Si modifica dal pannello Pagine o direttamente sul foglio.`),
+    el('div',{class:'row'},btn('Apri il pannello Pagine',()=>{UI.tab='pages';renderLeft();},'pri'),btn('Rendi pagina normale',()=>{unspecial(sp,side);sel=null;commit();syncAll();},null,'Tiene le foto e le impagina normalmente')))];}
   const cands=pageCands(sp,side);
   const g=el('div',{class:'lgrid'});
   for(const c of cands)g.append(el('button',{type:'button',class:'lth'+(c.key===M.lay?' on':''),title:c.name,onclick:()=>{relayoutPage(sp,side,{key:c.key});sel=null;commit();syncAll();}},layThumb(c.defs,A,phs,c.perm),c.name));
@@ -1994,7 +2457,7 @@ function tabLayout(){
         btn('Crea libro automatico…',openWizard,'alt'))),
     sec('Riquadri liberi',
       el('div',{class:'row'},btn('Aggiungi riquadro libero',()=>{const c=mkCell([.3,.3,.4,.4],side);sp.cells.push(c);sel={type:'cell',id:c.id};setMode('layout');commit();syncAll();}),
-        btn('Svuota questa pagina',()=>{sp.cells=sp.cells.filter(c=>c.side!==side);M.lay=null;sel=null;commit();syncAll();},'danger')),
+        btn('Svuota questa pagina',()=>{const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));const r=redistribute(ph,pageNum(UI.cur,side==='S'?'L':side),{afterIdx:UI.cur,exclude:x=>x.sp===sp&&x.side===side});sel=null;commit();syncAll();toast('Pagina svuotata'+redistMsg(r));},'danger','Le foto vengono spostate nelle pagine vicine')),
       chk('Bordi in comune si muovono insieme',()=>UI.link,v=>UI.link=v),
       chk('Aggancio a griglia e bordi',()=>UI.snap,v=>UI.snap=v),
       el('p',{},'In modalità Riquadri (tasto M) trascina un riquadro per spostarlo e i bordi o gli angoli per ridimensionarlo.'))
@@ -2003,11 +2466,11 @@ function tabLayout(){
 
 /* ============ tema ============ */
 const TPREV=new Map();
-function themePreview(id,w=118){
+function themePreview(id,w=118,ov){
   const ph=ORDER.find(i=>LIB.get(i)&&LIB.get(i).fav)||ORDER.find(i=>{const e=LIB.get(i);return e&&e.w>=e.h;})||ORDER[0]||null;
-  const key=id+'|'+ph+'|'+BOOK.page.w+'x'+BOOK.page.h+'|'+thumbGen+'|'+(id===BOOK.theme.id?JSON.stringify(BOOK.theme):'');
-  const c0=TPREV.get(id);if(c0&&c0.key===key)return c0.cv;
-  const save=BOOK.theme;BOOK.theme=id===save.id?save:{id,colors:{},fonts:{},deco:save.deco==null?1:save.deco,coverLayout:null};
+  const pk=id+(ov?JSON.stringify(ov):''),key=pk+'|'+ph+'|'+BOOK.page.w+'x'+BOOK.page.h+'|'+thumbGen+'|'+(id===BOOK.theme.id?JSON.stringify(BOOK.theme):'');
+  const c0=TPREV.get(pk);if(c0&&c0.key===key)return c0.cv;
+  const save=BOOK.theme;BOOK.theme={...(id===save.id?save:{id,colors:{},fonts:{},deco:save.deco==null?1:save.deco,coverLayout:null}),...(ov||{})};
   const c=c0?c0.cv:document.createElement('canvas');
   try{const sp=makeCover({},ph?[ph]:[]);
     const P=pageBox(sp,'R'),H=pgH(sp),s=w/P.w,h=Math.round(H*s),dpr=window.devicePixelRatio||1;
@@ -2015,7 +2478,7 @@ function themePreview(id,w=118){
     const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
     renderSpread(x,sp,{s,ox:-P.x*s,oy:0,q:'thumb'});
   }finally{BOOK.theme=save;}
-  TPREV.set(id,{key,cv:c});return c;
+  TPREV.set(pk,{key,cv:c});return c;
 }
 function restyleTexts(){const T=TH();for(const sp of BOOK.spreads)for(const t of sp.texts){if(!t.role||t.custom)continue;const st=roleStyle(t.role,T,bgOf(sp));
   if(isCover(sp)&&T.coverLayout==='full'&&(t.role==='cover-title'||t.role==='cover-sub')){st.color='#ffffff';st.shadow=true;}const of=t.font;Object.assign(t,st);if(of!==t.font)t.size=+(t.size/fScale(of)*fScale(t.font)).toFixed(1);}}
@@ -2044,9 +2507,13 @@ function tabTheme(){
   return[
     sec(`Tema del libro · ${T.name}`,el('p',{},T.desc+'. Il tema imposta copertina, retro, dorso, risguardi, titoli e decorazioni. Le tue foto e l’impaginazione restano.')),
     ...groups,
-    sec('Copertina',
-      el('div',{class:'covl'},...COVER_LAYOUTS.map(([v,l,tip])=>el('button',{type:'button',class:'cl'+(T.coverLayout===v?' on':''),title:tip,onclick:()=>{bt.coverLayout=v;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},covIcon(v),l))),
-      el('p',{},'Cambiando stile la copertina viene ricreata con le stesse foto e lo stesso titolo.')),
+    sec('Copertina · proposte per questo tema',
+      el('div',{class:'themes'},...coverProposals(T).map(v=>el('button',{type:'button',class:'thc'+(T.coverLayout===v.coverLayout&&T.coverBg===v.coverBg?' on':''),title:v.name,
+        onclick:()=>{bt.coverLayout=v.coverLayout;bt.coverBg=v.coverBg;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},el('div',{class:'thp'},themePreview(T.id,118,v)),el('b',{},v.name)))),
+      el('div',{class:'lbl'},el('span',{},'Impaginazione'),el('div',{class:'covl'},...COVER_LAYOUTS.map(([v,l,tip])=>el('button',{type:'button',class:'cl'+(T.coverLayout===v?' on':''),title:tip,onclick:()=>{bt.coverLayout=v;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},covIcon(v),l)))),
+      el('label',{class:'lbl'},el('span',{},'Sfondo'),el('select',{onchange:e=>{bt.coverBg=e.target.value;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},...COVER_BGS.map(([v,l])=>el('option',{value:v,selected:T.coverBg===v},l)))),
+      el('p',{},'La copertina viene ricreata con le stesse foto e lo stesso titolo. Poi puoi spostare e cambiare tutto.')),
+    BOOK.endp.on?tabEndpapers(T):null,
     sec('Decorazioni del tema',
       seg([['0','Nessuna'],['1','Leggere'],['2','Ricche']],String(T.deco),v=>{bt.deco=+v;themeChanged({decos:true});},true),
       chk('Motivo sullo sfondo della copertina',()=>bt.coverPattern!==false,v=>{bt.coverPattern=v;THUMBS.clear();syncAll();}),
@@ -2177,7 +2644,7 @@ function tabBook(){
   const s=el('select',{'aria-label':'Formato pagina'});
   for(const[n] of PAGE_PRESETS)s.append(el('option',{value:n},n));
   s.append(el('option',{value:'custom'},'Personalizzato'));s.value=P.preset;
-  const reflow=()=>{relayoutAll(true);rebuildCover();TPREV.clear();};
+  const reflow=()=>{relayoutAll(true);rebuildCover();for(const x of BOOK.spreads)for(const c of x.cells)if(c.fx==='pop')fxPopFrame(x,c);TPREV.clear();};
   s.onchange=()=>{const pr=PAGE_PRESETS.find(p=>p[0]===s.value);if(!pr){P.preset='custom';syncAll();return;}P.preset=pr[0];P.w=pr[1];P.h=pr[2];reflow();THUMBS.clear();commit();syncAll();};
   const pageMM=(lab,key)=>mmField(lab+' (mm)',()=>P[key],v=>{P[key]=v;const m=PAGE_PRESETS.find(p=>Math.abs(p[1]-P.w)<.05&&Math.abs(p[2]-P.h)<.05);P.preset=m?m[0]:'custom';},50,1000,.1,reflow);
   const pxAt=d=>`${Math.round(P.w/25.4*d)} × ${Math.round(P.h/25.4*d)} px`;
@@ -2225,6 +2692,7 @@ function tabBook(){
         mmField('Abbondanza (mm)',()=>E.bleed,v=>E.bleed=v,0,20,.5),
         mmField('Zona visibile, largh. (0 = pagina)',()=>E.visW,v=>E.visW=v,0,1000,.5),
         mmField('Zona visibile, alt. (0 = pagina)',()=>E.visH,v=>E.visH=v,0,1000,.5)):null,
+      E.on?chk(`Stampa sul foglio dei risguardi anche pag. 4 e pag. ${bookPages()-3} (retro dei fogli)`,()=>E.verso!==false,v=>{E.verso=v;THUMBS.clear();syncAll();},'Pag. 4 e la terzultima finiscono nel PDF dei risguardi invece che nell’interno'):null,
       E.on?el('p',{},'Ogni risguardo è un foglio a sé (anteriore e posteriore) ed esce in un file dedicato. Il riquadro verde mostra la parte che si vede a libro finito: tienici dentro testi e foto importanti.'):null,
       E.on&&endF>=0?btn('Vai al risguardo anteriore',()=>goSpread(endF)):null),
     sec('Sicurezza di stampa',
@@ -2238,6 +2706,110 @@ function tabBook(){
       el('div',{class:'srow'},el('span',{class:'k'},'a 300 dpi'),el('span',{class:'v'},pxAt(300)))))
   ];
 }
+
+/* proposte di copertina: combinazioni di impaginazione e sfondo adatte al tema */
+function coverProposals(T){const b=baseTheme(T.id),base=b.coverLayout,alt=base==='arch'?'circle':base==='circle'?'heart':base==='heart'?'arch':'arch';
+  const L=[[base,b.coverBg||'motivo'],['full','motivo'],['framed','chiaro'],[base,'tinta'],['framed','sfocata'],['collage',b.coverPattern?'motivo':'fitto'],['type','fitto'],[alt,'chiaro']];
+  const nm={full:'Foto piena',framed:'Incorniciata',arch:'Arco',circle:'Tonda',heart:'Cuore',collage:'Collage',type:'Solo titolo'},bn=Object.fromEntries(COVER_BGS);
+  const seen=new Set();return L.filter(([l,g])=>{const k=l+g;if(seen.has(k))return false;seen.add(k);return true;}).map(([l,g])=>({coverLayout:l,coverBg:g,name:l==='full'?nm[l]:`${nm[l]} · ${bn[g].toLowerCase()}`}));}
+/* varianti dei risguardi: del tema, a tinta, motivi semplici, foto, e i risguardi degli altri temi */
+function endpVariants(T){const C=T.colors,mc=T.motifColors&&T.motifColors.length?T.motifColors:[C.accent],dk=lum(C.endpaper)<140,ac=dk?mix(mc[0],'#ffffff',.25):mc[0];
+  const v=[{id:'tema',name:'Del tema',bg:null,pat:null},
+    {id:'chiaro',name:'Chiaro con motivi',bg:C.paper,pat:T.endPattern?{...clone(T.endPattern),colors:mc,op:.45}:'none'},
+    {id:'cop',name:'Come la copertina',bg:C.cover,pat:T.coverPattern?clone(T.coverPattern):'none'},
+    {id:'pois',name:'Pois',bg:C.endpaper,pat:{type:'dots',motifs:['dot'],colors:[ac],size:3.2,gap:13,op:.55}},
+    {id:'righe',name:'Righe',bg:C.endpaper,pat:{type:'stripes',colors:[ac],size:7,gap:16,op:.35}},
+    {id:'scozzese',name:'Scozzese',bg:C.endpaper,pat:{type:'plaid',colors:[mc[0],mc[1%mc.length]],size:8,gap:40,op:.5}},
+    {id:'tinta',name:'Tinta unita',bg:C.endpaper,pat:'none'},
+    {id:'tinta2',name:'Tinta copertina',bg:C.cover,pat:'none'},
+    {id:'bianco',name:'Bianco',bg:'#ffffff',pat:'none'},
+    {id:'foto',name:'Foto in bianco e nero',bg:'#222222',pat:'none',photo:true}];
+  for(const o of THEMES)if(o.id!==T.id&&o.endPattern)v.push({id:'t:'+o.id,name:o.name,bg:o.colors.endpaper,pat:clone(o.endPattern),other:true});
+  return v;}
+function applyEndpVariant(sp,v){
+  sp.cells=sp.cells.filter(c=>!c.epPh);sp.bg=v.bg;sp.pat=v.pat;sp.endv=v.id;
+  if(v.photo){const ids=[...usage().keys()],e=ids.map(id=>LIB.get(id)).filter(Boolean).sort((a,b)=>(b.fav-a.fav)||((b.w/b.h)-(a.w/a.h)))[0];
+    if(e){sp.mode='spread';const M=meta(sp,'S');M.full=true;const c=mkCell([0,0,1,1],'S');c.epPh=true;c.ph={...newPh(e.id),gray:100,br:105,ct:95};sp.cells.unshift(c);}}
+  else if(sp.mode==='spread'&&!sp.cells.length)sp.mode='pages';
+}
+UI.endpTarget='both';
+function endpPreview(v,w=132){const tpl=BOOK.spreads.find(s=>s.kind==='endF')||mkSpread('endF');const sp={...clone(tpl),cells:[],texts:[],decos:[],id:tpl.id};applyEndpVariant(sp,v);
+  const H=pgH(sp),s=w/spW(sp),h=Math.round(H*s),dpr=window.devicePixelRatio||1,c=el('canvas',{width:Math.round(w*dpr),height:Math.round(h*dpr),style:`width:${w}px;height:${h}px`}),x=c.getContext('2d');x.scale(dpr,dpr);
+  renderSpread(x,sp,{s,ox:0,oy:0,q:'thumb'});x.fillStyle='rgba(0,0,0,.18)';x.fillRect(foldX(sp)*s-.5,0,1,h);return c;}
+function tabEndpapers(T){
+  const vs=endpVariants(T),F=BOOK.spreads.find(s=>s.kind==='endF'),B=BOOK.spreads.find(s=>s.kind==='endB');
+  const curId=sp=>sp?(sp.endv||(sp.bg==null&&sp.pat==null?'tema':'')):'';
+  const apply=v=>{const tg=UI.endpTarget;for(const sp of[F,B]){if(!sp)continue;if(tg==='both'||(tg==='F'&&sp===F)||(tg==='B'&&sp===B))applyEndpVariant(sp,v);}
+    THUMBS.clear();commit();syncAll();goSpread(BOOK.spreads.indexOf(UI.endpTarget==='B'?B:F));};
+  const grid=list=>el('div',{class:'themes'},...list.map(v=>el('button',{type:'button',class:'thc'+((curId(F)===v.id&&UI.endpTarget!=='B')||(curId(B)===v.id&&UI.endpTarget==='B')?' on':''),title:v.name,onclick:()=>apply(v)},
+    el('div',{class:'thp'},endpPreview(v)),el('b',{},v.name))));
+  return sec('Risguardi',
+    seg([['both','Entrambi'],['F','Solo anteriore'],['B','Solo posteriore']],UI.endpTarget,v=>{UI.endpTarget=v;renderLeft();},true),
+    grid(vs.filter(v=>!v.other)),
+    el('details',{class:'more'},el('summary',{},'Risguardi degli altri temi'),grid(vs.filter(v=>v.other))),
+    el('p',{},'Il risguardo resta modificabile: puoi aggiungere foto, testi e decorazioni dal foglio.'));
+}
+
+/* ============ pagine speciali ============ */
+UI.spWhere='replace';UI.quoteIdx=0;UI.quoteCustom='';let fxBusy=false;
+function tabPages(){
+  const sp=cur(),side=activeSide(sp),inner=isInner(sp),T=TH(),M=inner?meta(sp,side):null,qs=themeQuotes();
+  const q=()=>UI.quoteCustom.trim()?[UI.quoteCustom.trim(),'']:qs[UI.quoteIdx%qs.length];
+  const out=[];
+  if(!inner)out.push(sec('Pagine speciali',el('p',{},'Vai su una pagina interna per inserire frasi, collage o la pagina effetto.'),btn('Vai alla prima pagina interna',()=>goSpread(firstInnerIdx()),'pri')));
+  else{
+    if(M.special&&M.special!=='effect'){const K=SPECIALS.find(k=>k[0]===M.special);
+      out.push(sec(`${pageLabel(UI.cur,side)} · ${K?K[1]:'pagina speciale'}`,
+        M.special.startsWith('quote')||M.special==='photo-quote'?el('div',{class:'row'},btn('Un’altra frase',()=>{const t=sp.texts.find(t=>t.role==='quote'&&(side==='S'||(t.x*spW(sp)<foldX(sp))===(side==='L')));
+          if(t){UI.quoteIdx++;const nq=qs[UI.quoteIdx%qs.length];t.text=nq[0];wrapText(t,visBox(sp,side).w*.72);const a=sp.texts.find(x=>x.role==='quote-author'&&Math.abs(x.x-t.x)<.05);if(a)a.text=nq[1]?'— '+nq[1]:'';commit();syncAll();}},'pri')):null,
+        btn('Rendi pagina normale (tiene le foto)',()=>{unspecial(sp,side);commit();syncAll();})));}
+    const quoteSel=el('select',{'aria-label':'Frase',onchange:e=>{UI.quoteIdx=+e.target.value;UI.quoteCustom='';renderLeft();}},...qs.map((x,k)=>el('option',{value:k,selected:k===UI.quoteIdx%qs.length},(x[0].length>60?x[0].slice(0,58)+'…':x[0])+(x[1]?' — '+x[1]:''))));
+    out.push(sec('Inserisci una pagina speciale',
+      seg([['replace','Al posto di questa pagina'],['after','In una nuova doppia pagina']],UI.spWhere,v=>{UI.spWhere=v;renderLeft();},true),
+      el('p',{},UI.spWhere==='replace'?`Va su ${pageLabel(UI.cur,side)}: le sue foto vengono spostate nelle pagine vicine, nessuna si perde.`:'Si aggiunge una doppia pagina dopo questa: metà delle foto della pagina attuale va accanto alla pagina speciale.'),
+      el('label',{class:'lbl'},el('span',{},'Frase (per le pagine con frase)'),quoteSel),
+      el('textarea',{rows:2,placeholder:'…oppure scrivi la tua frase',oninput:e=>{UI.quoteCustom=e.target.value;}},UI.quoteCustom),
+      el('div',{class:'specials'},...SPECIALS.map(([k,l,d])=>el('button',{type:'button',class:'spc',title:d,onclick:()=>{
+        const o={quote:q()};if(k==='dedica'){o.text=UI.quoteCustom.trim()||(WZ.dedica||'Con tutto il mio affetto');}if(k==='chapter'){o.text=UI.quoteCustom.trim()||'Nuovo capitolo';}
+        if(isVerso(UI.cur,side)&&UI.spWhere==='replace'&&k==='scrap'){toast('Questa pagina è il retro del risguardo: scegli un’altra pagina per il collage');return;}
+        placeSpecial(k,UI.spWhere,o);}},specIcon(k),el('b',{},l),el('small',{},d))))));
+  }
+  const ei=effectIdx();
+  out.push(sec('Pagina effetto · le foto migliori',
+    el('p',{},'Il programma sceglie le foto migliori con una persona o un animale ben visibile, scontorna il soggetto e crea una doppia pagina con effetto “fuori cornice” e sticker. Al massimo una per libro: se non ci sono foto adatte non viene creata.'),
+    ei>=0?el('div',{class:'row'},btn('Vai alla pagina effetto',()=>goSpread(ei),'pri'),btn('Rifai con le foto migliori',()=>runEffect('same')),
+      btn('Elimina',()=>{const s2=BOOK.spreads[ei];const ph=s2.cells.filter(c=>c.ph&&!c.fx).map(c=>c.ph);BOOK.spreads.splice(ei,1);normalizeOrder();redistribute(ph,pageNum(Math.max(firstInnerIdx(),ei-1),'R'));UI.cur=clamp(UI.cur,0,BOOK.spreads.length-1);commit();syncAll();},'danger'))
+    :el('div',{class:'row'},btn(fxBusy?'Analisi in corso…':'Crea la pagina effetto',()=>runEffect('replace'),'pri','Sostituisce una doppia pagina centrale; le sue foto vanno nelle pagine vicine'),
+      btn('Come doppia pagina in più',()=>runEffect('add'))),
+    FX.failed?el('p',{class:'warn'},'Modulo effetti non disponibile: '+FX.failed+'. Il file fotolibro-effetti.js deve stare accanto all’app.'):null));
+  out.push(sec('Sticker tra le foto',
+    seg([['0','Nessuno'],['1','Pochi'],['2','Tanti']],String(BOOK.theme.stickers||0),v=>{BOOK.theme.stickers=+v;regenDecos();THUMBS.clear();commit();syncAll();},true),
+    el('p',{},`Sticker del tema “${T.name}” (${themeStickers().w.slice(0,3).join(', ')}…) sugli angoli delle foto. Per aggiungerne uno a mano usa il pannello Decori.`)));
+  return out;
+}
+async function runEffect(mode){
+  if(fxBusy)return;fxBusy=true;renderLeft();
+  try{const ids=[...usage().keys()].filter(id=>LIB.get(id));
+    if(mode==='add'){const i=await createEffectPage(ids,{at:UI.cur+1,onProg:(a,b)=>progress('Analizzo le foto…',a,b)});if(i!==false){UI.cur=i;}}
+    else if(mode==='same'){const old=effectIdx();const i=await createEffectPage(ids,{at:old,onProg:(a,b)=>progress('Analizzo le foto…',a,b)});if(i!==false)UI.cur=i;}
+    else{await addEffectAfterBuild(ids);const i=effectIdx();if(i>=0)UI.cur=i;}
+    progress(null);THUMBS.clear();commit();syncAll();
+  }catch(e){progress(null);console.warn(e);toast('Pagina effetto non disponibile: '+(FX.failed||e.message),5000);}
+  finally{fxBusy=false;renderLeft();}
+}
+function specIcon(k){const c=el('canvas',{width:68,height:48,style:'width:34px;height:24px'}),x=c.getContext('2d');x.scale(2,2);const mu=cssVar('--muted')||'#888',ac=cssVar('--accent')||'#c2185b';
+  x.fillStyle=cssVar('--raise')||'#fff';x.fillRect(0,0,34,24);x.strokeStyle=mu;x.globalAlpha=.6;x.strokeRect(.5,.5,33,23);x.globalAlpha=1;
+  const L=(y,w)=>{x.fillStyle=mu;x.fillRect(17-w/2,y,w,1.6);};
+  if(k==='quote'){L(9,18);L(12.5,14);x.fillStyle=ac;x.fillRect(14,5,6,1.2);}
+  else if(k==='quote-color'){x.fillStyle=ac;x.fillRect(1,1,32,22);x.fillStyle='#fff';x.fillRect(8,9,18,1.6);x.fillRect(10,12.5,14,1.6);}
+  else if(k==='quote-frame'){x.fillStyle=ac;for(let i=0;i<6;i++){x.fillRect(3+i*5.4,2.5,2,2);x.fillRect(3+i*5.4,19.5,2,2);}L(10,16);L(13.5,12);}
+  else if(k==='quote-photo'){x.fillStyle=mu;x.globalAlpha=.55;x.fillRect(1,1,32,22);x.globalAlpha=1;x.fillStyle='#fff';x.fillRect(8,10,18,1.6);x.fillRect(10,13.5,14,1.6);}
+  else if(k==='photo-quote'){x.fillStyle=mu;x.globalAlpha=.55;x.fillRect(4,3,26,12);x.globalAlpha=1;L(18,16);}
+  else if(k==='scrap'){x.fillStyle=mu;for(const[a,b,r] of[[5,4,-.15],[18,6,.12],[11,12,-.05]]){x.save();x.translate(a+6,b+4.5);x.rotate(r);x.fillStyle='#fff';x.fillRect(-6.5,-5,13,10);x.strokeStyle=mu;x.strokeRect(-6.5,-5,13,10);x.globalAlpha=.5;x.fillStyle=mu;x.fillRect(-5.5,-4,11,7.5);x.restore();}
+    drawMotif(x,'star',29,19,6,0,ac);}
+  else if(k==='dedica'){x.strokeStyle=ac;x.lineWidth=1.3;x.beginPath();x.moveTo(7,13);x.bezierCurveTo(10,7,13,17,17,11);x.bezierCurveTo(20,7,23,16,27,11);x.stroke();}
+  else{x.fillStyle=mu;x.fillRect(9,10,16,3);x.fillRect(12,15,10,1.2);}
+  return c;}
 
 /* ---- js/72-props.js ---- */
 /* ============ pannello proprietà ============ */
@@ -2415,6 +2987,9 @@ function renderStart(){
       WZ.pagesMode==='fixed'?el('div',{class:'row'},el('input',{type:'number',class:'num',min:4,max:400,step:2,value:WZ.pages,oninput:e=>WZ.pages=clamp(parseInt(e.target.value)||4,4,400)}),
         ...[20,24,30,40].map(v=>btn(String(v),()=>{WZ.pages=v;renderStart();},WZ.pages===v?'on':null))):el('p',{class:'u'},'Circa 4 foto per pagina, layout variati.')),
     chk('Risguardi stampati (pag. 2 e penultima)',()=>BOOK.endp.on,v=>{BOOK.endp.on=v;ensureStructure();syncAll();}),
+    el('div',{class:'lbl'},el('span',{},'Pagine con frasi e citazioni'),el('div',{class:'seg full'},...[[0,'Nessuna'],[1,'Qualcuna'],[2,'Di più']].map(([v,l])=>el('button',{type:'button',class:WZ.quotes===v?'on':'',onclick:()=>{WZ.quotes=v;renderStart();}},l)))),
+    el('div',{class:'lbl'},el('span',{},'Sticker a tema tra le foto'),el('div',{class:'seg full'},...[[0,'Nessuno'],[1,'Pochi'],[2,'Tanti']].map(([v,l])=>el('button',{type:'button',class:WZ.stickers===v?'on':'',onclick:()=>{WZ.stickers=v;renderStart();}},l)))),
+    chk('Pagina effetto con le foto migliori (soggetto scontornato)',()=>WZ.effect,v=>{WZ.effect=v;}),
     el('div',{class:'sgo'},
       el('button',{type:'button',class:'btn pri big',disabled:!n,onclick:()=>{
         WZ.group=BOOK.chapters.filter(c=>c.on).length>1?'folder':'day';WZ.userGroup=false;
@@ -2442,7 +3017,7 @@ function openWizard(){
   const est=el('div',{class:'est'});
   const upd=()=>{const ex=WZ.similar?similarToExclude():null;const pages=planBook(WZ,ex);const nP=pages.reduce((a,p)=>a+p.ids.length,0);
     const tot=pages.length+(BOOK.firstRight?1:0);const ip=tot+(tot%2);
-    const nT=pages.filter(p=>p.title).length,blank=pages.filter(p=>p.blank).length;const endp=BOOK.endp.on?' + 2 risguardi':'';
+    const nT=pages.filter(p=>p.title).length,blank=pages.filter(p=>p.blank).length;const endp=BOOK.endp.on?' + risguardi':'';
     const per=nP?nf(nP/Math.max(1,pages.filter(p=>p.ids.length).length)):0;
     const lab=WZ.group==='folder'?'capitoli':WZ.group==='day'?'giorni':'eventi';
     let t=nP?`${nP} foto → ${ip} pagine interne (${ip/2} doppie pagine)${WZ.cover?' + copertina':''}${endp} · in media ${per} foto per pagina${nT?` · ${nT} ${lab} con titolo`:''}${ex&&ex.size?` · ${ex.size} scatti simili lasciati fuori`:''}`:'Nessuna foto da impaginare: aggiungi le foto dal pannello Foto.';
@@ -2487,6 +3062,9 @@ function openWizard(){
       ck('Preferite ★ a pagina intera','favFull','Le foto segnate con la stella occupano una pagina da sole'),
       ck(`Lascia fuori gli scatti simili (${SIMS.length} gruppi trovati)`,'similar','Di ogni raffica tiene la foto più nitida; le altre finiscono tra le scartate'),
       ck('Copertina a tema con la prima preferita','cover'),
+      el('div',{class:'row2'},el('label',{class:'lbl'},el('span',{},'Frasi e citazioni'),el('select',{onchange:e=>{WZ.quotes=+e.target.value;upd();}},...[[0,'Nessuna'],[1,'Qualcuna'],[2,'Di più']].map(([v,l])=>el('option',{value:v,selected:WZ.quotes===v},l)))),
+        el('label',{class:'lbl'},el('span',{},'Sticker tra le foto'),el('select',{onchange:e=>{WZ.stickers=+e.target.value;}},...[[0,'Nessuno'],[1,'Pochi'],[2,'Tanti']].map(([v,l])=>el('option',{value:v,selected:WZ.stickers===v},l))))),
+      ck('Pagina effetto con le foto migliori (se ce ne sono di adatte)','effect'),
       el('label',{class:'chk'},el('input',{type:'checkbox',checked:BOOK.mult4,onchange:e=>{BOOK.mult4=e.target.checked;upd();}}),'Arriva sempre a un multiplo di 4 pagine'),
       est),
     el('div',{class:'dlg-f'},el('span',{class:'grow'},has?'Sostituisce le pagine attuali. Ctrl+Z per tornare indietro.':''),
@@ -2537,12 +3115,111 @@ async function buildZip(files){
   return new Blob([...parts,...central,e.buffer],{type:'application/zip'});
 }
 
+/* ---- js/81-cmyk.js ---- */
+/* ============ JPEG CMYK (FOGRA39) ============
+   Conversione sRGB → CMYK con la tabella calcolata da littleCMS sul profilo ISO Coated v2 (ECI) — FOGRA39,
+   intento colorimetrico relativo con compensazione del punto nero (come Photoshop), interpolazione tetraedrica.
+   Encoder JPEG baseline a 4 canali derivato da jpeg-js / Adobe as3corelib (licenza BSD, © 2008 Adobe Systems Incorporated):
+   profilo ICC incorporato, marcatore Adobe (CMYK invertito come Photoshop), risoluzione in EXIF e nel blocco Photoshop. */
+let CMYK=null;
+async function cmykInit(){
+  if(CMYK)return CMYK;if(!window.__CMYK)await loadScript('fotolibro-cmyk.js');
+  const D=window.__CMYK;if(!D)throw new Error('modulo CMYK non trovato');
+  CMYK={grid:D.grid,lut:b64ToBytes(D.lut),icc:b64ToBytes(D.icc),name:D.name};return CMYK;
+}
+const JZZ=[0,1,5,6,14,15,27,28,2,4,7,13,16,26,29,42,3,8,12,17,25,30,41,43,9,11,18,24,31,40,44,53,10,19,23,32,39,45,52,54,20,22,33,38,46,51,55,60,21,34,37,47,50,56,59,61,35,36,48,49,57,58,62,63];
+const JQT=[16,11,10,16,24,40,51,61,12,12,14,19,26,58,60,55,14,13,16,24,40,57,69,56,14,17,22,29,51,87,80,62,18,22,37,56,68,109,103,77,24,35,55,64,81,104,113,92,49,64,78,87,103,121,120,101,72,92,95,98,112,100,103,99];
+const J_DC_NR=[0,0,1,5,1,1,1,1,1,1,0,0,0,0,0,0,0],J_DC_V=[0,1,2,3,4,5,6,7,8,9,10,11];
+const J_AC_NR=[0,0,2,1,3,3,2,4,3,5,5,4,4,0,0,1,0x7d];
+const J_AC_V=[0x01,0x02,0x03,0x00,0x04,0x11,0x05,0x12,0x21,0x31,0x41,0x06,0x13,0x51,0x61,0x07,0x22,0x71,0x14,0x32,0x81,0x91,0xa1,0x08,0x23,0x42,0xb1,0xc1,0x15,0x52,0xd1,0xf0,
+  0x24,0x33,0x62,0x72,0x82,0x09,0x0a,0x16,0x17,0x18,0x19,0x1a,0x25,0x26,0x27,0x28,0x29,0x2a,0x34,0x35,0x36,0x37,0x38,0x39,0x3a,0x43,0x44,0x45,0x46,0x47,0x48,0x49,
+  0x4a,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5a,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6a,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x83,0x84,0x85,0x86,0x87,0x88,0x89,
+  0x8a,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9a,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,0xb8,0xb9,0xba,0xc2,0xc3,0xc4,0xc5,
+  0xc6,0xc7,0xc8,0xc9,0xca,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,0xd8,0xd9,0xda,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,0xe8,0xe9,0xea,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,0xf8,0xf9,0xfa];
+function jHuff(nr,vals){const code=new Int32Array(256),len=new Uint8Array(256);let c=0,p=0;for(let k=1;k<=16;k++){for(let j=0;j<nr[k];j++){code[vals[p]]=c;len[vals[p]]=k;p++;c++;}c<<=1;}return{code,len};}
+const JCAT=new Uint8Array(65535),JBIT=new Int32Array(65535);
+(()=>{let lo=1,hi=2;for(let cat=1;cat<=15;cat++){for(let n=lo;n<hi;n++){JCAT[32767+n]=cat;JBIT[32767+n]=n;}for(let n=-(hi-1);n<=-lo;n++){JCAT[32767+n]=cat;JBIT[32767+n]=hi-1+n;}lo<<=1;hi<<=1;}})();
+/* sRGB (Uint8 RGBA) → CMYK (Uint8, quantità di inchiostro 0-255) con interpolazione tetraedrica */
+function rgbToCmykRow(src,so,n,dst,lut,G){
+  const g1=G-1,s=g1/255,G2=G*G;
+  for(let p=0;p<n;p++){const r=src[so+p*4],g=src[so+p*4+1],b=src[so+p*4+2];
+    let tr=r*s,tg=g*s,tb=b*s,ir=tr|0,ig=tg|0,ib=tb|0;if(ir>=g1)ir=g1-1;if(ig>=g1)ig=g1-1;if(ib>=g1)ib=g1-1;
+    const fr=tr-ir,fg=tg-ig,fb=tb-ib,c0=((ir*G+ig)*G+ib)*4,dR=G2*4,dG=G*4,dB=4;
+    let c1,c2,c3,w1,w2,w3;
+    if(fr>=fg){if(fg>=fb){c1=c0+dR;c2=c1+dG;c3=c2+dB;w1=fr;w2=fg;w3=fb;}else if(fr>=fb){c1=c0+dR;c2=c1+dB;c3=c2+dG;w1=fr;w2=fb;w3=fg;}else{c1=c0+dB;c2=c1+dR;c3=c2+dG;w1=fb;w2=fr;w3=fg;}}
+    else{if(fb>fg){c1=c0+dB;c2=c1+dG;c3=c2+dR;w1=fb;w2=fg;w3=fr;}else if(fb>fr){c1=c0+dG;c2=c1+dB;c3=c2+dR;w1=fg;w2=fb;w3=fr;}else{c1=c0+dG;c2=c1+dR;c3=c2+dB;w1=fg;w2=fr;w3=fb;}}
+    const o=p*4;for(let k=0;k<4;k++){const v=lut[c0+k]+w1*(lut[c1+k]-lut[c0+k])+w2*(lut[c2+k]-lut[c1+k])+w3*(lut[c3+k]-lut[c2+k]);dst[o+k]=v<0?0:v>255?255:v+.5;}}
+}
+async function encodeCmykJpeg(canvas,quality,dpi,onProg){
+  const C=await cmykInit(),W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d',{willReadFrequently:true});
+  const sf=quality<50?Math.floor(5000/quality):Math.floor(200-quality*2),QT=new Uint8Array(64),fd=new Float64Array(64),aasf=[1,1.387039845,1.306562965,1.175875602,1,.785694958,.5411961,.275899379];
+  for(let i=0;i<64;i++){QT[JZZ[i]]=clamp(Math.floor((JQT[i]*sf+50)/100),1,255);}
+  for(let r=0,k=0;r<8;r++)for(let c=0;c<8;c++,k++)fd[k]=1/(QT[JZZ[k]]*aasf[r]*aasf[c]*8);
+  const DC=jHuff(J_DC_NR,J_DC_V),AC=jHuff(J_AC_NR,J_AC_V);
+  /* buffer di uscita */
+  let buf=new Uint8Array(Math.max(1<<20,W*H*1.2|0)),bl=0;
+  const ensure=n=>{if(bl+n>buf.length){const nb=new Uint8Array(Math.max(buf.length*2,bl+n+(1<<20)));nb.set(buf.subarray(0,bl));buf=nb;}};
+  const B=v=>{ensure(1);buf[bl++]=v;},Wd=v=>{B((v>>8)&255);B(v&255);},bytes=a=>{ensure(a.length);buf.set(a,bl);bl+=a.length;},str=s=>{for(let i=0;i<s.length;i++)B(s.charCodeAt(i));};
+  let bnew=0,bpos=7;
+  const bits=(val,len)=>{let p=len-1;while(p>=0){if(val&(1<<p))bnew|=(1<<bpos);p--;bpos--;if(bpos<0){if(bnew===0xFF){B(0xFF);B(0);}else B(bnew);bpos=7;bnew=0;}}};
+  /* intestazioni */
+  Wd(0xFFD8);
+  { /* EXIF: risoluzione */ const t=[];const u16=v=>t.push((v>>8)&255,v&255),u32=v=>t.push((v>>>24)&255,(v>>16)&255,(v>>8)&255,v&255);
+    t.push(0x4D,0x4D);u16(42);u32(8);u16(3);u16(0x011A);u16(5);u32(1);u32(50);u16(0x011B);u16(5);u32(1);u32(58);u16(0x0128);u16(3);u32(1);u16(2);u16(0);u32(0);u32(dpi);u32(1);u32(dpi);u32(1);
+    Wd(0xFFE1);Wd(2+6+t.length);str('Exif');B(0);B(0);bytes(t);}
+  { /* profilo ICC FOGRA39 */ const icc=C.icc,CH=65519,n=Math.ceil(icc.length/CH);
+    for(let i=0;i<n;i++){const part=icc.subarray(i*CH,Math.min(icc.length,(i+1)*CH));Wd(0xFFE2);Wd(2+14+part.length);str('ICC_PROFILE');B(0);B(i+1);B(n);bytes(part);}}
+  { /* Photoshop: risoluzione */ const fx=dpi*65536;const d=[(fx>>>24)&255,(fx>>16)&255,(fx>>8)&255,fx&255,0,1,0,1,(fx>>>24)&255,(fx>>16)&255,(fx>>8)&255,fx&255,0,1,0,1];
+    Wd(0xFFED);Wd(2+14+4+2+2+4+16);str('Photoshop 3.0');B(0);str('8BIM');Wd(0x03ED);B(0);B(0);B(0);B(0);B(0);B(16);bytes(d);}
+  Wd(0xFFEE);Wd(14);str('Adobe');Wd(100);Wd(0);Wd(0);B(0);/* transform 0 = CMYK senza conversione colore */
+  Wd(0xFFDB);Wd(67);B(0);for(let i=0;i<64;i++)B(QT[i]);
+  Wd(0xFFC0);Wd(8+3*4);B(8);Wd(H);Wd(W);B(4);for(let k=1;k<=4;k++){B(k);B(0x11);B(0);}
+  Wd(0xFFC4);Wd(2+1+16+12+1+16+162);B(0x00);for(let k=1;k<=16;k++)B(J_DC_NR[k]);for(const v of J_DC_V)B(v);B(0x10);for(let k=1;k<=16;k++)B(J_AC_NR[k]);for(const v of J_AC_V)B(v);
+  Wd(0xFFDA);Wd(6+2*4);B(4);for(let k=1;k<=4;k++){B(k);B(0x00);}B(0);B(63);B(0);
+  /* dati */
+  const strip=new Uint8Array(W*8*4),blk=new Float64Array(64),DU=new Int32Array(64),pred=[0,0,0,0];
+  const lut=C.lut,G=C.grid,EOBc=AC.code[0],EOBl=AC.len[0],ZRc=AC.code[0xF0],ZRl=AC.len[0xF0];
+  for(let y0=0;y0<H;y0+=8){
+    const rows=Math.min(8,H-y0),img=ctx.getImageData(0,y0,W,rows).data;
+    for(let r=0;r<8;r++){const sr=Math.min(r,rows-1);rgbToCmykRow(img,sr*W*4,W,strip.subarray(r*W*4,(r+1)*W*4),lut,G);}
+    for(let x0=0;x0<W;x0+=8){
+      for(let comp=0;comp<4;comp++){
+        for(let yy=0,k=0;yy<8;yy++){const ro=yy*W*4;for(let xx=0;xx<8;xx++,k++){const x=Math.min(W-1,x0+xx);blk[k]=127-strip[ro+x*4+comp];}}
+        /* DCT (AAN) + quantizzazione */
+        for(let o=0;o<64;o+=8){const d0=blk[o],d1=blk[o+1],d2=blk[o+2],d3=blk[o+3],d4=blk[o+4],d5=blk[o+5],d6=blk[o+6],d7=blk[o+7];
+          const t0=d0+d7,t7=d0-d7,t1=d1+d6,t6=d1-d6,t2=d2+d5,t5=d2-d5,t3=d3+d4,t4=d3-d4;let t10=t0+t3,t13=t0-t3,t11=t1+t2,t12=t1-t2;
+          blk[o]=t10+t11;blk[o+4]=t10-t11;const z1=(t12+t13)*.707106781;blk[o+2]=t13+z1;blk[o+6]=t13-z1;
+          t10=t4+t5;t11=t5+t6;t12=t6+t7;const z5=(t10-t12)*.382683433,z2=.5411961*t10+z5,z4=1.306562965*t12+z5,z3=t11*.707106781,z11=t7+z3,z13=t7-z3;
+          blk[o+5]=z13+z2;blk[o+3]=z13-z2;blk[o+1]=z11+z4;blk[o+7]=z11-z4;}
+        for(let o=0;o<8;o++){const d0=blk[o],d1=blk[o+8],d2=blk[o+16],d3=blk[o+24],d4=blk[o+32],d5=blk[o+40],d6=blk[o+48],d7=blk[o+56];
+          const t0=d0+d7,t7=d0-d7,t1=d1+d6,t6=d1-d6,t2=d2+d5,t5=d2-d5,t3=d3+d4,t4=d3-d4;let t10=t0+t3,t13=t0-t3,t11=t1+t2,t12=t1-t2;
+          blk[o]=t10+t11;blk[o+32]=t10-t11;const z1=(t12+t13)*.707106781;blk[o+16]=t13+z1;blk[o+48]=t13-z1;
+          t10=t4+t5;t11=t5+t6;t12=t6+t7;const z5=(t10-t12)*.382683433,z2=.5411961*t10+z5,z4=1.306562965*t12+z5,z3=t11*.707106781,z11=t7+z3,z13=t7-z3;
+          blk[o+40]=z13+z2;blk[o+24]=z13-z2;blk[o+8]=z11+z4;blk[o+56]=z11-z4;}
+        for(let i=0;i<64;i++){let v=blk[i]*fd[i];v=v>0?(v+.5)|0:(v-.5)|0;if(v>32767)v=32767;else if(v<-32767)v=-32767;DU[JZZ[i]]=v;}
+        /* codifica di Huffman */
+        const diff=DU[0]-pred[comp];pred[comp]=DU[0];
+        if(diff===0)bits(DC.code[0],DC.len[0]);else{const p=32767+diff,c=JCAT[p];bits(DC.code[c],DC.len[c]);bits(JBIT[p],c);}
+        let end=63;while(end>0&&DU[end]===0)end--;
+        if(end===0){bits(EOBc,EOBl);continue;}
+        let i=1;while(i<=end){const st=i;while(DU[i]===0&&i<=end)i++;let nz=i-st;if(nz>=16){for(let q=0;q<(nz>>4);q++)bits(ZRc,ZRl);nz&=15;}
+          const p=32767+DU[i],c=JCAT[p],sym=(nz<<4)+c;bits(AC.code[sym],AC.len[sym]);bits(JBIT[p],c);i++;}
+        if(end!==63)bits(EOBc,EOBl);
+      }
+    }
+    if(onProg&&(y0/8)%24===0){onProg(y0/H);await sleep(0);}
+  }
+  if(bpos>=0)bits((1<<(bpos+1))-1,bpos+1);
+  Wd(0xFFD9);
+  return new Blob([buf.subarray(0,bl)],{type:'image/jpeg'});
+}
+
 /* ---- js/82-export.js ---- */
 /* ============ esportazione: bozza per il cliente e file per la stampa ============ */
 UI.expTab='draft';
 let RESULTS=[],expCancel=false,exporting=false;
 function openExport(tab){if(tab)UI.expTab=tab;RESULTS=[];
-  const ip=innerPages();EXP.from=clamp(EXP.from,1,Math.max(1,ip));EXP.to=EXP.to>=ip||EXP.to<EXP.from?ip:EXP.to;
+  const ir=interiorRange();EXP.from=ir[0];EXP.to=ir[1];
   if(EXP.name==='fotolibro'&&BOOK.job.name&&BOOK.job.name!=='Nuovo fotolibro')EXP.name=DRAFT.name=safeName(BOOK.job.name);
   renderExport();if(!$('#dlg').open)$('#dlg').showModal();}
 /* ---------- problemi ---------- */
@@ -2559,7 +3236,7 @@ function issueList(forPrint){
   const{low,empty,miss,txt}=bookIssues(),ws=[],go=i=>()=>{$('#dlg').close();goSpread(i);};
   const L=(cls,...k)=>el('div',{},el('span',{class:cls},'●'),el('span',{},...k));
   if(txt.length)ws.push(L('e',`${txt.length} ${txt.length>1?'testi':'testo'} a rischio taglio: “${String(txt[0].t.text).split('\n')[0].slice(0,30)}” ${txt[0].pr}, in `,el('button',{type:'button',class:'linkb',onclick:()=>{$('#dlg').close();goSpread(txt[0].i);sel={type:'text',id:txt[0].t.id};syncAll();}},spreadLabel(txt[0].i)),'.'));
-  const ip=innerPages();if(forPrint&&ip%4)ws.push(L('w',`Pagine interne: ${ip}. Molte tipografie vogliono un multiplo di 4.`));
+  const ip=printPages();if(forPrint&&ip%4)ws.push(L('w',`Interno: ${ip} pagine. Molte tipografie vogliono un multiplo di 4.`));
   if(forPrint&&miss.size)ws.push(L('e',`${miss.size} foto senza originale: verrebbero stampate dall’anteprima (bassa qualità). `,el('button',{type:'button',class:'linkb',onclick:()=>$('#dirIn').click()},'Ricollega la cartella')));
   if(forPrint&&low.length)ws.push(L('w',`${low.length} foto sotto i 200 dpi, la peggiore ${Math.round(low[0].d)} dpi in `,el('button',{type:'button',class:'linkb',onclick:go(low[0].i)},pageLabel(low[0].i,low[0].side)),'.'));
   if(empty.length)ws.push(L('w',`${empty.length} riquadri vuoti, il primo in `,el('button',{type:'button',class:'linkb',onclick:go(empty[0].i)},pageLabel(empty[0].i,empty[0].side)),'.'));
@@ -2611,44 +3288,77 @@ function coverTitle(){const c=BOOK.spreads.find(isCover);const t=c&&c.texts.find
 /* ---------- stampa ---------- */
 function expGeom(bleed){const b=bleed,off=Math.max(b,3),mlen=5,ext=EXP.marks?off+mlen+1:b,k=EXP.dpi/25.4;return{b,off,mlen,ext,k};}
 function printJobs(){
-  const out=[],P=BOOK.page;let pg=1;
-  for(const sp of BOOK.spreads){
-    if(isCover(sp)){if(EXP.cover)out.push({sp,file:'copertina',x:0,w:spW(sp),bleed:EXP.bleed+BOOK.cover.wrap,sides:null,label:'copertina'});continue;}
-    if(isEnd(sp)){if(EXP.endp)out.push({sp,file:'risguardi',x:0,w:spW(sp),bleed:BOOK.endp.bleed,sides:null,label:sp.kind==='endF'?'risguardo-anteriore':'risguardo-posteriore'});continue;}
-    if(!EXP.inner){pg+=2;continue;}
-    const a=EXP.from,b=EXP.to,inR=n=>n>=a&&n<=b;
-    if(EXP.pages==='single'){
-      if(inR(pg))out.push({sp,file:'interno',x:0,w:P.w,sides:['L','S'],bleed:EXP.bleed,label:'p'+pad3(pg),pg});
-      if(inR(pg+1))out.push({sp,file:'interno',x:P.w,w:P.w,sides:['R','S'],bleed:EXP.bleed,label:'p'+pad3(pg+1),pg:pg+1});}
-    else if(inR(pg)||inR(pg+1))out.push({sp,file:'interno',x:0,w:spW(sp),sides:null,bleed:EXP.bleed,label:`p${pad3(pg)}-${pad3(pg+1)}`,pg});
-    pg+=2;}
+  const out=[],P=BOOK.page,E=BOOK.endp,V=versoOn();
+  const cov=BOOK.spreads.find(isCover),eF=BOOK.spreads.find(s=>s.kind==='endF'),eB=BOOK.spreads.find(s=>s.kind==='endB');
+  if(cov&&EXP.cover)out.push({sp:cov,file:'copertina',x:0,w:spW(cov),bleed:EXP.bleed+BOOK.cover.wrap,sides:null,label:'copertina'});
+  if(E.on&&EXP.endp){const fi=firstInnerIdx(),li=lastInnerIdx(),N=bookPages();
+    if(eF)out.push({sp:eF,file:'risguardi',x:0,w:spW(eF),bleed:E.bleed,sides:null,label:'risguardi-pag2-3',title:'Risguardo anteriore (pag. 2–3)'});
+    if(V&&fi>=0)out.push({verso:true,src:BOOK.spreads[fi],srcSide:'L',sheet:eF||mkSpread('endF'),side:E.sideF||'L',file:'risguardi',label:'risguardi-pag4',title:'Retro del risguardo (pag. 4)'});
+    if(V&&li>=0)out.push({verso:true,src:BOOK.spreads[li],srcSide:'R',sheet:eB||mkSpread('endB'),side:E.sideB||'R',file:'risguardi',label:`risguardi-pag${N-3}`,title:`Retro del risguardo (pag. ${N-3})`});
+    if(eB)out.push({sp:eB,file:'risguardi',x:0,w:spW(eB),bleed:E.bleed,sides:null,label:`risguardi-pag${N-2}-${N-1}`,title:`Risguardo posteriore (pag. ${N-2}–${N-1})`});}
+  if(EXP.inner)BOOK.spreads.forEach((sp,i)=>{if(!isInner(sp))return;
+    const a=pageNum(i,'L'),b=a+1,inR=n=>n>=EXP.from&&n<=EXP.to,okL=!isVerso(i,'L')&&inR(a),okR=!isVerso(i,'R')&&inR(b);
+    if(EXP.pages==='single'||!okL||!okR){
+      if(okL)out.push({sp,file:'interno',x:0,w:P.w,sides:['L','S'],bleed:EXP.bleed,label:'p'+pad3(a),pg:a});
+      if(okR)out.push({sp,file:'interno',x:P.w,w:P.w,sides:['R','S'],bleed:EXP.bleed,label:'p'+pad3(b),pg:b});}
+    else out.push({sp,file:'interno',x:0,w:spW(sp),sides:null,bleed:EXP.bleed,label:`p${pad3(a)}-${pad3(b)}`,pg:a});});
   return out;
 }
-async function renderJob(j){
+function interiorRange(){const s=[];BOOK.spreads.forEach((sp,i)=>{if(!isInner(sp))return;for(const side of['L','R'])if(!isVerso(i,side))s.push(pageNum(i,side));});return s.length?[s[0],s[s.length-1]]:[1,1];}
+/* pag. 4 / terzultima: la pagina interna impaginata sul foglio dei risguardi, nella metà indicata */
+async function renderVersoJob(j){
+  const sh=j.sheet,E=BOOK.endp,g=expGeom(E.bleed),PH=pgH(sh),SW=spW(sh),W=Math.round((SW+2*g.ext)*g.k),H=Math.round((PH+2*g.ext)*g.k);
+  const src=j.src,P=BOOK.page,half=pageBox(sh,j.side),vis=visBox(sh,j.side),sb=pageBox(src,j.srcSide);
+  const map=await loadOriginals(src),fxmap=await loadCutouts(src,true);await loadSpreadFonts(src);
+  const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);ctx.imageSmoothingQuality='high';
+  /* zona: metà foglio (con abbondanza verso l'esterno), senza superare la piega */
+  const atLeft=half.x<=.01,x0=atLeft?-g.b:half.x,x1=atLeft?half.x+half.w:SW+g.b;
+  ctx.save();ctx.beginPath();ctx.rect((g.ext+x0)*g.k,(g.ext-g.b)*g.k,(x1-x0)*g.k,(PH+2*g.b)*g.k);ctx.clip();
+  ctx.fillStyle=bgOf(src,j.srcSide);ctx.fillRect(0,0,W,H);
+  /* la pagina va con il lato della rilegatura sulla piega del foglio */
+  const bindLeft=j.srcSide==='R',px=bindLeft?vis.x:vis.x+vis.w-P.w,py=vis.y,ext=Math.max(8,Math.min(60,Math.max(vis.x-half.x,half.x+half.w-vis.x-vis.w,vis.y)+g.b));
+  ctx.beginPath();ctx.rect((g.ext+(bindLeft?px:px-ext))*g.k,(g.ext+py-ext)*g.k,(P.w+ext)*g.k,(P.h+2*ext)*g.k);ctx.clip();
+  renderSpread(ctx,src,{s:g.k,ox:(g.ext+px-sb.x)*g.k,oy:(g.ext+py)*g.k,bleed:ext,spineBleed:false,q:'full',map,fxmap,sides:[j.srcSide]});
+  ctx.restore();
+  if(EXP.marks){drawMarks(ctx,g,SW,PH);const X=(g.ext+foldX(sh))*g.k;ctx.save();ctx.strokeStyle='#000';ctx.lineWidth=Math.max(1,.1*g.k);ctx.beginPath();
+    ctx.moveTo(X,(g.ext-g.off-g.mlen)*g.k);ctx.lineTo(X,(g.ext-g.off)*g.k);ctx.moveTo(X,(g.ext+PH+g.off)*g.k);ctx.lineTo(X,(g.ext+PH+g.off+g.mlen)*g.k);ctx.stroke();ctx.restore();}
+  for(const s of map.values())closeSrc(s);
+  return{canvas:c,pw:W,ph:H,Wmm:SW+2*g.ext,Hmm:PH+2*g.ext,ext:g.ext,b:g.b};
+}
+async function renderJobCanvas(j){
+  if(j.verso)return renderVersoJob(j);
   const PH=pgH(j.sp),g=expGeom(j.bleed),W=Math.round((j.w+2*g.ext)*g.k),H=Math.round((PH+2*g.ext)*g.k);
   if(W*H>260e6)throw new Error('troppo grande');
-  const map=await loadOriginals(j.sp);await loadSpreadFonts(j.sp);
+  const map=await loadOriginals(j.sp),fxmap=await loadCutouts(j.sp,true);await loadSpreadFonts(j.sp);
   const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);ctx.imageSmoothingQuality='high';
   ctx.save();ctx.beginPath();ctx.rect((g.ext-g.b)*g.k,(g.ext-g.b)*g.k,(j.w+2*g.b)*g.k,(PH+2*g.b)*g.k);ctx.clip();
-  renderSpread(ctx,j.sp,{s:g.k,ox:(g.ext-j.x)*g.k,oy:g.ext*g.k,bleed:g.b,spineBleed:!!j.sides,q:'full',map,sides:j.sides});
+  renderSpread(ctx,j.sp,{s:g.k,ox:(g.ext-j.x)*g.k,oy:g.ext*g.k,bleed:g.b,spineBleed:!!j.sides,q:'full',map,fxmap,sides:j.sides});
   ctx.restore();
   if(EXP.marks){drawMarks(ctx,g,j.w,PH);
-    if(isCover(j.sp)||isEnd(j.sp)){/* segni di piega/dorso fuori dal formato */const xs=isCover(j.sp)?[coverPW(),coverPW()+BOOK.cover.spine]:[foldX(j.sp)];
+    if(isCover(j.sp)||isEnd(j.sp)){const xs=isCover(j.sp)?[coverPW(),coverPW()+BOOK.cover.spine]:[foldX(j.sp)];
       ctx.save();ctx.strokeStyle='#000';ctx.lineWidth=Math.max(1,.1*g.k);ctx.beginPath();
       for(const x of xs){const X=(g.ext+x)*g.k;ctx.moveTo(X,(g.ext-g.off-g.mlen)*g.k);ctx.lineTo(X,(g.ext-g.off)*g.k);ctx.moveTo(X,(g.ext+PH+g.off)*g.k);ctx.lineTo(X,(g.ext+PH+g.off+g.mlen)*g.k);}
       ctx.stroke();ctx.restore();}}
   for(const s of map.values())closeSrc(s);
-  const blob=await canvasJpeg(c,EXP.quality/100,EXP.dpi);c.width=c.height=0;
-  return{blob,pw:W,ph:H,Wmm:j.w+2*g.ext,Hmm:PH+2*g.ext,ext:g.ext,b:g.b};
+  return{canvas:c,pw:W,ph:H,Wmm:j.w+2*g.ext,Hmm:PH+2*g.ext,ext:g.ext,b:g.b};
+}
+async function renderJob(j,fmt,onProg){
+  const r=await renderJobCanvas(j);let blob;
+  if(fmt==='cmyk')blob=await encodeCmykJpeg(r.canvas,EXP.quality,EXP.dpi,onProg);
+  else blob=await canvasJpeg(r.canvas,EXP.quality/100,EXP.dpi);
+  r.canvas.width=r.canvas.height=0;delete r.canvas;return{...r,blob};
 }
 function specSheet(){
   const P=BOOK.page,C=BOOK.cover,E=BOOK.endp,cov=BOOK.spreads.find(isCover),L=[];
   L.push(`FOTOLIBRO STUDIO · scheda tecnica`,`Lavoro: ${BOOK.job.name}`,`Data: ${new Date().toLocaleString('it-IT')}`,`Tema: ${TH().name}`,'');
-  L.push(`Formato pagina rifilata: ${nf(P.w)} × ${nf(P.h)} mm`,`Pagine interne: ${innerPages()}`,`Abbondanza interno: ${nf(EXP.bleed)} mm`,`Risoluzione: ${EXP.dpi} dpi · JPEG q${EXP.quality} · RGB`,'');
+  L.push(`Formato pagina rifilata: ${nf(P.w)} × ${nf(P.h)} mm`,`Pagine del libro: ${bookPages()}`,`Abbondanza interno: ${nf(EXP.bleed)} mm`,`Risoluzione: ${EXP.dpi} dpi · JPEG q${EXP.quality} · RGB`,'');
   if(cov)L.push(`Copertina aperta (rifilata): ${nf(spW(cov))} × ${nf(pgH(cov))} mm`,`  dorso ${nf(C.spine)} mm · cartone +${nf(C.over)} mm/lato · risvolto ${nf(C.wrap)} mm + abbondanza ${nf(EXP.bleed)} mm`,
     `  file copertina: ${nf(spW(cov)+2*(C.wrap+EXP.bleed))} × ${nf(pgH(cov)+2*(C.wrap+EXP.bleed))} mm`,'');
-  if(E.on)L.push(`Risguardi: 2 fogli ${nf(E.w)} × ${nf(E.h)} mm (+${nf(E.bleed)} mm abbondanza), piega a ${nf(E.fold)} mm da sinistra`,`  anteriore = pag. 2 · posteriore = penultima pagina`,'');
+  if(E.on){const N=bookPages();L.push(`Risguardi: fogli ${nf(E.w)} × ${nf(E.h)} mm (+${nf(E.bleed)} mm abbondanza), piega a ${nf(E.fold)} mm da sinistra`);
+    if(versoOn())L.push(`  PDF di 4 pagine: 1) pag. 2–3 · 2) pag. 4 sul lato ${E.sideF==='R'?'destro':'sinistro'} · 3) pag. ${N-3} sul lato ${E.sideB==='L'?'sinistro':'destro'} · 4) pag. ${N-2}–${N-1}`,'');
+    else L.push('  PDF di 2 pagine: risguardo anteriore e posteriore','');}
+  const ir=interiorRange();L.push(`Interno: pag. ${ir[0]}–${ir[1]} (${printPages()} pagine)`,`Copertina: ${EXP.covFmt==='cmyk'?'JPEG CMYK · '+(CMYK?CMYK.name:'ISO Coated v2 (ECI) · FOGRA39'):EXP.covFmt==='jpg'?'JPEG RGB':'PDF RGB'} · ${EXP.dpi} dpi`,'');
   return L.join('\r\n');
 }
 /* ---------- esecuzione ---------- */
@@ -2669,18 +3379,22 @@ async function runExport(kind){
         RESULTS.push({name:`${name}_sfogliabile.html`,blob:new Blob([html],{type:'text/html'})});}
     }else{
       const jobs=printJobs();if(!jobs.length)throw new Error('vuoto');
-      const name=safeName(EXP.name)||'fotolibro',done=[];
-      const part=EXP.inner&&(EXP.from>1||EXP.to<innerPages()),suf=part?`_p${pad3(EXP.from)}-${pad3(EXP.to)}`:'';
+      const name=safeName(EXP.name)||'fotolibro',done=[],files=[];
+      if(jobs.some(j=>j.file==='copertina')&&EXP.covFmt==='cmyk')await cmykInit();
       for(let i=0;i<jobs.length;i++){if(expCancel)throw new Error('annullato');
-        const j=jobs[i];prog(`${j.file==='copertina'?'Copertina':j.file==='risguardi'?(j.label==='risguardo-anteriore'?'Risguardo anteriore':'Risguardo posteriore'):(EXP.pages==='single'?'Pagina ':'Pagine ')+j.label.slice(1).replace(/^0+/,'').replace(/-0*/,'–')} · ${i+1} di ${jobs.length}`,i,jobs.length);
-        await sleep(5);done.push({...await renderJob(j),job:j});}
+        const j=jobs[i],fmt=j.file==='copertina'?(EXP.covFmt==='cmyk'?'cmyk':'rgb'):'rgb',lab=j.title||(j.file==='copertina'?'Copertina':`Pagina ${j.pg}`);
+        prog(`${lab} · ${i+1} di ${jobs.length}`,i,jobs.length);await sleep(5);
+        const r=await renderJob(j,fmt,f=>prog(`${lab} · conversione CMYK FOGRA39 ${Math.round(f*100)}%`,i+f,jobs.length));
+        if(j.file==='copertina'&&EXP.covFmt!=='pdf'){files.push({name:`${name}_copertina${fmt==='cmyk'?'_CMYK-FOGRA39':''}.jpg`,blob:r.blob});continue;}
+        done.push({...r,job:j});}
       prog('Creo i file…',1,1);await sleep(5);
-      const files=[];
+      const part=EXP.inner&&(()=>{const ir=interiorRange();return EXP.from>ir[0]||EXP.to<ir[1];})(),suf=part?`_p${pad3(EXP.from)}-${pad3(EXP.to)}`:'';
       for(const f of['copertina','risguardi','interno']){const d=done.filter(x=>x.job.file===f);if(!d.length)continue;
-        if(EXP.fmt==='pdf')files.push({name:`${name}_${f}${f==='interno'?suf:''}.pdf`,blob:buildPDF(d)});
-        else d.forEach(x=>files.push({name:`${name}_${f==='interno'?'interno_'+x.job.label:x.job.label}.jpg`,blob:x.blob,jpg:true}));}
+        const fm=f==='risguardi'?EXP.endFmt:f==='interno'?EXP.fmt:'pdf';
+        if(fm==='pdf')files.push({name:`${name}_${f}${f==='interno'?suf:''}.pdf`,blob:buildPDF(d)});
+        else d.forEach(x=>files.push({name:`${name}_${f==='interno'?'interno_'+x.job.label:x.job.label}.jpg`,blob:x.blob}));}
       done.length=0;
-      if(EXP.zipAll||EXP.fmt==='jpg'){files.push({name:`${name}_scheda-tecnica.txt`,blob:new Blob([specSheet()],{type:'text/plain'})});
+      if(EXP.zipAll||files.length>4){files.push({name:`${name}_scheda-tecnica.txt`,blob:new Blob([specSheet()],{type:'text/plain'})});
         RESULTS.push({name:`${name}_stampa.zip`,blob:await buildZip(files)});}
       else RESULTS.push(...files);
     }
@@ -2712,25 +3426,35 @@ function renderExport(){
       el('label',{class:'lbl'},el('span',{},'Nome dei file'),el('input',{class:'inp',value:DRAFT.name,oninput:e=>DRAFT.name=e.target.value})),
       issueList(false)];
   }else{
-    const cov=BOOK.spreads.find(isCover),E=BOOK.endp,gC=expGeom(EXP.bleed+BOOK.cover.wrap),gE=expGeom(E.bleed),gI=expGeom(EXP.bleed);
+    const cov=BOOK.spreads.find(isCover),E=BOOK.endp,gC=expGeom(EXP.bleed+BOOK.cover.wrap),gE=expGeom(E.bleed),gI=expGeom(EXP.bleed),N=bookPages(),ir=interiorRange(),V=versoOn();
     const dims=(w,h,g)=>`${nf(w+2*g.ext)} × ${nf(h+2*g.ext)} mm`;
-    const rng=el('div',{class:'row'},el('span',{class:'u'},'da pag.'),el('input',{type:'number',class:'num',min:1,max:ip,value:EXP.from,onchange:e=>{EXP.from=clamp(parseInt(e.target.value)||1,1,ip);EXP.to=Math.max(EXP.to,EXP.from);renderExport();}}),
-      el('span',{class:'u'},'a pag.'),el('input',{type:'number',class:'num',min:1,max:ip,value:EXP.to,onchange:e=>{EXP.to=clamp(parseInt(e.target.value)||ip,EXP.from,ip);renderExport();}}),
-      btn('Tutte',()=>{EXP.from=1;EXP.to=ip;renderExport();}));
-    body=[el('div',{class:'dlg-s'},'File separati come li chiedono le tipografie: copertina con dorso e risvolti, risguardi su foglio a parte, interno. Renderizzati dalle foto originali.'),
+    if(EXP.from<ir[0]||EXP.from>ir[1])EXP.from=ir[0];if(EXP.to>ir[1]||EXP.to<EXP.from)EXP.to=ir[1];
+    const rng=el('div',{class:'row'},el('span',{class:'u'},'da pag.'),el('input',{type:'number',class:'num',min:ir[0],max:ir[1],value:EXP.from,onchange:e=>{EXP.from=clamp(parseInt(e.target.value)||ir[0],ir[0],ir[1]);EXP.to=Math.max(EXP.to,EXP.from);renderExport();}}),
+      el('span',{class:'u'},'a pag.'),el('input',{type:'number',class:'num',min:ir[0],max:ir[1],value:EXP.to,onchange:e=>{EXP.to=clamp(parseInt(e.target.value)||ir[1],EXP.from,ir[1]);renderExport();}}),
+      btn('Tutte',()=>{EXP.from=ir[0];EXP.to=ir[1];renderExport();}));
+    const covF={cmyk:'JPEG · CMYK FOGRA39',jpg:'JPEG · RGB',pdf:'PDF · RGB'};
+    body=[el('div',{class:'dlg-s'},'Tre file per la tipografia. Tutto viene renderizzato dalle foto originali.'),
       el('div',{class:'opts'},
-        cov?ck(EXP,'cover','Copertina',`retro + dorso + fronte · ${dims(spW(cov),pgH(cov),gC)}`):null,
-        E.on?ck(EXP,'endp','Risguardi',`2 fogli (pag. 2 e penultima) · ${dims(E.w,E.h,gE)} ciascuno`):null,
-        ck(EXP,'inner','Interno',`${ip} pagine · ${EXP.pages==='single'?dims(P.w,P.h,gI)+' ciascuna':dims(2*P.w,P.h,gI)+' a doppia pagina'}`)),
+        cov?ck(EXP,'cover','Copertina',`${covF[EXP.covFmt]} · ${EXP.dpi} dpi · retro + dorso + fronte · ${dims(spW(cov),pgH(cov),gC)}`):null,
+        E.on?ck(EXP,'endp','Risguardi',V?`PDF di 4 pagine su fogli ${dims(E.w,E.h,gE)}: pag. 2–3 · pag. 4 · pag. ${N-3} · pag. ${N-2}–${N-1}`:`PDF di 2 pagine · ${dims(E.w,E.h,gE)}`):null,
+        ck(EXP,'inner','Interno',`PDF · ${EXP.dpi} dpi · pag. ${ir[0]}–${ir[1]} (${printPages()} pagine) · ${EXP.pages==='single'?dims(P.w,P.h,gI)+' ciascuna':'a doppie pagine'}`)),
+      el('div',{class:'row3'},
+        cov?sel2(EXP,'covFmt','Copertina',[['cmyk','JPEG CMYK FOGRA39'],['jpg','JPEG RGB'],['pdf','PDF RGB']]):el('span'),
+        E.on?sel2(EXP,'endFmt','Risguardi',[['pdf','PDF'],['jpg','JPEG']]):el('span'),
+        sel2(EXP,'fmt','Interno',[['pdf','PDF'],['jpg','JPEG']])),
+      E.on&&V?el('div',{class:'row2'},
+        sel2(E,'sideF',`Pag. 4 sul foglio`,[['L','Lato sinistro'],['R','Lato destro']]),
+        sel2(E,'sideB',`Pag. ${N-3} sul foglio`,[['L','Lato sinistro'],['R','Lato destro']])):null,
       EXP.inner?el('div',{class:'row2'},sel2(EXP,'pages','Interno come',[['single','Pagine singole'],['spread','Doppie pagine affiancate']]),el('div',{class:'lbl'},el('span',{},'Quali pagine'),rng)):null,
-      el('div',{class:'row3'},sel2(EXP,'fmt','Formato',[['pdf','PDF'],['jpg','JPEG (in .zip)']]),
-        sel2(EXP,'dpi','Risoluzione',[[200,'200 dpi'],[300,'300 dpi · stampa foto'],[400,'400 dpi']],true),
-        sel2(EXP,'quality','Qualità JPEG',[[85,'85'],[92,'92 · consigliata'],[100,'100 · massima']],true)),
-      el('div',{class:'row3'},sel2(EXP,'bleed','Abbondanza interno e copertina',[[0,'Nessuna'],[2,'2 mm'],[3,'3 mm'],[5,'5 mm']],true),
+      el('div',{class:'row3'},
+        sel2(EXP,'dpi','Risoluzione',[[200,'200 dpi'],[300,'300 dpi · stampa'],[400,'400 dpi']],true),
+        sel2(EXP,'quality','Qualità JPEG',[[85,'85'],[92,'92 · consigliata'],[100,'100 · massima']],true),
+        sel2(EXP,'bleed','Abbondanza interno e copertina',[[0,'Nessuna'],[2,'2 mm'],[3,'3 mm'],[5,'5 mm']],true)),
+      el('div',{class:'row2'},
         el('label',{class:'chk'},el('input',{type:'checkbox',checked:EXP.marks,onchange:e=>{EXP.marks=e.target.checked;renderExport();}}),'Crocini di taglio e piega'),
-        el('label',{class:'chk'},el('input',{type:'checkbox',checked:EXP.zipAll||EXP.fmt==='jpg',disabled:EXP.fmt==='jpg',onchange:e=>{EXP.zipAll=e.target.checked;renderExport();}}),'Tutto in un .zip con scheda tecnica')),
+        el('label',{class:'chk'},el('input',{type:'checkbox',checked:EXP.zipAll,onchange:e=>{EXP.zipAll=e.target.checked;renderExport();}}),'Tutto in un .zip con scheda tecnica')),
       el('label',{class:'lbl'},el('span',{},'Nome dei file'),el('input',{class:'inp',value:EXP.name,oninput:e=>EXP.name=e.target.value})),
-      el('p',{class:'u'},`Misure e risguardi si impostano nel pannello Libro. Risguardi: abbondanza ${nf(E.bleed)} mm.`),
+      el('p',{class:'u'},`CMYK: profilo ISO Coated v2 (ECI) per FOGRA39, intento colorimetrico relativo con compensazione del punto nero, profilo incorporato nel file. Misure dei risguardi nel pannello Libro (abbondanza ${nf(E.bleed)} mm).`),
       issueList(true)];
   }
   const res=RESULTS.length?el('div',{class:'eres'},el('b',{},RESULTS.length>1?'File pronti':'File pronto'),
@@ -2869,6 +3593,7 @@ window.addEventListener('keydown',e=>{
   if(e.key==='f'||e.key==='F'){toggleFocus();return;}
   if(e.key==='PageDown'){e.preventDefault();goSpread(UI.cur+1);return;}
   if(e.key==='PageUp'){e.preventDefault();goSpread(UI.cur-1);return;}
+  if((e.key==='v'||e.key==='V')&&isSpecial(cur(),activeSide(cur()))){toast('Pagina speciale: si modifica dal pannello Pagine');return;}
   if(e.key==='v'||e.key==='V'){const sp=cur(),side=activeSide(sp),M=meta(sp,side),cands=pageCands(sp,side);if(cands.length){const i=cands.findIndex(c=>c.key===M.lay);relayoutPage(sp,side,{key:cands[(i+1)%cands.length].key});sel=null;commit();syncAll();}return;}
   if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteSelection();}
   else if(e.key==='Escape'){sel=null;TSEL.clear();renderProps();renderLeft();draw();}
@@ -2992,7 +3717,7 @@ async function init(){
   try{const ln=localStorage.getItem(PROF_KEY+'-ultimo');const p=ln&&allProfiles().find(x=>x.name===ln);if(p)setProfileFields(p);}catch(e){}
   await makeSamples();sortOrder();SIMS=findSimilar();
   const keepEndp=BOOK.endp.on;
-  buildBook({...WZ,title:'Estate in collina',sub:'Luglio 2026',similar:true});
+  buildBook({...WZ,title:'Estate in collina',sub:'Luglio 2026',similar:true,effect:false});
   WZ.title='';BOOK.job.name='Nuovo fotolibro';
   resetHistory();UI.tab='photos';syncAll();$('#toast').hidden=true;
   if(saved&&saved.photos&&saved.photos.length)START.saved=saved;

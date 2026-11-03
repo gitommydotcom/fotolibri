@@ -1,6 +1,6 @@
 # Pubblicazione su Netlify: l'app è un unico file HTML statico.
 [build]
-  command = "node build.mjs && mkdir -p public && cp dist/fotolibro-studio.html public/index.html"
+  command = "node build.mjs && mkdir -p public && cp dist/fotolibro-studio.html public/index.html && cp dist/fotolibro-effetti.js dist/fotolibro-cmyk.js dist/LICENZE.txt public/"
   publish = "public"
 
 [[headers]]

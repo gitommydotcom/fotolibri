@@ -8,7 +8,7 @@ function openWizard(){
   const est=el('div',{class:'est'});
   const upd=()=>{const ex=WZ.similar?similarToExclude():null;const pages=planBook(WZ,ex);const nP=pages.reduce((a,p)=>a+p.ids.length,0);
     const tot=pages.length+(BOOK.firstRight?1:0);const ip=tot+(tot%2);
-    const nT=pages.filter(p=>p.title).length,blank=pages.filter(p=>p.blank).length;const endp=BOOK.endp.on?' + 2 risguardi':'';
+    const nT=pages.filter(p=>p.title).length,blank=pages.filter(p=>p.blank).length;const endp=BOOK.endp.on?' + risguardi':'';
     const per=nP?nf(nP/Math.max(1,pages.filter(p=>p.ids.length).length)):0;
     const lab=WZ.group==='folder'?'capitoli':WZ.group==='day'?'giorni':'eventi';
     let t=nP?`${nP} foto → ${ip} pagine interne (${ip/2} doppie pagine)${WZ.cover?' + copertina':''}${endp} · in media ${per} foto per pagina${nT?` · ${nT} ${lab} con titolo`:''}${ex&&ex.size?` · ${ex.size} scatti simili lasciati fuori`:''}`:'Nessuna foto da impaginare: aggiungi le foto dal pannello Foto.';
@@ -53,6 +53,9 @@ function openWizard(){
       ck('Preferite ★ a pagina intera','favFull','Le foto segnate con la stella occupano una pagina da sole'),
       ck(`Lascia fuori gli scatti simili (${SIMS.length} gruppi trovati)`,'similar','Di ogni raffica tiene la foto più nitida; le altre finiscono tra le scartate'),
       ck('Copertina a tema con la prima preferita','cover'),
+      el('div',{class:'row2'},el('label',{class:'lbl'},el('span',{},'Frasi e citazioni'),el('select',{onchange:e=>{WZ.quotes=+e.target.value;upd();}},...[[0,'Nessuna'],[1,'Qualcuna'],[2,'Di più']].map(([v,l])=>el('option',{value:v,selected:WZ.quotes===v},l)))),
+        el('label',{class:'lbl'},el('span',{},'Sticker tra le foto'),el('select',{onchange:e=>{WZ.stickers=+e.target.value;}},...[[0,'Nessuno'],[1,'Pochi'],[2,'Tanti']].map(([v,l])=>el('option',{value:v,selected:WZ.stickers===v},l))))),
+      ck('Pagina effetto con le foto migliori (se ce ne sono di adatte)','effect'),
       el('label',{class:'chk'},el('input',{type:'checkbox',checked:BOOK.mult4,onchange:e=>{BOOK.mult4=e.target.checked;upd();}}),'Arriva sempre a un multiplo di 4 pagine'),
       est),
     el('div',{class:'dlg-f'},el('span',{class:'grow'},has?'Sostituisce le pagine attuali. Ctrl+Z per tornare indietro.':''),

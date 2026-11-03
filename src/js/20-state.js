@@ -40,7 +40,7 @@ const SHAPES=[[null,'Rettangolo'],['round','Arrotondato'],['circle','Ovale'],['a
 /* ============ stato ============ */
 const newBook=()=>({v:2,job:{id:uid(),name:'Nuovo fotolibro'},page:{preset:'Orizzontale 29,7×21 cm (A4)',w:297,h:210},
   cover:{on:true,spine:8,wrap:15,over:3},
-  endp:{on:true,w:650,h:330,fold:325,bleed:0,visW:0,visH:0},
+  endp:{on:true,w:650,h:330,fold:325,bleed:0,visW:0,visH:0,verso:true,sideF:'L',sideB:'R'},
   firstRight:false,safe:5,mult4:true,
   style:{margin:10,bind:15,gutter:4,radius:0,borderW:0,borderColor:'#ffffff',shadow:0},
   theme:{id:'neutro',colors:{},fonts:{},deco:1,coverLayout:null},
@@ -55,7 +55,7 @@ function normBook(b){const d=newBook();b.job=b.job||d.job;b.page={...d.page,...(
 let BOOK=newBook();
 const UI={cur:0,side:'R',mode:'photo',tab:'photos',filter:'all',folder:'*',sort:'date',link:true,snap:true,guides:true};
 const view={zoom:1,s:1,ox:0,oy:0,b:0,cw:0,ch:0,dpr:1};
-const EXP={fmt:'pdf',dpi:300,quality:92,bleed:3,marks:false,name:'fotolibro',cover:true,endp:true,inner:true,pages:'single',from:1,to:9999,zipAll:false};
+const EXP={covFmt:'cmyk',endFmt:'pdf',fmt:'pdf',dpi:300,quality:92,bleed:3,marks:false,name:'fotolibro',cover:true,endp:true,inner:true,pages:'single',from:1,to:9999,zipAll:false};
 const DRAFT={pdf:true,flip:true,dpi:120,quality:82,wm:true,wmText:'BOZZA',pages:'spread',name:'fotolibro'};
 const LIB=new Map();let ORDER=[];let SIMS=[];
 const PREV=new Map();const TSEL=new Set();let lastTSel=null;let thumbGen=0;
@@ -65,9 +65,9 @@ const cur=()=>BOOK.spreads[UI.cur];
 const isCover=sp=>!!sp&&sp.kind==='cover';
 const isEnd=sp=>!!sp&&(sp.kind==='endF'||sp.kind==='endB');
 const isInner=sp=>!!sp&&sp.kind==='inner';
-const mkMeta=()=>({lay:null,band:0,full:false});
+const mkMeta=()=>({lay:null,band:0,full:false,special:null,bg:null});
 const mkSpread=kind=>({id:uid(),kind,mode:'pages',bg:null,pat:null,cells:[],texts:[],decos:[],meta:{L:mkMeta(),R:mkMeta(),S:mkMeta()}});
-const mkCell=(d,side)=>({id:uid(),side,x:d[0],y:d[1],w:d[2],h:d[3],fill:null,ph:null,shape:null});
+const mkCell=(d,side)=>({id:uid(),side,x:d[0],y:d[1],w:d[2],h:d[3],fill:null,ph:null,shape:null,rot:0,fx:null});
 const newPh=img=>({img,zoom:1,ox:0,oy:0,rot:0,flip:false,flipV:false,fit:'cover',br:100,ct:100,sat:100,gray:0,sepia:0,blur:0});
 const T0={rot:0,ls:0,lh:1.15,op:100,boxColor:'#000000',boxOp:0,strokeW:0,strokeColor:'#000000',shadow:false,bold:false,italic:false,upper:false,align:'center'};
 const mkText=o=>({...T0,id:uid(),text:'Testo',font:'Montserrat',size:24,color:'#222222',x:.5,y:.5,...o});
@@ -157,11 +157,22 @@ function innerIdx(i){let k=0;for(let j=0;j<i;j++)if(isInner(BOOK.spreads[j]))k++
 function pageLabel(i,side){const sp=BOOK.spreads[i];if(!sp)return'';
   if(isCover(sp))return side==='L'?'Retro':side==='R'?'Fronte':'Copertina';
   if(isEnd(sp)){const n=sp.kind==='endF'?'Risguardo anteriore':'Risguardo posteriore';return side==='L'?n+' · sinistra':side==='R'?n+' · destra':n;}
-  const a=2*innerIdx(i)+1;return side==='L'?`pag. ${a}`:side==='R'?`pag. ${a+1}`:`pag. ${a}–${a+1}`;}
+  const a=pageNum(i,'L'),v=s=>isVerso(i,s)?' · retro risguardo':'';return side==='L'?`pag. ${a}${v('L')}`:side==='R'?`pag. ${a+1}${v('R')}`:`pag. ${a}–${a+1}`;}
 function spreadLabel(i){const sp=BOOK.spreads[i];if(!sp)return'';if(isCover(sp))return'Copertina';if(sp.kind==='endF')return'Risg. ant.';if(sp.kind==='endB')return'Risg. post.';
-  const k=innerIdx(i);return`${2*k+1}–${2*k+2}`;}
+  const a=pageNum(i,'L');return`${a}–${a+1}`;}
 function innerPages(){return BOOK.spreads.filter(isInner).length*2;}
-function bgOf(sp){if(sp.bg)return sp.bg;const C=TH().colors;return isCover(sp)?C.cover:isEnd(sp)?C.endpaper:C.paper;}
+/* pag. 4 e terzultima: retro dei fogli di risguardo, stampate nel file risguardi */
+const versoOn=()=>BOOK.endp.on&&BOOK.endp.verso!==false;
+function firstInnerIdx(){return BOOK.spreads.findIndex(isInner);}
+function lastInnerIdx(){let k=-1;BOOK.spreads.forEach((s,i)=>{if(isInner(s))k=i;});return k;}
+function isVerso(i,side){if(!versoOn())return false;return(side==='L'&&i===firstInnerIdx())||(side==='R'&&i===lastInnerIdx());}
+function printPages(){return innerPages()-(versoOn()?2:0);}
+function bookPages(){return BOOK.endp.on?innerPages()+6:innerPages()+(BOOK.cover.on?2:0);}
+/* numero di pagina nel libro: copertina = 1, risguardo = 2-3, interno da 4 */
+function pageNum(i,side){const k=innerIdx(i),base=BOOK.endp.on?4:1;return base+2*k+(side==='R'?1:0);}
+function isSpecial(sp,side){return!!(meta(sp,side).special||(sp.mode==='spread'&&sp.meta.S&&sp.meta.S.special));}
+function sideBg(sp,side){const M=sp.meta&&sp.meta[side];return M&&M.bg||null;}
+function bgOf(sp,side){if(side){const b=sideBg(sp,side);if(b)return b;}if(sp.bg)return sp.bg;const C=TH().colors;return isCover(sp)?C.cover:isEnd(sp)?C.endpaper:C.paper;}
 function patOf(sp){
   if(sp.pat==='none')return null;if(sp.pat&&typeof sp.pat==='object')return sp.pat;
   const T=TH();if(isCover(sp))return T.coverPatternOn?T.coverPattern||null:null;if(isEnd(sp))return T.endPatternOn?T.endPattern||null:null;

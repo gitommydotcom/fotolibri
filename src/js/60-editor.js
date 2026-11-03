@@ -103,7 +103,6 @@ function renderStrip(){
   S.replaceChildren(...items);
   S.scrollLeft=y;const on=S.querySelector('.sth.on');if(on){const r=on.getBoundingClientRect(),R=S.getBoundingClientRect();if(r.left<R.left||r.right>R.right)on.scrollIntoView({block:'nearest',inline:'center'});}
 }
-function lastInnerIdx(){let k=-1;BOOK.spreads.forEach((s,i)=>{if(isInner(s))k=i;});return k;}
 function goSpread(i){if(i<0||i>=BOOK.spreads.length)return;UI.cur=i;sel=null;UI.side=BOOK.spreads[i].mode==='spread'?'S':'L';syncAll();}
 function moveSpread(a,b){const sps=BOOK.spreads;if(a===b||!isInner(sps[a]))return;
   const[x]=sps.splice(a,1);sps.splice(Math.min(b,sps.length),0,x);normalizeOrder();UI.cur=sps.indexOf(x);UI.cur=BOOK.spreads.indexOf(x);commit();syncAll();}
@@ -114,9 +113,12 @@ let delArmed=0;
 function renderPbar(){
   const sp=cur(),i=UI.cur,n=BOOK.spreads.length;if(!sp)return;
   const ttl=isCover(sp)?'Copertina':isEnd(sp)?(sp.kind==='endF'?'Risguardo anteriore':'Risguardo posteriore'):`Pagine ${spreadLabel(i)}`;
-  const sub=isCover(sp)?'retro · dorso · fronte':isEnd(sp)?(sp.kind==='endF'?'pag. 2 · foglio a parte':'penultima pagina · foglio a parte'):`${innerIdx(i)+1} di ${innerPages()/2} doppie · ${innerPages()} pagine`;
+  const N=bookPages(),sub=isCover(sp)?`pag. 1 e ${N} · retro · dorso · fronte`:isEnd(sp)?(sp.kind==='endF'?'pag. 2–3 · foglio dei risguardi':`pag. ${N-2}–${N-1} · foglio dei risguardi`):`${innerIdx(i)+1} di ${innerPages()/2} doppie · libro di ${N} pagine`;
   const del=btn('Elimina',e=>{if(Date.now()-delArmed>3000){delArmed=Date.now();e.currentTarget.textContent='Confermi?';return;}delArmed=0;
-    if(BOOK.spreads.filter(isInner).length<=1){toast('L’interno deve avere almeno una doppia pagina');return;}BOOK.spreads.splice(i,1);UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();},'danger','Elimina questa doppia pagina (clicca due volte)');
+    if(BOOK.spreads.filter(isInner).length<=1){toast('L’interno deve avere almeno una doppia pagina');return;}
+    const old=BOOK.spreads[i],ph=old.cells.filter(c=>c.ph&&!c.fx&&!c.epPh).map(c=>c.ph),pos=pageNum(i,'L');BOOK.spreads.splice(i,1);
+    const keep=ph.filter(p=>!usedInInterior(p.img));const r=redistribute(keep,pos,{afterIdx:Math.max(0,i-1)});
+    UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();toast('Doppia pagina eliminata'+redistMsg(r),4500);},'danger','Elimina questa doppia pagina: le sue foto vanno nelle pagine vicine (clicca due volte)');
   $('#pbar').replaceChildren(...[
     btn('◀',()=>goSpread(i-1),'nav','Doppia pagina precedente (PagSu)'),
     el('div',{class:'ttl'},ttl,el('small',{},sub)),
@@ -127,7 +129,7 @@ function renderPbar(){
     isInner(sp)?del:null,
     isCover(sp)?btn('Rigenera copertina dal tema',()=>{rebuildCover();sel=null;commit();syncAll();toast('Copertina ricreata con le stesse foto e titoli (Ctrl+Z per annullare)');},'alt'):null,
     el('div',{class:'sep'}),
-    isCover(sp)?null:el('label',{class:'chk',title:'Una sola impaginazione su entrambe le pagine, anche attraverso la piega'},
+    isCover(sp)||(isInner(sp)&&(isVerso(i,'L')||isVerso(i,'R')))?null:el('label',{class:'chk',title:'Una sola impaginazione su entrambe le pagine, anche attraverso la piega'},
       el('input',{type:'checkbox',checked:sp.mode==='spread',onchange:e=>{setSpreadMode(sp,e.target.checked?'spread':'pages');UI.side=e.target.checked?'S':'L';sel=null;commit();syncAll();}}),'Unisci le due pagine')].filter(Boolean));
 }
 
@@ -162,7 +164,7 @@ function hitCell(p){const sp=cur();for(let i=sp.cells.length-1;i>=0;i--){const r
 function hitText(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=sp.texts.length-1;i>=0;i--){const t=sp.texts[i],m=measureText(mctx,t,10);
   const hw=(m.w/2+m.pad)/10,hh=(m.h/2+m.pad*.6)/10,dx=p.x-t.x*W,dy=p.y-t.y*H,a=-t.rot*Math.PI/180;
   const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(lx)<=hw&&Math.abs(ly)<=hh)return t;}return null;}
-function hitDeco(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=(sp.decos||[]).length-1;i>=0;i--){const d=sp.decos[i],r=d.s/2;if(Math.abs(p.x-d.x*W)<=r&&Math.abs(p.y-d.y*H)<=r)return d;}return null;}
+function hitDeco(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=(sp.decos||[]).length-1;i>=0;i--){const d=sp.decos[i];let rx=d.s/2,ry=d.s/2;if(d.txt){const B=badgeBox(d,1);rx=B.w/2+d.s*.3;ry=B.h/2;}if(Math.abs(p.x-d.x*W)<=rx&&Math.abs(p.y-d.y*H)<=ry)return d;}return null;}
 function hitDecoHandle(d,e){const sp=cur(),r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,cx=px(d.x*spW(sp),view.ox),cy=px(d.y*pgH(sp),view.oy),h=d.s*view.s/2;return Math.abs(mx-(cx+h))<=8&&Math.abs(my-(cy+h))<=8;}
 const HCODES=['tl','t','tr','r','br','b','bl','l'];
 function handlePts(c){const r=cellRect(cur(),c),s=view.s,X=px(r.x,view.ox),Y=px(r.y,view.oy),W=r.w*s,H=r.h*s;

@@ -38,6 +38,9 @@ function renderStart(){
       WZ.pagesMode==='fixed'?el('div',{class:'row'},el('input',{type:'number',class:'num',min:4,max:400,step:2,value:WZ.pages,oninput:e=>WZ.pages=clamp(parseInt(e.target.value)||4,4,400)}),
         ...[20,24,30,40].map(v=>btn(String(v),()=>{WZ.pages=v;renderStart();},WZ.pages===v?'on':null))):el('p',{class:'u'},'Circa 4 foto per pagina, layout variati.')),
     chk('Risguardi stampati (pag. 2 e penultima)',()=>BOOK.endp.on,v=>{BOOK.endp.on=v;ensureStructure();syncAll();}),
+    el('div',{class:'lbl'},el('span',{},'Pagine con frasi e citazioni'),el('div',{class:'seg full'},...[[0,'Nessuna'],[1,'Qualcuna'],[2,'Di più']].map(([v,l])=>el('button',{type:'button',class:WZ.quotes===v?'on':'',onclick:()=>{WZ.quotes=v;renderStart();}},l)))),
+    el('div',{class:'lbl'},el('span',{},'Sticker a tema tra le foto'),el('div',{class:'seg full'},...[[0,'Nessuno'],[1,'Pochi'],[2,'Tanti']].map(([v,l])=>el('button',{type:'button',class:WZ.stickers===v?'on':'',onclick:()=>{WZ.stickers=v;renderStart();}},l)))),
+    chk('Pagina effetto con le foto migliori (soggetto scontornato)',()=>WZ.effect,v=>{WZ.effect=v;}),
     el('div',{class:'sgo'},
       el('button',{type:'button',class:'btn pri big',disabled:!n,onclick:()=>{
         WZ.group=BOOK.chapters.filter(c=>c.on).length>1?'folder':'day';WZ.userGroup=false;

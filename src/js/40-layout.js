@@ -116,5 +116,5 @@ function activeSide(sp){sp=sp||cur();if(!sp)return'L';if(sp.mode==='spread')retu
 function relayoutAll(keepKeys){
   const R=rng(Date.now());let prev=null;
   for(const sp of BOOK.spreads){if(isCover(sp))continue;for(const side of(sp.mode==='spread'?['S']:['L','R'])){
-    if(!sp.cells.some(c=>c.side===side))continue;const ch=relayoutPage(sp,side,keepKeys?{key:meta(sp,side).lay}:{rng:R,avoid:prev&&prev.key,avoidSig:prev&&shapeSig(prev.defs)});prev=ch;}}
+    if(!sp.cells.some(c=>c.side===side)||isSpecial(sp,side))continue;const ch=relayoutPage(sp,side,keepKeys?{key:meta(sp,side).lay}:{rng:R,avoid:prev&&prev.key,avoidSig:prev&&shapeSig(prev.defs)});prev=ch;}}
 }

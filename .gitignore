@@ -2,3 +2,5 @@ tests/out/
 node_modules/
 public/
 .netlify
+dist/fotolibro-effetti.js
+dist/fotolibro-cmyk.js

@@ -33,6 +33,7 @@ window.addEventListener('keydown',e=>{
   if(e.key==='f'||e.key==='F'){toggleFocus();return;}
   if(e.key==='PageDown'){e.preventDefault();goSpread(UI.cur+1);return;}
   if(e.key==='PageUp'){e.preventDefault();goSpread(UI.cur-1);return;}
+  if((e.key==='v'||e.key==='V')&&isSpecial(cur(),activeSide(cur()))){toast('Pagina speciale: si modifica dal pannello Pagine');return;}
   if(e.key==='v'||e.key==='V'){const sp=cur(),side=activeSide(sp),M=meta(sp,side),cands=pageCands(sp,side);if(cands.length){const i=cands.findIndex(c=>c.key===M.lay);relayoutPage(sp,side,{key:cands[(i+1)%cands.length].key});sel=null;commit();syncAll();}return;}
   if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteSelection();}
   else if(e.key==='Escape'){sel=null;TSEL.clear();renderProps();renderLeft();draw();}
@@ -156,7 +157,7 @@ async function init(){
   try{const ln=localStorage.getItem(PROF_KEY+'-ultimo');const p=ln&&allProfiles().find(x=>x.name===ln);if(p)setProfileFields(p);}catch(e){}
   await makeSamples();sortOrder();SIMS=findSimilar();
   const keepEndp=BOOK.endp.on;
-  buildBook({...WZ,title:'Estate in collina',sub:'Luglio 2026',similar:true});
+  buildBook({...WZ,title:'Estate in collina',sub:'Luglio 2026',similar:true,effect:false});
   WZ.title='';BOOK.job.name='Nuovo fotolibro';
   resetHistory();UI.tab='photos';syncAll();$('#toast').hidden=true;
   if(saved&&saved.photos&&saved.photos.length)START.saved=saved;

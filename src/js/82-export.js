@@ -2,7 +2,7 @@
 UI.expTab='draft';
 let RESULTS=[],expCancel=false,exporting=false;
 function openExport(tab){if(tab)UI.expTab=tab;RESULTS=[];
-  const ip=innerPages();EXP.from=clamp(EXP.from,1,Math.max(1,ip));EXP.to=EXP.to>=ip||EXP.to<EXP.from?ip:EXP.to;
+  const ir=interiorRange();EXP.from=ir[0];EXP.to=ir[1];
   if(EXP.name==='fotolibro'&&BOOK.job.name&&BOOK.job.name!=='Nuovo fotolibro')EXP.name=DRAFT.name=safeName(BOOK.job.name);
   renderExport();if(!$('#dlg').open)$('#dlg').showModal();}
 /* ---------- problemi ---------- */
@@ -19,7 +19,7 @@ function issueList(forPrint){
   const{low,empty,miss,txt}=bookIssues(),ws=[],go=i=>()=>{$('#dlg').close();goSpread(i);};
   const L=(cls,...k)=>el('div',{},el('span',{class:cls},'●'),el('span',{},...k));
   if(txt.length)ws.push(L('e',`${txt.length} ${txt.length>1?'testi':'testo'} a rischio taglio: “${String(txt[0].t.text).split('\n')[0].slice(0,30)}” ${txt[0].pr}, in `,el('button',{type:'button',class:'linkb',onclick:()=>{$('#dlg').close();goSpread(txt[0].i);sel={type:'text',id:txt[0].t.id};syncAll();}},spreadLabel(txt[0].i)),'.'));
-  const ip=innerPages();if(forPrint&&ip%4)ws.push(L('w',`Pagine interne: ${ip}. Molte tipografie vogliono un multiplo di 4.`));
+  const ip=printPages();if(forPrint&&ip%4)ws.push(L('w',`Interno: ${ip} pagine. Molte tipografie vogliono un multiplo di 4.`));
   if(forPrint&&miss.size)ws.push(L('e',`${miss.size} foto senza originale: verrebbero stampate dall’anteprima (bassa qualità). `,el('button',{type:'button',class:'linkb',onclick:()=>$('#dirIn').click()},'Ricollega la cartella')));
   if(forPrint&&low.length)ws.push(L('w',`${low.length} foto sotto i 200 dpi, la peggiore ${Math.round(low[0].d)} dpi in `,el('button',{type:'button',class:'linkb',onclick:go(low[0].i)},pageLabel(low[0].i,low[0].side)),'.'));
   if(empty.length)ws.push(L('w',`${empty.length} riquadri vuoti, il primo in `,el('button',{type:'button',class:'linkb',onclick:go(empty[0].i)},pageLabel(empty[0].i,empty[0].side)),'.'));
@@ -71,44 +71,77 @@ function coverTitle(){const c=BOOK.spreads.find(isCover);const t=c&&c.texts.find
 /* ---------- stampa ---------- */
 function expGeom(bleed){const b=bleed,off=Math.max(b,3),mlen=5,ext=EXP.marks?off+mlen+1:b,k=EXP.dpi/25.4;return{b,off,mlen,ext,k};}
 function printJobs(){
-  const out=[],P=BOOK.page;let pg=1;
-  for(const sp of BOOK.spreads){
-    if(isCover(sp)){if(EXP.cover)out.push({sp,file:'copertina',x:0,w:spW(sp),bleed:EXP.bleed+BOOK.cover.wrap,sides:null,label:'copertina'});continue;}
-    if(isEnd(sp)){if(EXP.endp)out.push({sp,file:'risguardi',x:0,w:spW(sp),bleed:BOOK.endp.bleed,sides:null,label:sp.kind==='endF'?'risguardo-anteriore':'risguardo-posteriore'});continue;}
-    if(!EXP.inner){pg+=2;continue;}
-    const a=EXP.from,b=EXP.to,inR=n=>n>=a&&n<=b;
-    if(EXP.pages==='single'){
-      if(inR(pg))out.push({sp,file:'interno',x:0,w:P.w,sides:['L','S'],bleed:EXP.bleed,label:'p'+pad3(pg),pg});
-      if(inR(pg+1))out.push({sp,file:'interno',x:P.w,w:P.w,sides:['R','S'],bleed:EXP.bleed,label:'p'+pad3(pg+1),pg:pg+1});}
-    else if(inR(pg)||inR(pg+1))out.push({sp,file:'interno',x:0,w:spW(sp),sides:null,bleed:EXP.bleed,label:`p${pad3(pg)}-${pad3(pg+1)}`,pg});
-    pg+=2;}
+  const out=[],P=BOOK.page,E=BOOK.endp,V=versoOn();
+  const cov=BOOK.spreads.find(isCover),eF=BOOK.spreads.find(s=>s.kind==='endF'),eB=BOOK.spreads.find(s=>s.kind==='endB');
+  if(cov&&EXP.cover)out.push({sp:cov,file:'copertina',x:0,w:spW(cov),bleed:EXP.bleed+BOOK.cover.wrap,sides:null,label:'copertina'});
+  if(E.on&&EXP.endp){const fi=firstInnerIdx(),li=lastInnerIdx(),N=bookPages();
+    if(eF)out.push({sp:eF,file:'risguardi',x:0,w:spW(eF),bleed:E.bleed,sides:null,label:'risguardi-pag2-3',title:'Risguardo anteriore (pag. 2–3)'});
+    if(V&&fi>=0)out.push({verso:true,src:BOOK.spreads[fi],srcSide:'L',sheet:eF||mkSpread('endF'),side:E.sideF||'L',file:'risguardi',label:'risguardi-pag4',title:'Retro del risguardo (pag. 4)'});
+    if(V&&li>=0)out.push({verso:true,src:BOOK.spreads[li],srcSide:'R',sheet:eB||mkSpread('endB'),side:E.sideB||'R',file:'risguardi',label:`risguardi-pag${N-3}`,title:`Retro del risguardo (pag. ${N-3})`});
+    if(eB)out.push({sp:eB,file:'risguardi',x:0,w:spW(eB),bleed:E.bleed,sides:null,label:`risguardi-pag${N-2}-${N-1}`,title:`Risguardo posteriore (pag. ${N-2}–${N-1})`});}
+  if(EXP.inner)BOOK.spreads.forEach((sp,i)=>{if(!isInner(sp))return;
+    const a=pageNum(i,'L'),b=a+1,inR=n=>n>=EXP.from&&n<=EXP.to,okL=!isVerso(i,'L')&&inR(a),okR=!isVerso(i,'R')&&inR(b);
+    if(EXP.pages==='single'||!okL||!okR){
+      if(okL)out.push({sp,file:'interno',x:0,w:P.w,sides:['L','S'],bleed:EXP.bleed,label:'p'+pad3(a),pg:a});
+      if(okR)out.push({sp,file:'interno',x:P.w,w:P.w,sides:['R','S'],bleed:EXP.bleed,label:'p'+pad3(b),pg:b});}
+    else out.push({sp,file:'interno',x:0,w:spW(sp),sides:null,bleed:EXP.bleed,label:`p${pad3(a)}-${pad3(b)}`,pg:a});});
   return out;
 }
-async function renderJob(j){
+function interiorRange(){const s=[];BOOK.spreads.forEach((sp,i)=>{if(!isInner(sp))return;for(const side of['L','R'])if(!isVerso(i,side))s.push(pageNum(i,side));});return s.length?[s[0],s[s.length-1]]:[1,1];}
+/* pag. 4 / terzultima: la pagina interna impaginata sul foglio dei risguardi, nella metà indicata */
+async function renderVersoJob(j){
+  const sh=j.sheet,E=BOOK.endp,g=expGeom(E.bleed),PH=pgH(sh),SW=spW(sh),W=Math.round((SW+2*g.ext)*g.k),H=Math.round((PH+2*g.ext)*g.k);
+  const src=j.src,P=BOOK.page,half=pageBox(sh,j.side),vis=visBox(sh,j.side),sb=pageBox(src,j.srcSide);
+  const map=await loadOriginals(src),fxmap=await loadCutouts(src,true);await loadSpreadFonts(src);
+  const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);ctx.imageSmoothingQuality='high';
+  /* zona: metà foglio (con abbondanza verso l'esterno), senza superare la piega */
+  const atLeft=half.x<=.01,x0=atLeft?-g.b:half.x,x1=atLeft?half.x+half.w:SW+g.b;
+  ctx.save();ctx.beginPath();ctx.rect((g.ext+x0)*g.k,(g.ext-g.b)*g.k,(x1-x0)*g.k,(PH+2*g.b)*g.k);ctx.clip();
+  ctx.fillStyle=bgOf(src,j.srcSide);ctx.fillRect(0,0,W,H);
+  /* la pagina va con il lato della rilegatura sulla piega del foglio */
+  const bindLeft=j.srcSide==='R',px=bindLeft?vis.x:vis.x+vis.w-P.w,py=vis.y,ext=Math.max(8,Math.min(60,Math.max(vis.x-half.x,half.x+half.w-vis.x-vis.w,vis.y)+g.b));
+  ctx.beginPath();ctx.rect((g.ext+(bindLeft?px:px-ext))*g.k,(g.ext+py-ext)*g.k,(P.w+ext)*g.k,(P.h+2*ext)*g.k);ctx.clip();
+  renderSpread(ctx,src,{s:g.k,ox:(g.ext+px-sb.x)*g.k,oy:(g.ext+py)*g.k,bleed:ext,spineBleed:false,q:'full',map,fxmap,sides:[j.srcSide]});
+  ctx.restore();
+  if(EXP.marks){drawMarks(ctx,g,SW,PH);const X=(g.ext+foldX(sh))*g.k;ctx.save();ctx.strokeStyle='#000';ctx.lineWidth=Math.max(1,.1*g.k);ctx.beginPath();
+    ctx.moveTo(X,(g.ext-g.off-g.mlen)*g.k);ctx.lineTo(X,(g.ext-g.off)*g.k);ctx.moveTo(X,(g.ext+PH+g.off)*g.k);ctx.lineTo(X,(g.ext+PH+g.off+g.mlen)*g.k);ctx.stroke();ctx.restore();}
+  for(const s of map.values())closeSrc(s);
+  return{canvas:c,pw:W,ph:H,Wmm:SW+2*g.ext,Hmm:PH+2*g.ext,ext:g.ext,b:g.b};
+}
+async function renderJobCanvas(j){
+  if(j.verso)return renderVersoJob(j);
   const PH=pgH(j.sp),g=expGeom(j.bleed),W=Math.round((j.w+2*g.ext)*g.k),H=Math.round((PH+2*g.ext)*g.k);
   if(W*H>260e6)throw new Error('troppo grande');
-  const map=await loadOriginals(j.sp);await loadSpreadFonts(j.sp);
+  const map=await loadOriginals(j.sp),fxmap=await loadCutouts(j.sp,true);await loadSpreadFonts(j.sp);
   const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);ctx.imageSmoothingQuality='high';
   ctx.save();ctx.beginPath();ctx.rect((g.ext-g.b)*g.k,(g.ext-g.b)*g.k,(j.w+2*g.b)*g.k,(PH+2*g.b)*g.k);ctx.clip();
-  renderSpread(ctx,j.sp,{s:g.k,ox:(g.ext-j.x)*g.k,oy:g.ext*g.k,bleed:g.b,spineBleed:!!j.sides,q:'full',map,sides:j.sides});
+  renderSpread(ctx,j.sp,{s:g.k,ox:(g.ext-j.x)*g.k,oy:g.ext*g.k,bleed:g.b,spineBleed:!!j.sides,q:'full',map,fxmap,sides:j.sides});
   ctx.restore();
   if(EXP.marks){drawMarks(ctx,g,j.w,PH);
-    if(isCover(j.sp)||isEnd(j.sp)){/* segni di piega/dorso fuori dal formato */const xs=isCover(j.sp)?[coverPW(),coverPW()+BOOK.cover.spine]:[foldX(j.sp)];
+    if(isCover(j.sp)||isEnd(j.sp)){const xs=isCover(j.sp)?[coverPW(),coverPW()+BOOK.cover.spine]:[foldX(j.sp)];
       ctx.save();ctx.strokeStyle='#000';ctx.lineWidth=Math.max(1,.1*g.k);ctx.beginPath();
       for(const x of xs){const X=(g.ext+x)*g.k;ctx.moveTo(X,(g.ext-g.off-g.mlen)*g.k);ctx.lineTo(X,(g.ext-g.off)*g.k);ctx.moveTo(X,(g.ext+PH+g.off)*g.k);ctx.lineTo(X,(g.ext+PH+g.off+g.mlen)*g.k);}
       ctx.stroke();ctx.restore();}}
   for(const s of map.values())closeSrc(s);
-  const blob=await canvasJpeg(c,EXP.quality/100,EXP.dpi);c.width=c.height=0;
-  return{blob,pw:W,ph:H,Wmm:j.w+2*g.ext,Hmm:PH+2*g.ext,ext:g.ext,b:g.b};
+  return{canvas:c,pw:W,ph:H,Wmm:j.w+2*g.ext,Hmm:PH+2*g.ext,ext:g.ext,b:g.b};
+}
+async function renderJob(j,fmt,onProg){
+  const r=await renderJobCanvas(j);let blob;
+  if(fmt==='cmyk')blob=await encodeCmykJpeg(r.canvas,EXP.quality,EXP.dpi,onProg);
+  else blob=await canvasJpeg(r.canvas,EXP.quality/100,EXP.dpi);
+  r.canvas.width=r.canvas.height=0;delete r.canvas;return{...r,blob};
 }
 function specSheet(){
   const P=BOOK.page,C=BOOK.cover,E=BOOK.endp,cov=BOOK.spreads.find(isCover),L=[];
   L.push(`FOTOLIBRO STUDIO · scheda tecnica`,`Lavoro: ${BOOK.job.name}`,`Data: ${new Date().toLocaleString('it-IT')}`,`Tema: ${TH().name}`,'');
-  L.push(`Formato pagina rifilata: ${nf(P.w)} × ${nf(P.h)} mm`,`Pagine interne: ${innerPages()}`,`Abbondanza interno: ${nf(EXP.bleed)} mm`,`Risoluzione: ${EXP.dpi} dpi · JPEG q${EXP.quality} · RGB`,'');
+  L.push(`Formato pagina rifilata: ${nf(P.w)} × ${nf(P.h)} mm`,`Pagine del libro: ${bookPages()}`,`Abbondanza interno: ${nf(EXP.bleed)} mm`,`Risoluzione: ${EXP.dpi} dpi · JPEG q${EXP.quality} · RGB`,'');
   if(cov)L.push(`Copertina aperta (rifilata): ${nf(spW(cov))} × ${nf(pgH(cov))} mm`,`  dorso ${nf(C.spine)} mm · cartone +${nf(C.over)} mm/lato · risvolto ${nf(C.wrap)} mm + abbondanza ${nf(EXP.bleed)} mm`,
     `  file copertina: ${nf(spW(cov)+2*(C.wrap+EXP.bleed))} × ${nf(pgH(cov)+2*(C.wrap+EXP.bleed))} mm`,'');
-  if(E.on)L.push(`Risguardi: 2 fogli ${nf(E.w)} × ${nf(E.h)} mm (+${nf(E.bleed)} mm abbondanza), piega a ${nf(E.fold)} mm da sinistra`,`  anteriore = pag. 2 · posteriore = penultima pagina`,'');
+  if(E.on){const N=bookPages();L.push(`Risguardi: fogli ${nf(E.w)} × ${nf(E.h)} mm (+${nf(E.bleed)} mm abbondanza), piega a ${nf(E.fold)} mm da sinistra`);
+    if(versoOn())L.push(`  PDF di 4 pagine: 1) pag. 2–3 · 2) pag. 4 sul lato ${E.sideF==='R'?'destro':'sinistro'} · 3) pag. ${N-3} sul lato ${E.sideB==='L'?'sinistro':'destro'} · 4) pag. ${N-2}–${N-1}`,'');
+    else L.push('  PDF di 2 pagine: risguardo anteriore e posteriore','');}
+  const ir=interiorRange();L.push(`Interno: pag. ${ir[0]}–${ir[1]} (${printPages()} pagine)`,`Copertina: ${EXP.covFmt==='cmyk'?'JPEG CMYK · '+(CMYK?CMYK.name:'ISO Coated v2 (ECI) · FOGRA39'):EXP.covFmt==='jpg'?'JPEG RGB':'PDF RGB'} · ${EXP.dpi} dpi`,'');
   return L.join('\r\n');
 }
 /* ---------- esecuzione ---------- */
@@ -129,18 +162,22 @@ async function runExport(kind){
         RESULTS.push({name:`${name}_sfogliabile.html`,blob:new Blob([html],{type:'text/html'})});}
     }else{
       const jobs=printJobs();if(!jobs.length)throw new Error('vuoto');
-      const name=safeName(EXP.name)||'fotolibro',done=[];
-      const part=EXP.inner&&(EXP.from>1||EXP.to<innerPages()),suf=part?`_p${pad3(EXP.from)}-${pad3(EXP.to)}`:'';
+      const name=safeName(EXP.name)||'fotolibro',done=[],files=[];
+      if(jobs.some(j=>j.file==='copertina')&&EXP.covFmt==='cmyk')await cmykInit();
       for(let i=0;i<jobs.length;i++){if(expCancel)throw new Error('annullato');
-        const j=jobs[i];prog(`${j.file==='copertina'?'Copertina':j.file==='risguardi'?(j.label==='risguardo-anteriore'?'Risguardo anteriore':'Risguardo posteriore'):(EXP.pages==='single'?'Pagina ':'Pagine ')+j.label.slice(1).replace(/^0+/,'').replace(/-0*/,'–')} · ${i+1} di ${jobs.length}`,i,jobs.length);
-        await sleep(5);done.push({...await renderJob(j),job:j});}
+        const j=jobs[i],fmt=j.file==='copertina'?(EXP.covFmt==='cmyk'?'cmyk':'rgb'):'rgb',lab=j.title||(j.file==='copertina'?'Copertina':`Pagina ${j.pg}`);
+        prog(`${lab} · ${i+1} di ${jobs.length}`,i,jobs.length);await sleep(5);
+        const r=await renderJob(j,fmt,f=>prog(`${lab} · conversione CMYK FOGRA39 ${Math.round(f*100)}%`,i+f,jobs.length));
+        if(j.file==='copertina'&&EXP.covFmt!=='pdf'){files.push({name:`${name}_copertina${fmt==='cmyk'?'_CMYK-FOGRA39':''}.jpg`,blob:r.blob});continue;}
+        done.push({...r,job:j});}
       prog('Creo i file…',1,1);await sleep(5);
-      const files=[];
+      const part=EXP.inner&&(()=>{const ir=interiorRange();return EXP.from>ir[0]||EXP.to<ir[1];})(),suf=part?`_p${pad3(EXP.from)}-${pad3(EXP.to)}`:'';
       for(const f of['copertina','risguardi','interno']){const d=done.filter(x=>x.job.file===f);if(!d.length)continue;
-        if(EXP.fmt==='pdf')files.push({name:`${name}_${f}${f==='interno'?suf:''}.pdf`,blob:buildPDF(d)});
-        else d.forEach(x=>files.push({name:`${name}_${f==='interno'?'interno_'+x.job.label:x.job.label}.jpg`,blob:x.blob,jpg:true}));}
+        const fm=f==='risguardi'?EXP.endFmt:f==='interno'?EXP.fmt:'pdf';
+        if(fm==='pdf')files.push({name:`${name}_${f}${f==='interno'?suf:''}.pdf`,blob:buildPDF(d)});
+        else d.forEach(x=>files.push({name:`${name}_${f==='interno'?'interno_'+x.job.label:x.job.label}.jpg`,blob:x.blob}));}
       done.length=0;
-      if(EXP.zipAll||EXP.fmt==='jpg'){files.push({name:`${name}_scheda-tecnica.txt`,blob:new Blob([specSheet()],{type:'text/plain'})});
+      if(EXP.zipAll||files.length>4){files.push({name:`${name}_scheda-tecnica.txt`,blob:new Blob([specSheet()],{type:'text/plain'})});
         RESULTS.push({name:`${name}_stampa.zip`,blob:await buildZip(files)});}
       else RESULTS.push(...files);
     }
@@ -172,25 +209,35 @@ function renderExport(){
       el('label',{class:'lbl'},el('span',{},'Nome dei file'),el('input',{class:'inp',value:DRAFT.name,oninput:e=>DRAFT.name=e.target.value})),
       issueList(false)];
   }else{
-    const cov=BOOK.spreads.find(isCover),E=BOOK.endp,gC=expGeom(EXP.bleed+BOOK.cover.wrap),gE=expGeom(E.bleed),gI=expGeom(EXP.bleed);
+    const cov=BOOK.spreads.find(isCover),E=BOOK.endp,gC=expGeom(EXP.bleed+BOOK.cover.wrap),gE=expGeom(E.bleed),gI=expGeom(EXP.bleed),N=bookPages(),ir=interiorRange(),V=versoOn();
     const dims=(w,h,g)=>`${nf(w+2*g.ext)} × ${nf(h+2*g.ext)} mm`;
-    const rng=el('div',{class:'row'},el('span',{class:'u'},'da pag.'),el('input',{type:'number',class:'num',min:1,max:ip,value:EXP.from,onchange:e=>{EXP.from=clamp(parseInt(e.target.value)||1,1,ip);EXP.to=Math.max(EXP.to,EXP.from);renderExport();}}),
-      el('span',{class:'u'},'a pag.'),el('input',{type:'number',class:'num',min:1,max:ip,value:EXP.to,onchange:e=>{EXP.to=clamp(parseInt(e.target.value)||ip,EXP.from,ip);renderExport();}}),
-      btn('Tutte',()=>{EXP.from=1;EXP.to=ip;renderExport();}));
-    body=[el('div',{class:'dlg-s'},'File separati come li chiedono le tipografie: copertina con dorso e risvolti, risguardi su foglio a parte, interno. Renderizzati dalle foto originali.'),
+    if(EXP.from<ir[0]||EXP.from>ir[1])EXP.from=ir[0];if(EXP.to>ir[1]||EXP.to<EXP.from)EXP.to=ir[1];
+    const rng=el('div',{class:'row'},el('span',{class:'u'},'da pag.'),el('input',{type:'number',class:'num',min:ir[0],max:ir[1],value:EXP.from,onchange:e=>{EXP.from=clamp(parseInt(e.target.value)||ir[0],ir[0],ir[1]);EXP.to=Math.max(EXP.to,EXP.from);renderExport();}}),
+      el('span',{class:'u'},'a pag.'),el('input',{type:'number',class:'num',min:ir[0],max:ir[1],value:EXP.to,onchange:e=>{EXP.to=clamp(parseInt(e.target.value)||ir[1],EXP.from,ir[1]);renderExport();}}),
+      btn('Tutte',()=>{EXP.from=ir[0];EXP.to=ir[1];renderExport();}));
+    const covF={cmyk:'JPEG · CMYK FOGRA39',jpg:'JPEG · RGB',pdf:'PDF · RGB'};
+    body=[el('div',{class:'dlg-s'},'Tre file per la tipografia. Tutto viene renderizzato dalle foto originali.'),
       el('div',{class:'opts'},
-        cov?ck(EXP,'cover','Copertina',`retro + dorso + fronte · ${dims(spW(cov),pgH(cov),gC)}`):null,
-        E.on?ck(EXP,'endp','Risguardi',`2 fogli (pag. 2 e penultima) · ${dims(E.w,E.h,gE)} ciascuno`):null,
-        ck(EXP,'inner','Interno',`${ip} pagine · ${EXP.pages==='single'?dims(P.w,P.h,gI)+' ciascuna':dims(2*P.w,P.h,gI)+' a doppia pagina'}`)),
+        cov?ck(EXP,'cover','Copertina',`${covF[EXP.covFmt]} · ${EXP.dpi} dpi · retro + dorso + fronte · ${dims(spW(cov),pgH(cov),gC)}`):null,
+        E.on?ck(EXP,'endp','Risguardi',V?`PDF di 4 pagine su fogli ${dims(E.w,E.h,gE)}: pag. 2–3 · pag. 4 · pag. ${N-3} · pag. ${N-2}–${N-1}`:`PDF di 2 pagine · ${dims(E.w,E.h,gE)}`):null,
+        ck(EXP,'inner','Interno',`PDF · ${EXP.dpi} dpi · pag. ${ir[0]}–${ir[1]} (${printPages()} pagine) · ${EXP.pages==='single'?dims(P.w,P.h,gI)+' ciascuna':'a doppie pagine'}`)),
+      el('div',{class:'row3'},
+        cov?sel2(EXP,'covFmt','Copertina',[['cmyk','JPEG CMYK FOGRA39'],['jpg','JPEG RGB'],['pdf','PDF RGB']]):el('span'),
+        E.on?sel2(EXP,'endFmt','Risguardi',[['pdf','PDF'],['jpg','JPEG']]):el('span'),
+        sel2(EXP,'fmt','Interno',[['pdf','PDF'],['jpg','JPEG']])),
+      E.on&&V?el('div',{class:'row2'},
+        sel2(E,'sideF',`Pag. 4 sul foglio`,[['L','Lato sinistro'],['R','Lato destro']]),
+        sel2(E,'sideB',`Pag. ${N-3} sul foglio`,[['L','Lato sinistro'],['R','Lato destro']])):null,
       EXP.inner?el('div',{class:'row2'},sel2(EXP,'pages','Interno come',[['single','Pagine singole'],['spread','Doppie pagine affiancate']]),el('div',{class:'lbl'},el('span',{},'Quali pagine'),rng)):null,
-      el('div',{class:'row3'},sel2(EXP,'fmt','Formato',[['pdf','PDF'],['jpg','JPEG (in .zip)']]),
-        sel2(EXP,'dpi','Risoluzione',[[200,'200 dpi'],[300,'300 dpi · stampa foto'],[400,'400 dpi']],true),
-        sel2(EXP,'quality','Qualità JPEG',[[85,'85'],[92,'92 · consigliata'],[100,'100 · massima']],true)),
-      el('div',{class:'row3'},sel2(EXP,'bleed','Abbondanza interno e copertina',[[0,'Nessuna'],[2,'2 mm'],[3,'3 mm'],[5,'5 mm']],true),
+      el('div',{class:'row3'},
+        sel2(EXP,'dpi','Risoluzione',[[200,'200 dpi'],[300,'300 dpi · stampa'],[400,'400 dpi']],true),
+        sel2(EXP,'quality','Qualità JPEG',[[85,'85'],[92,'92 · consigliata'],[100,'100 · massima']],true),
+        sel2(EXP,'bleed','Abbondanza interno e copertina',[[0,'Nessuna'],[2,'2 mm'],[3,'3 mm'],[5,'5 mm']],true)),
+      el('div',{class:'row2'},
         el('label',{class:'chk'},el('input',{type:'checkbox',checked:EXP.marks,onchange:e=>{EXP.marks=e.target.checked;renderExport();}}),'Crocini di taglio e piega'),
-        el('label',{class:'chk'},el('input',{type:'checkbox',checked:EXP.zipAll||EXP.fmt==='jpg',disabled:EXP.fmt==='jpg',onchange:e=>{EXP.zipAll=e.target.checked;renderExport();}}),'Tutto in un .zip con scheda tecnica')),
+        el('label',{class:'chk'},el('input',{type:'checkbox',checked:EXP.zipAll,onchange:e=>{EXP.zipAll=e.target.checked;renderExport();}}),'Tutto in un .zip con scheda tecnica')),
       el('label',{class:'lbl'},el('span',{},'Nome dei file'),el('input',{class:'inp',value:EXP.name,oninput:e=>EXP.name=e.target.value})),
-      el('p',{class:'u'},`Misure e risguardi si impostano nel pannello Libro. Risguardi: abbondanza ${nf(E.bleed)} mm.`),
+      el('p',{class:'u'},`CMYK: profilo ISO Coated v2 (ECI) per FOGRA39, intento colorimetrico relativo con compensazione del punto nero, profilo incorporato nel file. Misure dei risguardi nel pannello Libro (abbondanza ${nf(E.bleed)} mm).`),
       issueList(true)];
   }
   const res=RESULTS.length?el('div',{class:'eres'},el('b',{},RESULTS.length>1?'File pronti':'File pronto'),
