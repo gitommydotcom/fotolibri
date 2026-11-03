@@ -1,0 +1,10 @@
+# Pubblicazione su Netlify: l'app è un unico file HTML statico.
+[build]
+  command = "node build.mjs && mkdir -p public && cp dist/fotolibro-studio.html public/index.html"
+  publish = "public"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
