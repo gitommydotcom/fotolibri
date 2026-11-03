@@ -6,29 +6,33 @@
 <title>Fotolibro Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400&family=Josefin+Sans:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;700&family=Bebas+Neue&family=Roboto+Slab:wght@400;700&family=Great+Vibes&family=Dancing+Script:wght@400;700&family=Caveat:wght@400;700&family=Pacifico&family=Amatic+SC:wght@400;700&family=Fredoka:wght@400;600;700&family=Mountains+of+Christmas:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400&family=Josefin+Sans:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;700&family=Bebas+Neue&family=Roboto+Slab:wght@400;700&family=Great+Vibes&family=Dancing+Script:wght@400;700&family=Caveat:wght@400;700&family=Pacifico&family=Amatic+SC:wght@400;700&family=Fredoka:wght@400;600;700&family=Mountains+of+Christmas:wght@400;700&display=swap">
 <style>
 /* Fotolibro Studio — banco di lavoro: strumenti | libro aperto + striscia delle pagine | proprietà */
 :root{
-  --bg:#E8EBEE; --panel:#F7F8F9; --raise:#FFFFFF; --ink:#1A1F26; --muted:#5D6773; --line:#D2D7DD;
-  --accent:#C2185B; --accent-ink:#FFFFFF; --soft:#F6E4EC; --stage:#CBD0D6;
-  --ok:#2E7D4F; --warn:#B26A00; --bad:#C62828;
+  /* palette "gallery neutral" (ui-ux-pro-max: Photography/Portfolio · Museum/Gallery):
+     interfaccia calda e sobria, le foto restano protagoniste; il palco resta quasi neutro per giudicare i colori */
+  --bg:#EFEDE9; --panel:#FAF9F7; --raise:#FFFFFF; --ink:#1C1A17; --muted:#5E5850; --line:#DDD8D0;
+  --accent:#A63A1E; --accent-ink:#FFFFFF; --soft:#F5E7E1; --stage:#D3D1CD;
+  --ok:#2E7D4F; --warn:#9A5B00; --bad:#B3261E;
   --f-ui:"Inter","Segoe UI",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
-  --f-brand:"Bricolage Grotesque","Segoe UI",sans-serif;
+  --f-brand:"Playfair Display",Georgia,serif;
+  --z-top:5; --z-start:40; --z-toast:50;
+  --ease:cubic-bezier(.2,.7,.2,1);
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#13161A; --panel:#1A1E23; --raise:#232830; --ink:#E4E7EB; --muted:#98A1AC; --line:#2E343C;
-    --accent:#EE5E9A; --accent-ink:#1B0A12; --soft:#3A2230; --stage:#0D0F12;
+    --bg:#141312; --panel:#1C1B19; --raise:#25231F; --ink:#ECE8E2; --muted:#A39C92; --line:#34312C;
+    --accent:#F08A64; --accent-ink:#1A0C06; --soft:#3A2820; --stage:#0E0D0C;
     --ok:#5FC08A; --warn:#E3A13D; --bad:#EF6B6B; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#13161A; --panel:#1A1E23; --raise:#232830; --ink:#E4E7EB; --muted:#98A1AC; --line:#2E343C;
-  --accent:#EE5E9A; --accent-ink:#1B0A12; --soft:#3A2230; --stage:#0D0F12;
-  --ok:#5FC08A; --warn:#E3A13D; --bad:#EF6B6B; color-scheme:dark;
+  --bg:#141312; --panel:#1C1B19; --raise:#25231F; --ink:#ECE8E2; --muted:#A39C92; --line:#34312C;
+    --accent:#F08A64; --accent-ink:#1A0C06; --soft:#3A2820; --stage:#0E0D0C;
+    --ok:#5FC08A; --warn:#E3A13D; --bad:#EF6B6B; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -44,20 +48,23 @@ button,input,select,textarea{font:inherit;color:inherit}
 .grp{display:flex;align-items:center;gap:4px}
 .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
 .spacer{flex:1}
-.btn{border:1px solid var(--line);background:var(--raise);padding:6px 11px;border-radius:6px;cursor:pointer;white-space:nowrap;line-height:1.2}
+.btn{border:1px solid var(--line);background:var(--raise);padding:6px 11px;border-radius:6px;cursor:pointer;white-space:nowrap;line-height:1.2;min-height:28px;transition:background-color .15s var(--ease),border-color .15s var(--ease),color .15s var(--ease),box-shadow .15s var(--ease)}
 .btn:hover{border-color:var(--muted)}
-.btn:disabled{opacity:.4;cursor:default}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.pri:disabled{opacity:1;background:var(--line);color:var(--muted);filter:none}
 .btn.pri{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
-.btn.pri:hover{filter:brightness(1.07)}
+.btn.pri:hover:not(:disabled){filter:brightness(1.08);box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 35%,transparent)}
+.btn:active:not(:disabled){transform:translateY(.5px)}
 .btn.alt{border-color:var(--accent);color:var(--accent);font-weight:600}
 .btn.sm{padding:4px 8px;font-size:12px}
 .btn.danger{color:var(--bad)}
 .ib{width:30px;height:30px;padding:0;display:inline-grid;place-items:center}
 .ib svg{width:16px;height:16px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;padding:2px;background:var(--bg);gap:2px;flex-wrap:wrap}
-.seg button{border:0;background:transparent;padding:5px 10px;border-radius:5px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button{border:0;background:transparent;padding:5px 10px;border-radius:5px;color:var(--muted);cursor:pointer;white-space:nowrap;transition:background-color .15s var(--ease),color .15s var(--ease)}
+.seg button:hover:not(.on){color:var(--ink);background:color-mix(in srgb,var(--raise) 55%,transparent)}
 .seg button.on{background:var(--raise);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14);font-weight:500}
-.seg.full{display:flex}.seg.full button{flex:1}
+.seg.full{display:flex;flex-wrap:nowrap}.seg.full button{flex:1 1 0;min-width:0;white-space:normal;line-height:1.2;padding:6px 6px}
 .zl{font:12px var(--f-mono);min-width:44px;text-align:center;color:var(--muted)}
 .prog{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
 .pb{width:150px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;flex:none}
@@ -121,8 +128,8 @@ input[type=checkbox]{accent-color:var(--accent)}
 .ti.ex img{filter:grayscale(1);opacity:.4}
 .ti .cnt{position:absolute;left:3px;bottom:3px;background:var(--accent);color:var(--accent-ink);font:10px var(--f-mono);padding:0 4px;border-radius:7px;border:0;cursor:pointer}
 .ti .tag{position:absolute;left:3px;top:3px;background:rgba(0,0,0,.6);color:#fff;font-size:8px;padding:1px 3px;border-radius:3px;letter-spacing:.04em}
-.ti .hb{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:11px;line-height:20px;padding:0;opacity:0}
-.ti .hb.fv{right:3px}.ti .hb.xb{right:25px}
+.ti .hb{position:absolute;top:3px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.62);color:#fff;cursor:pointer;font-size:12px;line-height:24px;padding:0;opacity:0;transition:opacity .15s}
+.ti .hb.fv{right:3px}.ti .hb.xb{right:30px}
 .ti .hb.fv.on{opacity:1;background:var(--accent);color:var(--accent-ink)}
 .ti:hover .hb,.ti:focus-within .hb{opacity:1}
 .trayact{position:sticky;top:0;z-index:2;background:var(--soft);border:1px solid var(--line);border-radius:7px;padding:7px;display:grid;gap:6px}
@@ -152,7 +159,7 @@ input[type=checkbox]{accent-color:var(--accent)}
 
 .stagewrap{display:flex;flex-direction:column;min-width:0;min-height:0}
 .pbar{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
-.pbar .ttl{font-family:var(--f-brand);font-weight:600;font-size:14px;min-width:170px;text-align:center;line-height:1.15}
+.pbar .ttl{font-family:var(--f-ui);font-weight:600;font-size:14px;min-width:170px;text-align:center;line-height:1.15}
 .pbar .ttl small{display:block;font:11px var(--f-mono);color:var(--muted);font-weight:400}
 .stage{flex:1;overflow:auto;display:grid;background:var(--stage);min-height:0;
   background-image:radial-gradient(color-mix(in srgb,var(--muted) 22%,transparent) 1px,transparent 1px);background-size:16px 16px}
@@ -199,7 +206,12 @@ dialog::backdrop{background:rgba(10,12,16,.45)}
 .linkb{border:0;background:none;color:var(--accent);cursor:pointer;padding:0;text-decoration:underline}
 .est{font:12px var(--f-mono);background:var(--soft);border-radius:7px;padding:9px 11px;color:var(--ink)}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:50;max-width:calc(100vw - 32px)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 10px 9px 16px;border-radius:9px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:var(--z-toast);max-width:min(640px,calc(100vw - 32px));display:flex;align-items:center;gap:12px;animation:toastIn .2s var(--ease)}
+.toast:not(:has(button)){padding-right:16px}
+.toast button{flex:none;border:0;background:color-mix(in srgb,var(--bg) 16%,transparent);color:var(--bg);font-weight:600;padding:5px 11px;border-radius:6px;cursor:pointer;min-height:28px}
+.toast button:hover{background:color-mix(in srgb,var(--bg) 28%,transparent)}
+.toast button:focus-visible{outline-color:var(--bg)}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 
 .btn.on{background:var(--soft);border-color:var(--accent);color:var(--accent)}
 .main.noL .left,.main.noR .right{display:none}
@@ -216,9 +228,9 @@ dialog::backdrop{background:rgba(10,12,16,.45)}
   .stagewrap{order:-1}
   .stage{height:56vh;flex:none}
   .right{border-left:0;overflow:visible}
-  .top{position:sticky;top:0;z-index:5}
+  .top{position:sticky;top:0;z-index:var(--z-top)}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 
 /* ===== aggiunte Fotolibro Studio ===== */
 .top{gap:8px}
@@ -269,15 +281,15 @@ dialog.full:not([open]){display:none}
 #flipFrame{flex:1;border:0;width:100%;background:#2a2d33}
 
 /* schermata iniziale */
-.start{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;
+.start{position:fixed;inset:0;z-index:var(--z-start);background:var(--bg);overflow:auto;
   background-image:radial-gradient(color-mix(in srgb,var(--muted) 16%,transparent) 1px,transparent 1px);background-size:18px 18px}
 .startin{max-width:1360px;margin:0 auto;padding:26px 28px 30px;display:grid;gap:18px}
 .shead{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
 .shead p{margin:0;color:var(--muted);font-size:14px}
-.brand.big{font-size:24px;cursor:default}.brand.big svg{width:30px;height:30px;color:var(--accent)}
+.brand.big{font-size:28px;cursor:default}.brand.big svg{width:30px;height:30px;color:var(--accent)}
 .sgrid{display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,2.1fr) minmax(270px,1fr);gap:16px;align-items:start}
 .scol{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.scol h2{margin:0;font:700 17px var(--f-brand);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.scol h2{margin:0;font:700 19px var(--f-brand);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .scol h2 i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:13px}
 .scol h2 small{font:400 12px var(--f-ui);color:var(--muted);flex-basis:100%;padding-left:36px}
 .sdrop{border:2px dashed var(--line);border-radius:12px;padding:26px 14px;display:grid;gap:6px;justify-items:center;text-align:center;cursor:pointer;background:var(--raise);color:var(--muted)}
@@ -306,7 +318,19 @@ dialog.full:not([open]){display:none}
 .spc:hover{border-color:var(--accent);background:var(--soft)}
 details.more summary{cursor:pointer;color:var(--accent);font-size:12px;margin:4px 0 8px}
 .warn{color:var(--warn)!important}
-.tabs button{font-size:10.5px}
+.tabs button{font-size:11px}
+
+/* rifinitura UI/UX (linee guida ui-ux-pro-max: hover, focus, target ≥24px, stati) */
+.brand{font-weight:700;letter-spacing:0}
+.lth,.thc,.spc,.cl,.look,.mt,.opt,.sdrop,.drop,.tlist button{transition:border-color .15s var(--ease),background-color .15s var(--ease),color .15s var(--ease),transform .15s var(--ease)}
+.spc:hover,.lth:hover{transform:translateY(-1px)}
+.tabs button{transition:color .15s var(--ease),border-color .15s var(--ease)}
+.tabs button:focus-visible,.seg button:focus-visible{outline-offset:-2px}
+.chk input{width:16px;height:16px;flex:none}
+.chk{min-height:24px}
+.sth:focus-visible canvas{outline-color:var(--accent)}
+.sdrop:focus-visible{outline-offset:3px}
+.scol h2 i{font:600 13px var(--f-ui)}
 
 </style>
 </head>
@@ -353,7 +377,7 @@ details.more summary{cursor:pointer;color:var(--accent);font-size:12px;margin:4p
 
 <div class="main">
   <aside class="left">
-    <nav class="tabs" id="tabs">
+    <nav class="tabs" id="tabs" aria-label="Strumenti">
       <button data-t="photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>Foto</button>
       <button data-t="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.6 0-1.3-1-1.6-1-2.7 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>Tema</button>
       <button data-t="pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="3" width="13" height="17" rx="1.5"/><path d="M8 8h5M8 11.5h5M8 15h3"/><path d="m18.5 13 1 2.2 2.3.3-1.7 1.5.5 2.3-2.1-1.2-2 1.2.4-2.3-1.7-1.5 2.3-.3Z" fill="currentColor" stroke="none"/></svg>Pagine</button>
@@ -384,7 +408,7 @@ details.more summary{cursor:pointer;color:var(--accent);font-size:12px;margin:4p
 <dialog id="flipDlg" class="full"><div class="flipbar"><b>Anteprima sfogliabile</b><span>così la vedrà il cliente nel flipbook</span><button type="button" class="btn sm" id="flipClose">Chiudi</button></div><iframe id="flipFrame" title="Anteprima sfogliabile"></iframe></dialog>
 
 <div class="start" id="start" hidden><div class="startin" id="startBody"></div></div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
 /* ---- js/00-util.js ---- */
@@ -413,7 +437,14 @@ function el(tag,attrs={},...kids){
   return e;
 }
 let toastT=0;
-function toast(msg,ms=2800){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,ms);}
+/* toast: 3,5–5 s (linee guida), "Annulla" quando l'azione è annullabile, pausa al passaggio del mouse */
+function toast(msg,ms=3500,act){const t=$('#toast');let undoable=act==='undo'||/Ctrl\+Z/.test(msg);
+  if(undoable)msg=msg.replace(/[\s.(:·]*Ctrl\+Z per (annullare|tornare indietro)\)?\.?/,'').replace(/\s*\(\s*\)$/,'');
+  t.replaceChildren(el('span',{},msg));
+  if(undoable&&typeof undo==='function')t.append(el('button',{type:'button',onclick:()=>{t.hidden=true;undo();}},'Annulla'));
+  t.hidden=false;clearTimeout(toastT);const wait=Math.max(ms,undoable?6000:0);
+  const arm=d=>{clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,d);};arm(wait);
+  t.onmouseenter=()=>clearTimeout(toastT);t.onmouseleave=()=>arm(2000);}
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},60000);}
 const toBlob=(c,t,q)=>new Promise(r=>c.toBlob(r,t,q));
@@ -2146,7 +2177,7 @@ function renderPbar(){
     if(BOOK.spreads.filter(isInner).length<=1){toast('L’interno deve avere almeno una doppia pagina');return;}
     const old=BOOK.spreads[i],ph=old.cells.filter(c=>c.ph&&!c.fx&&!c.epPh).map(c=>c.ph),pos=pageNum(i,'L');BOOK.spreads.splice(i,1);
     const keep=ph.filter(p=>!usedInInterior(p.img));const r=redistribute(keep,pos,{afterIdx:Math.max(0,i-1)});
-    UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();toast('Doppia pagina eliminata'+redistMsg(r),4500);},'danger','Elimina questa doppia pagina: le sue foto vanno nelle pagine vicine (clicca due volte)');
+    UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();toast('Doppia pagina eliminata'+redistMsg(r),4500,'undo');},'danger','Elimina questa doppia pagina: le sue foto vanno nelle pagine vicine (clicca due volte)');
   $('#pbar').replaceChildren(...[
     btn('◀',()=>goSpread(i-1),'nav','Doppia pagina precedente (PagSu)'),
     el('div',{class:'ttl'},ttl,el('small',{},sub)),
@@ -2341,7 +2372,7 @@ function numIn(label,get,set,min,max,step=1){const i=el('input',{type:'number',c
 
 /* ============ pannello sinistro ============ */
 function renderLeft(){
-  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===UI.tab));
+  document.querySelectorAll('#tabs button').forEach(b=>{const on=b.dataset.t===UI.tab;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});
   const L=$('#leftBody'),y=L.scrollTop;L.replaceChildren(...({photos:tabPhotos,theme:tabTheme,pages:tabPages,layout:tabLayout,text:tabText,deco:tabDeco,book:tabBook}[UI.tab])().filter(Boolean));L.scrollTop=y;
 }
 function tabPhotos(){
@@ -2457,7 +2488,7 @@ function tabLayout(){
         btn('Crea libro automatico…',openWizard,'alt'))),
     sec('Riquadri liberi',
       el('div',{class:'row'},btn('Aggiungi riquadro libero',()=>{const c=mkCell([.3,.3,.4,.4],side);sp.cells.push(c);sel={type:'cell',id:c.id};setMode('layout');commit();syncAll();}),
-        btn('Svuota questa pagina',()=>{const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));const r=redistribute(ph,pageNum(UI.cur,side==='S'?'L':side),{afterIdx:UI.cur,exclude:x=>x.sp===sp&&x.side===side});sel=null;commit();syncAll();toast('Pagina svuotata'+redistMsg(r));},'danger','Le foto vengono spostate nelle pagine vicine')),
+        btn('Svuota questa pagina',()=>{const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));const r=redistribute(ph,pageNum(UI.cur,side==='S'?'L':side),{afterIdx:UI.cur,exclude:x=>x.sp===sp&&x.side===side});sel=null;commit();syncAll();toast('Pagina svuotata'+redistMsg(r),4500,'undo');},'danger','Le foto vengono spostate nelle pagine vicine')),
       chk('Bordi in comune si muovono insieme',()=>UI.link,v=>UI.link=v),
       chk('Aggancio a griglia e bordi',()=>UI.snap,v=>UI.snap=v),
       el('p',{},'In modalità Riquadri (tasto M) trascina un riquadro per spostarlo e i bordi o gli angoli per ridimensionarlo.'))
@@ -2846,7 +2877,7 @@ function cellProps(c){
         btn('Centra',()=>{ph.ox=ph.oy=0;ph.zoom=1;commit();renderProps();draw();}))));
     out.push(sec(null,el('div',{class:'row'},
       btn(im.fav?'★ Preferita':'☆ Rendi preferita e ingrandisci',()=>{im.fav=!im.fav;if(im.fav)relayoutPage(sp,c.side);sel=null;commit();syncAll();},im.fav?'alt':'pri','Le preferite vanno nel riquadro più grande'),
-      btn('Togli dalla pagina',()=>{removeFromPage(c);commit();syncAll();toast('Foto tolta: la ritrovi tra le “Non usate”');},'danger','Toglie il riquadro e ridistribuisce le altre foto'),
+      btn('Togli dalla pagina',()=>{removeFromPage(c);commit();syncAll();toast('Foto tolta: la ritrovi tra le “Non usate”',4500,'undo');},'danger','Toglie il riquadro e ridistribuisce le altre foto'),
       btn('Svuota riquadro',()=>{c.ph=null;commit();syncAll();}))));
     out.push(sec('Colore e tono',
       slider('Luminosità',()=>ph.br,v=>ph.br=v,0,200,1,'%'),
@@ -2857,7 +2888,7 @@ function cellProps(c){
       el('div',{class:'row'},
         btn('Ripristina',()=>{Object.assign(ph,{br:100,ct:100,sat:100,gray:0,sepia:0,blur:0});commit();renderProps();draw();}),
         btn('Applica a questa doppia pagina',()=>{for(const k of sp.cells)if(k.ph&&k.ph!==ph)Object.assign(k.ph,{br:ph.br,ct:ph.ct,sat:ph.sat,gray:ph.gray,sepia:ph.sepia});commit();draw();scheduleStrip();}),
-        btn('A tutto il libro',()=>{for(const s of BOOK.spreads)for(const k of s.cells)if(k.ph&&k.ph!==ph)Object.assign(k.ph,{br:ph.br,ct:ph.ct,sat:ph.sat,gray:ph.gray,sepia:ph.sepia});commit();draw();toast('Regolazioni copiate su tutte le foto del libro');}))));
+        btn('A tutto il libro',()=>{for(const s of BOOK.spreads)for(const k of s.cells)if(k.ph&&k.ph!==ph)Object.assign(k.ph,{br:ph.br,ct:ph.ct,sat:ph.sat,gray:ph.gray,sepia:ph.sepia});commit();draw();toast('Regolazioni copiate su tutte le foto del libro',4500,'undo');}))));
   }else{
     out.push(sec(`Riquadro ${idx} · vuoto`,el('p',{},'Trascina una foto dal pannello Foto, oppure caricala direttamente qui.'),
       el('div',{class:'row'},btn('Carica foto qui…',()=>{pickFor=c.id;$('#fileIn').click();},'pri'),btn('Vai alle foto non usate',()=>{UI.tab='photos';UI.filter='unused';renderLeft();}),
@@ -3571,7 +3602,7 @@ $('#tL').onclick=()=>togglePanel('L');$('#tR').onclick=()=>togglePanel('R');$('#
 applyPanels();
 
 /* ============ modalità / zoom / tastiera ============ */
-function setMode(m){UI.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));renderProps();draw();}
+function setMode(m){UI.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>{b.classList.toggle('on',b.dataset.m===m);b.setAttribute('aria-pressed',b.dataset.m===m);});renderProps();draw();}
 function setZoom(z){view.zoom=clamp(z,.25,6);draw();}
 document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.t;renderLeft();});

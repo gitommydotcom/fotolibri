@@ -89,3 +89,15 @@ Durante lo sviluppo si può aprire direttamente `src/index.html`.
 - Profilo ICC ISO Coated v2 (ECI) – © Heidelberger Druckmaschinen AG, distribuito senza modifiche con la sua licenza (`vendor/icc/`, `dist/LICENZE.txt`)
 - @mediapipe/tasks-vision e modello DeepLab v3 – Apache License 2.0 (`vendor/mediapipe/`)
 - Encoder JPEG derivato da jpeg-js / Adobe as3corelib – licenza BSD (vedi `src/js/81-cmyk.js`)
+
+## Design e MCP UI/UX
+
+Nel file `.mcp.json` è registrato il server MCP **ui-ux-pro-mcp** (`npx -y ui-ux-pro-mcp@1.5.0 --stdio`), costruito sul database di *ui-ux-pro-max*: stili, palette, abbinamenti di caratteri e linee guida UX. Claude Code lo propone all'apertura del progetto.
+
+Dalle sue raccomandazioni arrivano:
+- la palette "gallery neutral" per i prodotti fotografici, con contrasti AA verificati anche in modalità scura;
+- i titoli in Playfair Display con il testo in Inter;
+- i bersagli cliccabili di almeno 24 px;
+- gli stati di hover, focus e disabilitato;
+- i toast con il pulsante "Annulla";
+- il rispetto di `prefers-reduced-motion`.

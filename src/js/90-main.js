@@ -11,7 +11,7 @@ $('#tL').onclick=()=>togglePanel('L');$('#tR').onclick=()=>togglePanel('R');$('#
 applyPanels();
 
 /* ============ modalità / zoom / tastiera ============ */
-function setMode(m){UI.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));renderProps();draw();}
+function setMode(m){UI.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>{b.classList.toggle('on',b.dataset.m===m);b.setAttribute('aria-pressed',b.dataset.m===m);});renderProps();draw();}
 function setZoom(z){view.zoom=clamp(z,.25,6);draw();}
 document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.t;renderLeft();});

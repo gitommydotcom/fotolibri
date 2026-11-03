@@ -23,7 +23,14 @@ function el(tag,attrs={},...kids){
   return e;
 }
 let toastT=0;
-function toast(msg,ms=2800){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,ms);}
+/* toast: 3,5–5 s (linee guida), "Annulla" quando l'azione è annullabile, pausa al passaggio del mouse */
+function toast(msg,ms=3500,act){const t=$('#toast');let undoable=act==='undo'||/Ctrl\+Z/.test(msg);
+  if(undoable)msg=msg.replace(/[\s.(:·]*Ctrl\+Z per (annullare|tornare indietro)\)?\.?/,'').replace(/\s*\(\s*\)$/,'');
+  t.replaceChildren(el('span',{},msg));
+  if(undoable&&typeof undo==='function')t.append(el('button',{type:'button',onclick:()=>{t.hidden=true;undo();}},'Annulla'));
+  t.hidden=false;clearTimeout(toastT);const wait=Math.max(ms,undoable?6000:0);
+  const arm=d=>{clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,d);};arm(wait);
+  t.onmouseenter=()=>clearTimeout(toastT);t.onmouseleave=()=>arm(2000);}
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},60000);}
 const toBlob=(c,t,q)=>new Promise(r=>c.toBlob(r,t,q));

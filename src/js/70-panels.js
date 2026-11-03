@@ -21,7 +21,7 @@ function numIn(label,get,set,min,max,step=1){const i=el('input',{type:'number',c
 
 /* ============ pannello sinistro ============ */
 function renderLeft(){
-  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===UI.tab));
+  document.querySelectorAll('#tabs button').forEach(b=>{const on=b.dataset.t===UI.tab;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});
   const L=$('#leftBody'),y=L.scrollTop;L.replaceChildren(...({photos:tabPhotos,theme:tabTheme,pages:tabPages,layout:tabLayout,text:tabText,deco:tabDeco,book:tabBook}[UI.tab])().filter(Boolean));L.scrollTop=y;
 }
 function tabPhotos(){
@@ -137,7 +137,7 @@ function tabLayout(){
         btn('Crea libro automatico…',openWizard,'alt'))),
     sec('Riquadri liberi',
       el('div',{class:'row'},btn('Aggiungi riquadro libero',()=>{const c=mkCell([.3,.3,.4,.4],side);sp.cells.push(c);sel={type:'cell',id:c.id};setMode('layout');commit();syncAll();}),
-        btn('Svuota questa pagina',()=>{const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));const r=redistribute(ph,pageNum(UI.cur,side==='S'?'L':side),{afterIdx:UI.cur,exclude:x=>x.sp===sp&&x.side===side});sel=null;commit();syncAll();toast('Pagina svuotata'+redistMsg(r));},'danger','Le foto vengono spostate nelle pagine vicine')),
+        btn('Svuota questa pagina',()=>{const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));const r=redistribute(ph,pageNum(UI.cur,side==='S'?'L':side),{afterIdx:UI.cur,exclude:x=>x.sp===sp&&x.side===side});sel=null;commit();syncAll();toast('Pagina svuotata'+redistMsg(r),4500,'undo');},'danger','Le foto vengono spostate nelle pagine vicine')),
       chk('Bordi in comune si muovono insieme',()=>UI.link,v=>UI.link=v),
       chk('Aggancio a griglia e bordi',()=>UI.snap,v=>UI.snap=v),
       el('p',{},'In modalità Riquadri (tasto M) trascina un riquadro per spostarlo e i bordi o gli angoli per ridimensionarlo.'))

@@ -6,7 +6,7 @@
 <title>Fotolibro Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400&family=Josefin+Sans:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;700&family=Bebas+Neue&family=Roboto+Slab:wght@400;700&family=Great+Vibes&family=Dancing+Script:wght@400;700&family=Caveat:wght@400;700&family=Pacifico&family=Amatic+SC:wght@400;700&family=Fredoka:wght@400;600;700&family=Mountains+of+Christmas:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400&family=Josefin+Sans:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;700&family=Bebas+Neue&family=Roboto+Slab:wght@400;700&family=Great+Vibes&family=Dancing+Script:wght@400;700&family=Caveat:wght@400;700&family=Pacifico&family=Amatic+SC:wght@400;700&family=Fredoka:wght@400;600;700&family=Mountains+of+Christmas:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -52,7 +52,7 @@
 
 <div class="main">
   <aside class="left">
-    <nav class="tabs" id="tabs">
+    <nav class="tabs" id="tabs" aria-label="Strumenti">
       <button data-t="photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>Foto</button>
       <button data-t="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.6 0-1.3-1-1.6-1-2.7 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>Tema</button>
       <button data-t="pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="3" width="13" height="17" rx="1.5"/><path d="M8 8h5M8 11.5h5M8 15h3"/><path d="m18.5 13 1 2.2 2.3.3-1.7 1.5.5 2.3-2.1-1.2-2 1.2.4-2.3-1.7-1.5 2.3-.3Z" fill="currentColor" stroke="none"/></svg>Pagine</button>
@@ -83,7 +83,7 @@
 <dialog id="flipDlg" class="full"><div class="flipbar"><b>Anteprima sfogliabile</b><span>così la vedrà il cliente nel flipbook</span><button type="button" class="btn sm" id="flipClose">Chiudi</button></div><iframe id="flipFrame" title="Anteprima sfogliabile"></iframe></dialog>
 
 <div class="start" id="start" hidden><div class="startin" id="startBody"></div></div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="js/00-util.js"></script>
 <script src="js/10-motifs.js"></script>

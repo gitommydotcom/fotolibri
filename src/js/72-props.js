@@ -32,7 +32,7 @@ function cellProps(c){
         btn('Centra',()=>{ph.ox=ph.oy=0;ph.zoom=1;commit();renderProps();draw();}))));
     out.push(sec(null,el('div',{class:'row'},
       btn(im.fav?'★ Preferita':'☆ Rendi preferita e ingrandisci',()=>{im.fav=!im.fav;if(im.fav)relayoutPage(sp,c.side);sel=null;commit();syncAll();},im.fav?'alt':'pri','Le preferite vanno nel riquadro più grande'),
-      btn('Togli dalla pagina',()=>{removeFromPage(c);commit();syncAll();toast('Foto tolta: la ritrovi tra le “Non usate”');},'danger','Toglie il riquadro e ridistribuisce le altre foto'),
+      btn('Togli dalla pagina',()=>{removeFromPage(c);commit();syncAll();toast('Foto tolta: la ritrovi tra le “Non usate”',4500,'undo');},'danger','Toglie il riquadro e ridistribuisce le altre foto'),
       btn('Svuota riquadro',()=>{c.ph=null;commit();syncAll();}))));
     out.push(sec('Colore e tono',
       slider('Luminosità',()=>ph.br,v=>ph.br=v,0,200,1,'%'),
@@ -43,7 +43,7 @@ function cellProps(c){
       el('div',{class:'row'},
         btn('Ripristina',()=>{Object.assign(ph,{br:100,ct:100,sat:100,gray:0,sepia:0,blur:0});commit();renderProps();draw();}),
         btn('Applica a questa doppia pagina',()=>{for(const k of sp.cells)if(k.ph&&k.ph!==ph)Object.assign(k.ph,{br:ph.br,ct:ph.ct,sat:ph.sat,gray:ph.gray,sepia:ph.sepia});commit();draw();scheduleStrip();}),
-        btn('A tutto il libro',()=>{for(const s of BOOK.spreads)for(const k of s.cells)if(k.ph&&k.ph!==ph)Object.assign(k.ph,{br:ph.br,ct:ph.ct,sat:ph.sat,gray:ph.gray,sepia:ph.sepia});commit();draw();toast('Regolazioni copiate su tutte le foto del libro');}))));
+        btn('A tutto il libro',()=>{for(const s of BOOK.spreads)for(const k of s.cells)if(k.ph&&k.ph!==ph)Object.assign(k.ph,{br:ph.br,ct:ph.ct,sat:ph.sat,gray:ph.gray,sepia:ph.sepia});commit();draw();toast('Regolazioni copiate su tutte le foto del libro',4500,'undo');}))));
   }else{
     out.push(sec(`Riquadro ${idx} · vuoto`,el('p',{},'Trascina una foto dal pannello Foto, oppure caricala direttamente qui.'),
       el('div',{class:'row'},btn('Carica foto qui…',()=>{pickFor=c.id;$('#fileIn').click();},'pri'),btn('Vai alle foto non usate',()=>{UI.tab='photos';UI.filter='unused';renderLeft();}),

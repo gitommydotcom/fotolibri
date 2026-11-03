@@ -118,7 +118,7 @@ function renderPbar(){
     if(BOOK.spreads.filter(isInner).length<=1){toast('L’interno deve avere almeno una doppia pagina');return;}
     const old=BOOK.spreads[i],ph=old.cells.filter(c=>c.ph&&!c.fx&&!c.epPh).map(c=>c.ph),pos=pageNum(i,'L');BOOK.spreads.splice(i,1);
     const keep=ph.filter(p=>!usedInInterior(p.img));const r=redistribute(keep,pos,{afterIdx:Math.max(0,i-1)});
-    UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();toast('Doppia pagina eliminata'+redistMsg(r),4500);},'danger','Elimina questa doppia pagina: le sue foto vanno nelle pagine vicine (clicca due volte)');
+    UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();toast('Doppia pagina eliminata'+redistMsg(r),4500,'undo');},'danger','Elimina questa doppia pagina: le sue foto vanno nelle pagine vicine (clicca due volte)');
   $('#pbar').replaceChildren(...[
     btn('◀',()=>goSpread(i-1),'nav','Doppia pagina precedente (PagSu)'),
     el('div',{class:'ttl'},ttl,el('small',{},sub)),
