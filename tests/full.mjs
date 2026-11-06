@@ -59,6 +59,9 @@ const ex=await p.evaluate(async()=>{EXP.dpi=150;openExport('print');await runExp
   $('#dlg').close();DRAFT.dpi=80;await runExport('draft');for(const r of RESULTS){const u=new Uint8Array(await r.blob.arrayBuffer());let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));o.push([r.name,btoa(s)]);}
   $('#dlg').close();return{files:o,N:bookPages(),ir:interiorRange()};});
 for(const [nm,d] of ex.files)writeFileSync(OUT+'/'+nm,Buffer.from(d,'base64'));
+const eg=await p.evaluate(()=>{const sp=BOOK.spreads.find(s=>s.kind==='endF'),f=foldX(sp),L=visBox(sp,'L'),R=visBox(sp,'R'),b=EXP.bleed,P=BOOK.page,H=pgH(sp);
+  return{flush:Math.abs(L.x+L.w-f)<.01&&Math.abs(R.x-f)<.01,size:Math.abs(L.w-(P.w+2*b))<.01&&Math.abs(L.h-(P.h+2*b))<.01,center:Math.abs(L.y-(H-L.h)/2)<.01};});
+ok(eg.flush&&eg.size&&eg.center,'risguardi: zona stampata = pagina + abbondanza, appoggiata alla piega e centrata in altezza');
 writeFileSync(OUT+'/export.json',JSON.stringify({N:ex.N,ir:ex.ir,files:ex.files.map(f=>f[0])}));
 console.log('   file:',ex.files.map(f=>f[0]).join(', '));
 console.log('7. Salva e riapri');

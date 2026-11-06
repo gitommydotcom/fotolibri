@@ -950,13 +950,22 @@ function visBox(sp,side){
   const H=pgH(sp);
   if(!isEnd(sp)){const pb=pageBox(sp,side);return{x:pb.x,y:0,w:pb.w,h:H};}
   if(side==='S'){const a=visBox(sp,'L'),b=visBox(sp,'R');return{x:a.x,y:Math.min(a.y,b.y),w:b.x+b.w-a.x,h:Math.max(a.h,b.h)};}
-  const E=BOOK.endp,pb=pageBox(sp,side),vw=Math.min(E.visW||BOOK.page.w,pb.w),vh=Math.min(E.visH||BOOK.page.h,H),y=(H-vh)/2;
+  /* zona stampata di ogni lato: pagina + abbondanza (o misure date a mano), appoggiata alla piega e centrata in altezza;
+     il resto del foglio resta bianco */
+  const E=BOOK.endp,pb=pageBox(sp,side),b=EXP.bleed||0,vw=Math.min(E.visW||BOOK.page.w+2*b,pb.w),vh=Math.min(E.visH||BOOK.page.h+2*b,H),y=(H-vh)/2;
   return side==='L'?{x:pb.x+pb.w-vw,y,w:vw,h:vh}:{x:pb.x,y,w:vw,h:vh};
 }
+/* pagina rifilata dentro la zona stampata del risguardo: lato della rilegatura verso la piega, abbondanza attorno */
+function endTrimBox(sp,side,bindLeft){
+  const V=visBox(sp,side),P=BOOK.page,w=Math.min(P.w,V.w),h=Math.min(P.h,V.h),bi=Math.max(0,Math.min(EXP.bleed||0,(V.w-w)/2));
+  if(bindLeft==null)bindLeft=side==='R';
+  return{x:bindLeft?V.x+bi:V.x+V.w-bi-w,y:V.y+(V.h-h)/2,w,h};
+}
+function endPrintArea(sp){const a=visBox(sp,'L'),b=visBox(sp,'R');return[a,b];}
 function meta(sp,side){return sp.meta[side]||(sp.meta[side]=mkMeta());}
 function areaOf(sp,side){
   const st=BOOK.style,M=meta(sp,side),H=pgH(sp);
-  let V=visBox(sp,side);if(M.full&&isEnd(sp)){const pb=pageBox(sp,side);V={x:pb.x,y:0,w:pb.w,h:H};}
+  let V=visBox(sp,side);if(isEnd(sp)&&!M.full)V=side==='S'?(()=>{const a=endTrimBox(sp,'L'),c=endTrimBox(sp,'R');return{x:a.x,y:a.y,w:c.x+c.w-a.x,h:a.h};})():endTrimBox(sp,side);
   const m=M.full?0:st.margin,bd=M.full?0:(isInner(sp)?st.bind:st.margin);
   let x,w;
   if(side==='L'){x=V.x+m;w=V.w-m-bd;}else if(side==='R'){x=V.x+bd;w=V.w-bd-m;}else{x=V.x+m;w=V.w-2*m;}
@@ -1116,6 +1125,7 @@ function sortOrder(){
 function usage(){const m=new Map();BOOK.spreads.forEach((sp,i)=>sp.cells.forEach(c=>{if(c.ph){const u=m.get(c.ph.img);if(u)u.n++;else m.set(c.ph.img,{n:1,sp:i});}}));return m;}
 function realCount(){let n=0;for(const e of LIB.values())if(!e.sample)n++;return n;}
 function progress(label,done,total){const p=$('#prog');START.prog=total==null?null:{label,done,total};
+  if(total!=null&&START.open&&!document.getElementById('sprog'))renderStartLive();
   const sp=document.getElementById('sprog');if(sp&&total!=null){sp.firstChild.textContent=label;sp.querySelector('.pb i').style.width=(total?100*done/total:0)+'%';const sb=document.querySelector('#sbar .ssum b');if(sb)sb.textContent=label;}
   if(total==null){p.hidden=true;return;}p.hidden=false;$('#progL').textContent=label;$('#progB').style.width=(total?100*done/total:0)+'%';}
 async function importFiles(files){
@@ -1879,6 +1889,9 @@ function drawBadge(ctx,d,x,y,s){
 function renderSpread(ctx,sp,o){
   const st=BOOK.style,s=o.s,ox=o.ox,oy=o.oy,b=o.bleed||0,W=spW(sp),H=pgH(sp),bg=bgOf(sp);
   ctx.save();
+  /* risguardi: si stampa solo la zona visibile (pagina + abbondanza per lato), il resto del foglio resta carta bianca */
+  if(isEnd(sp)&&!o.fullSheet){ctx.fillStyle='#ffffff';ctx.fillRect(ox-b*s,oy-b*s,(W+2*b)*s,(H+2*b)*s);ctx.beginPath();
+    for(const V of endPrintArea(sp))ctx.rect(ox+V.x*s,oy+V.y*s,V.w*s,V.h*s);ctx.clip();}
   ctx.fillStyle=bg;ctx.fillRect(ox-b*s,oy-b*s,(W+2*b)*s,(H+2*b)*s);
   /* sfondo proprio di una singola pagina (pagine speciali) */
   for(const side of['L','R','S']){const sb=sideBg(sp,side);if(!sb||(side==='S'&&sp.mode!=='spread')||(side!=='S'&&sp.mode==='spread'))continue;
@@ -2106,7 +2119,7 @@ function paint(){
   overlays(ctx,sp);
   const P=BOOK.page;
   $('#dimInfo').textContent=isCover(sp)?`Copertina aperta ${nf(W)} × ${nf(H)} mm · dorso ${nf(BOOK.cover.spine)} · cartone +${nf(BOOK.cover.over)} · risvolto ${nf(BOOK.cover.wrap)} mm`
-    :isEnd(sp)?`Foglio risguardo ${nf(W)} × ${nf(H)} mm · piega a ${nf(foldX(sp))} mm · zona visibile ${nf(visBox(sp,'L').w)} × ${nf(visBox(sp,'L').h)} mm per lato`
+    :isEnd(sp)?`Foglio risguardo ${nf(W)} × ${nf(H)} mm · piega a ${nf(foldX(sp))} mm · zona stampata ${nf(visBox(sp,'L').w)} × ${nf(visBox(sp,'L').h)} mm per lato (pagina + abbondanza)`
     :`${P.preset==='custom'?'Personalizzato':P.preset} · doppia pagina ${nf(W)} × ${nf(H)} mm · abbondanza ${nf(EXP.bleed)} mm`;
 }
 const px=(mm,o)=>o+mm*view.s;
@@ -2123,10 +2136,10 @@ function overlays(ctx,sp){
     for(const side of(sp.mode==='spread'?['S']:['L','R'])){const M=meta(sp,side);if(M.full)continue;const I=areaOf(sp,side);ctx.strokeRect(px(I.x,view.ox)+.5,px(I.y,view.oy)+.5,I.w*s,I.h*s);}
     if(view.b>0){ctx.strokeStyle='rgba(0,170,220,.9)';ctx.setLineDash([]);ctx.strokeRect(view.ox+.5,view.oy+.5,W*s,H*s);}
     const sf=BOOK.safe;if(sf>0){ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(220,60,60,.55)';
-      for(const side of(sp.mode==='spread'&&!isEnd(sp)?['S']:['L','R'])){const V=visBox(sp,side);ctx.strokeRect(px(V.x+sf,view.ox)+.5,px(V.y+sf,view.oy)+.5,(V.w-2*sf)*s,(V.h-2*sf)*s);}}
+      for(const side of(sp.mode==='spread'&&!isEnd(sp)?['S']:['L','R'])){const V=isEnd(sp)?endTrimBox(sp,side):visBox(sp,side);ctx.strokeRect(px(V.x+sf,view.ox)+.5,px(V.y+sf,view.oy)+.5,(V.w-2*sf)*s,(V.h-2*sf)*s);}}
     if(isEnd(sp)){ctx.setLineDash([8,4]);ctx.strokeStyle='rgba(30,160,90,.9)';ctx.lineWidth=1.2;
       for(const side of['L','R']){const V=visBox(sp,side);ctx.strokeRect(px(V.x,view.ox)+.5,px(V.y,view.oy)+.5,V.w*s,V.h*s);}
-      ctx.font='10px "IBM Plex Mono",monospace';ctx.fillStyle='rgba(30,140,80,.95)';ctx.textAlign='left';ctx.textBaseline='top';const V=visBox(sp,'L');ctx.fillText('zona visibile a libro finito',px(V.x,view.ox)+4,px(V.y,view.oy)+4);}
+      ctx.font='10px "IBM Plex Mono",monospace';ctx.fillStyle='rgba(30,140,80,.95)';ctx.textAlign='left';ctx.textBaseline='top';const V=visBox(sp,'L');ctx.textBaseline='bottom';ctx.fillText('zona stampata (pagina + abbondanza) · fuori resta carta bianca',px(V.x,view.ox)+2,px(V.y,view.oy)-5);ctx.strokeStyle='rgba(30,160,90,.5)';ctx.setLineDash([2,3]);for(const side of['L','R']){const T=endTrimBox(sp,side);ctx.strokeRect(px(T.x,view.ox)+.5,px(T.y,view.oy)+.5,T.w*s,T.h*s);}}
     if(isCover(sp)&&BOOK.cover.wrap>0){ctx.setLineDash([6,3]);ctx.strokeStyle='rgba(200,120,0,.8)';const w=BOOK.cover.wrap;
       ctx.strokeRect(view.ox-w*s+.5,view.oy-w*s+.5,(W+2*w)*s,(H+2*w)*s);}
     ctx.setLineDash([]);
@@ -2672,6 +2685,7 @@ const BUILTIN_PROFILES=[
   {name:'A4 orizzontale 29,7×21 · copertina rigida',page:A4L,bleed:3,safe:5,margin:10,bind:15,spine:8,wrap:15,over:3,dpi:300,firstRight:false,mult4:true,endp:EP},
   {name:'A4 orizzontale 29,7×21 · copertina morbida',page:A4L,bleed:3,safe:5,margin:10,bind:14,spine:5,wrap:0,over:0,dpi:300,firstRight:false,mult4:true,endp:{...EP,on:false}},
   {name:'A4 orizzontale · apertura piatta (lay-flat)',page:A4L,bleed:3,safe:5,margin:10,bind:5,spine:8,wrap:15,over:3,dpi:300,firstRight:false,mult4:false,endp:EP},
+  {name:'Orizzontale 30×20 · copertina rigida',page:{w:300,h:200,preset:'Orizzontale 30×20 cm'},bleed:2,safe:5,margin:10,bind:15,spine:8,wrap:15,over:3,dpi:300,firstRight:false,mult4:true,endp:EP},
   {name:'A4 verticale 21×29,7 · copertina rigida',page:{w:210,h:297,preset:'Verticale 21×29,7 cm (A4)'},bleed:3,safe:5,margin:10,bind:15,spine:8,wrap:15,over:3,dpi:300,firstRight:false,mult4:true,endp:EP},
   {name:'Quadrato 30×30 · copertina rigida',page:{w:300,h:300,preset:'Quadrato 30×30 cm'},bleed:3,safe:6,margin:12,bind:18,spine:10,wrap:15,over:3,dpi:300,firstRight:false,mult4:true,endp:EP},
   {name:'Quadrato 20×20 · copertina morbida',page:{w:200,h:200,preset:'Quadrato 20×20 cm'},bleed:3,safe:5,margin:8,bind:12,spine:5,wrap:0,over:0,dpi:300,firstRight:false,mult4:true,endp:{...EP,on:false}},
@@ -2747,10 +2761,10 @@ function tabBook(){
         mmField('Altezza foglio (mm)',()=>E.h,v=>E.h=v,50,1000,.5),
         mmField('Piega a (mm da sinistra)',()=>foldX(BOOK.spreads[endF]||{kind:'endF'}),v=>E.fold=v,10,1990,.5),
         mmField('Abbondanza (mm)',()=>E.bleed,v=>E.bleed=v,0,20,.5),
-        mmField('Zona visibile, largh. (0 = pagina)',()=>E.visW,v=>E.visW=v,0,1000,.5),
-        mmField('Zona visibile, alt. (0 = pagina)',()=>E.visH,v=>E.visH=v,0,1000,.5)):null,
+        mmField('Zona stampata per lato, largh. (0 = pagina + abbondanza)',()=>E.visW,v=>E.visW=v,0,1000,.5),
+        mmField('Zona stampata per lato, alt. (0 = pagina + abbondanza)',()=>E.visH,v=>E.visH=v,0,1000,.5)):null,
       E.on?chk(`Stampa sul foglio dei risguardi anche pag. 4 e pag. ${bookPages()-3} (retro dei fogli)`,()=>E.verso!==false,v=>{E.verso=v;THUMBS.clear();syncAll();},'Pag. 4 e la terzultima finiscono nel PDF dei risguardi invece che nell’interno'):null,
-      E.on?el('p',{},'Ogni risguardo è un foglio a sé (anteriore e posteriore) ed esce in un file dedicato. Il riquadro verde mostra la parte che si vede a libro finito: tienici dentro testi e foto importanti.'):null,
+      E.on?el('p',{},'Ogni lato del foglio stampa solo la pagina con la sua abbondanza, appoggiata alla piega e centrata in altezza (riquadro verde): il resto del foglio resta bianco, anche con un motivo. Il tratteggio interno è la pagina rifilata.'):null,
       E.on&&endF>=0?btn('Vai al risguardo anteriore',()=>goSpread(endF)):null),
     sec('Sicurezza di stampa',
       slider('Abbondanza (bleed)',()=>EXP.bleed,v=>EXP.bleed=v,0,10,.5,'mm'),
@@ -3495,13 +3509,11 @@ async function renderVersoJob(j){
   const src=j.src,P=BOOK.page,half=pageBox(sh,j.side),vis=visBox(sh,j.side),sb=pageBox(src,j.srcSide);
   const map=await loadOriginals(src),fxmap=await loadCutouts(src,true);await loadSpreadFonts(src);
   const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);ctx.imageSmoothingQuality='high';
-  /* zona: metà foglio (con abbondanza verso l'esterno), senza superare la piega */
-  const atLeft=half.x<=.01,x0=atLeft?-g.b:half.x,x1=atLeft?half.x+half.w:SW+g.b;
-  ctx.save();ctx.beginPath();ctx.rect((g.ext+x0)*g.k,(g.ext-g.b)*g.k,(x1-x0)*g.k,(PH+2*g.b)*g.k);ctx.clip();
+  /* zona stampata: pagina + abbondanza appoggiata alla piega, centrata in altezza; fuori resta carta bianca */
+  ctx.save();ctx.beginPath();ctx.rect((g.ext+vis.x)*g.k,(g.ext+vis.y)*g.k,vis.w*g.k,vis.h*g.k);ctx.clip();
   ctx.fillStyle=bgOf(src,j.srcSide);ctx.fillRect(0,0,W,H);
-  /* la pagina va con il lato della rilegatura sulla piega del foglio */
-  const bindLeft=j.srcSide==='R',px=bindLeft?vis.x:vis.x+vis.w-P.w,py=vis.y,ext=Math.max(8,Math.min(60,Math.max(vis.x-half.x,half.x+half.w-vis.x-vis.w,vis.y)+g.b));
-  ctx.beginPath();ctx.rect((g.ext+(bindLeft?px:px-ext))*g.k,(g.ext+py-ext)*g.k,(P.w+ext)*g.k,(P.h+2*ext)*g.k);ctx.clip();
+  /* la pagina va con il lato della rilegatura verso la piega del foglio */
+  const T=endTrimBox(sh,j.side,j.srcSide==='R'),px=T.x,py=T.y,ext=Math.max(EXP.bleed||0,vis.w-T.w,vis.h-T.h)+1;
   renderSpread(ctx,src,{s:g.k,ox:(g.ext+px-sb.x)*g.k,oy:(g.ext+py)*g.k,bleed:ext,spineBleed:false,q:'full',map,fxmap,sides:[j.srcSide]});
   ctx.restore();
   if(EXP.marks){drawMarks(ctx,g,SW,PH);const X=(g.ext+foldX(sh))*g.k;ctx.save();ctx.strokeStyle='#000';ctx.lineWidth=Math.max(1,.1*g.k);ctx.beginPath();

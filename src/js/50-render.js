@@ -83,6 +83,9 @@ function drawBadge(ctx,d,x,y,s){
 function renderSpread(ctx,sp,o){
   const st=BOOK.style,s=o.s,ox=o.ox,oy=o.oy,b=o.bleed||0,W=spW(sp),H=pgH(sp),bg=bgOf(sp);
   ctx.save();
+  /* risguardi: si stampa solo la zona visibile (pagina + abbondanza per lato), il resto del foglio resta carta bianca */
+  if(isEnd(sp)&&!o.fullSheet){ctx.fillStyle='#ffffff';ctx.fillRect(ox-b*s,oy-b*s,(W+2*b)*s,(H+2*b)*s);ctx.beginPath();
+    for(const V of endPrintArea(sp))ctx.rect(ox+V.x*s,oy+V.y*s,V.w*s,V.h*s);ctx.clip();}
   ctx.fillStyle=bg;ctx.fillRect(ox-b*s,oy-b*s,(W+2*b)*s,(H+2*b)*s);
   /* sfondo proprio di una singola pagina (pagine speciali) */
   for(const side of['L','R','S']){const sb=sideBg(sp,side);if(!sb||(side==='S'&&sp.mode!=='spread')||(side!=='S'&&sp.mode==='spread'))continue;

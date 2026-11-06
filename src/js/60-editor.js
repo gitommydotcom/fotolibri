@@ -22,7 +22,7 @@ function paint(){
   overlays(ctx,sp);
   const P=BOOK.page;
   $('#dimInfo').textContent=isCover(sp)?`Copertina aperta ${nf(W)} × ${nf(H)} mm · dorso ${nf(BOOK.cover.spine)} · cartone +${nf(BOOK.cover.over)} · risvolto ${nf(BOOK.cover.wrap)} mm`
-    :isEnd(sp)?`Foglio risguardo ${nf(W)} × ${nf(H)} mm · piega a ${nf(foldX(sp))} mm · zona visibile ${nf(visBox(sp,'L').w)} × ${nf(visBox(sp,'L').h)} mm per lato`
+    :isEnd(sp)?`Foglio risguardo ${nf(W)} × ${nf(H)} mm · piega a ${nf(foldX(sp))} mm · zona stampata ${nf(visBox(sp,'L').w)} × ${nf(visBox(sp,'L').h)} mm per lato (pagina + abbondanza)`
     :`${P.preset==='custom'?'Personalizzato':P.preset} · doppia pagina ${nf(W)} × ${nf(H)} mm · abbondanza ${nf(EXP.bleed)} mm`;
 }
 const px=(mm,o)=>o+mm*view.s;
@@ -39,10 +39,10 @@ function overlays(ctx,sp){
     for(const side of(sp.mode==='spread'?['S']:['L','R'])){const M=meta(sp,side);if(M.full)continue;const I=areaOf(sp,side);ctx.strokeRect(px(I.x,view.ox)+.5,px(I.y,view.oy)+.5,I.w*s,I.h*s);}
     if(view.b>0){ctx.strokeStyle='rgba(0,170,220,.9)';ctx.setLineDash([]);ctx.strokeRect(view.ox+.5,view.oy+.5,W*s,H*s);}
     const sf=BOOK.safe;if(sf>0){ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(220,60,60,.55)';
-      for(const side of(sp.mode==='spread'&&!isEnd(sp)?['S']:['L','R'])){const V=visBox(sp,side);ctx.strokeRect(px(V.x+sf,view.ox)+.5,px(V.y+sf,view.oy)+.5,(V.w-2*sf)*s,(V.h-2*sf)*s);}}
+      for(const side of(sp.mode==='spread'&&!isEnd(sp)?['S']:['L','R'])){const V=isEnd(sp)?endTrimBox(sp,side):visBox(sp,side);ctx.strokeRect(px(V.x+sf,view.ox)+.5,px(V.y+sf,view.oy)+.5,(V.w-2*sf)*s,(V.h-2*sf)*s);}}
     if(isEnd(sp)){ctx.setLineDash([8,4]);ctx.strokeStyle='rgba(30,160,90,.9)';ctx.lineWidth=1.2;
       for(const side of['L','R']){const V=visBox(sp,side);ctx.strokeRect(px(V.x,view.ox)+.5,px(V.y,view.oy)+.5,V.w*s,V.h*s);}
-      ctx.font='10px "IBM Plex Mono",monospace';ctx.fillStyle='rgba(30,140,80,.95)';ctx.textAlign='left';ctx.textBaseline='top';const V=visBox(sp,'L');ctx.fillText('zona visibile a libro finito',px(V.x,view.ox)+4,px(V.y,view.oy)+4);}
+      ctx.font='10px "IBM Plex Mono",monospace';ctx.fillStyle='rgba(30,140,80,.95)';ctx.textAlign='left';ctx.textBaseline='top';const V=visBox(sp,'L');ctx.textBaseline='bottom';ctx.fillText('zona stampata (pagina + abbondanza) · fuori resta carta bianca',px(V.x,view.ox)+2,px(V.y,view.oy)-5);ctx.strokeStyle='rgba(30,160,90,.5)';ctx.setLineDash([2,3]);for(const side of['L','R']){const T=endTrimBox(sp,side);ctx.strokeRect(px(T.x,view.ox)+.5,px(T.y,view.oy)+.5,T.w*s,T.h*s);}}
     if(isCover(sp)&&BOOK.cover.wrap>0){ctx.setLineDash([6,3]);ctx.strokeStyle='rgba(200,120,0,.8)';const w=BOOK.cover.wrap;
       ctx.strokeRect(view.ox-w*s+.5,view.oy-w*s+.5,(W+2*w)*s,(H+2*w)*s);}
     ctx.setLineDash([]);

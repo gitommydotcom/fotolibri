@@ -94,13 +94,11 @@ async function renderVersoJob(j){
   const src=j.src,P=BOOK.page,half=pageBox(sh,j.side),vis=visBox(sh,j.side),sb=pageBox(src,j.srcSide);
   const map=await loadOriginals(src),fxmap=await loadCutouts(src,true);await loadSpreadFonts(src);
   const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);ctx.imageSmoothingQuality='high';
-  /* zona: metà foglio (con abbondanza verso l'esterno), senza superare la piega */
-  const atLeft=half.x<=.01,x0=atLeft?-g.b:half.x,x1=atLeft?half.x+half.w:SW+g.b;
-  ctx.save();ctx.beginPath();ctx.rect((g.ext+x0)*g.k,(g.ext-g.b)*g.k,(x1-x0)*g.k,(PH+2*g.b)*g.k);ctx.clip();
+  /* zona stampata: pagina + abbondanza appoggiata alla piega, centrata in altezza; fuori resta carta bianca */
+  ctx.save();ctx.beginPath();ctx.rect((g.ext+vis.x)*g.k,(g.ext+vis.y)*g.k,vis.w*g.k,vis.h*g.k);ctx.clip();
   ctx.fillStyle=bgOf(src,j.srcSide);ctx.fillRect(0,0,W,H);
-  /* la pagina va con il lato della rilegatura sulla piega del foglio */
-  const bindLeft=j.srcSide==='R',px=bindLeft?vis.x:vis.x+vis.w-P.w,py=vis.y,ext=Math.max(8,Math.min(60,Math.max(vis.x-half.x,half.x+half.w-vis.x-vis.w,vis.y)+g.b));
-  ctx.beginPath();ctx.rect((g.ext+(bindLeft?px:px-ext))*g.k,(g.ext+py-ext)*g.k,(P.w+ext)*g.k,(P.h+2*ext)*g.k);ctx.clip();
+  /* la pagina va con il lato della rilegatura verso la piega del foglio */
+  const T=endTrimBox(sh,j.side,j.srcSide==='R'),px=T.x,py=T.y,ext=Math.max(EXP.bleed||0,vis.w-T.w,vis.h-T.h)+1;
   renderSpread(ctx,src,{s:g.k,ox:(g.ext+px-sb.x)*g.k,oy:(g.ext+py)*g.k,bleed:ext,spineBleed:false,q:'full',map,fxmap,sides:[j.srcSide]});
   ctx.restore();
   if(EXP.marks){drawMarks(ctx,g,SW,PH);const X=(g.ext+foldX(sh))*g.k;ctx.save();ctx.strokeStyle='#000';ctx.lineWidth=Math.max(1,.1*g.k);ctx.beginPath();

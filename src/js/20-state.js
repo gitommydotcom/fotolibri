@@ -107,13 +107,22 @@ function visBox(sp,side){
   const H=pgH(sp);
   if(!isEnd(sp)){const pb=pageBox(sp,side);return{x:pb.x,y:0,w:pb.w,h:H};}
   if(side==='S'){const a=visBox(sp,'L'),b=visBox(sp,'R');return{x:a.x,y:Math.min(a.y,b.y),w:b.x+b.w-a.x,h:Math.max(a.h,b.h)};}
-  const E=BOOK.endp,pb=pageBox(sp,side),vw=Math.min(E.visW||BOOK.page.w,pb.w),vh=Math.min(E.visH||BOOK.page.h,H),y=(H-vh)/2;
+  /* zona stampata di ogni lato: pagina + abbondanza (o misure date a mano), appoggiata alla piega e centrata in altezza;
+     il resto del foglio resta bianco */
+  const E=BOOK.endp,pb=pageBox(sp,side),b=EXP.bleed||0,vw=Math.min(E.visW||BOOK.page.w+2*b,pb.w),vh=Math.min(E.visH||BOOK.page.h+2*b,H),y=(H-vh)/2;
   return side==='L'?{x:pb.x+pb.w-vw,y,w:vw,h:vh}:{x:pb.x,y,w:vw,h:vh};
 }
+/* pagina rifilata dentro la zona stampata del risguardo: lato della rilegatura verso la piega, abbondanza attorno */
+function endTrimBox(sp,side,bindLeft){
+  const V=visBox(sp,side),P=BOOK.page,w=Math.min(P.w,V.w),h=Math.min(P.h,V.h),bi=Math.max(0,Math.min(EXP.bleed||0,(V.w-w)/2));
+  if(bindLeft==null)bindLeft=side==='R';
+  return{x:bindLeft?V.x+bi:V.x+V.w-bi-w,y:V.y+(V.h-h)/2,w,h};
+}
+function endPrintArea(sp){const a=visBox(sp,'L'),b=visBox(sp,'R');return[a,b];}
 function meta(sp,side){return sp.meta[side]||(sp.meta[side]=mkMeta());}
 function areaOf(sp,side){
   const st=BOOK.style,M=meta(sp,side),H=pgH(sp);
-  let V=visBox(sp,side);if(M.full&&isEnd(sp)){const pb=pageBox(sp,side);V={x:pb.x,y:0,w:pb.w,h:H};}
+  let V=visBox(sp,side);if(isEnd(sp)&&!M.full)V=side==='S'?(()=>{const a=endTrimBox(sp,'L'),c=endTrimBox(sp,'R');return{x:a.x,y:a.y,w:c.x+c.w-a.x,h:a.h};})():endTrimBox(sp,side);
   const m=M.full?0:st.margin,bd=M.full?0:(isInner(sp)?st.bind:st.margin);
   let x,w;
   if(side==='L'){x=V.x+m;w=V.w-m-bd;}else if(side==='R'){x=V.x+bd;w=V.w-bd-m;}else{x=V.x+m;w=V.w-2*m;}
