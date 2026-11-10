@@ -252,7 +252,16 @@ function tabDeco(){
   const autoN=BOOK.spreads.reduce((a,s)=>a+(s.decos||[]).filter(d=>d.auto).length,0);
   const corners=()=>{const V=visBox(sp,side),W=spW(sp),H=pgH(sp),m=list[0],s=Math.min(V.w,V.h)*.1,o=BOOK.safe+s*.6;
     [[V.x+o,V.y+o,-15],[V.x+V.w-o,V.y+o,15],[V.x+o,V.y+V.h-o,15],[V.x+V.w-o,V.y+V.h-o,-15]].forEach(([x,y,r],k)=>sp.decos.push(mkDeco({m:list[k%list.length]||m,x:x/W,y:y/H,s,rot:r,c:palette[k%palette.length],c2:T.c2||T.colors.accent2})));commit();syncAll();};
+  const tArt=artFor(T.id),allArt=[...ART.values()];
+  let artSec=null;
+  if(allArt.length){const ser=[['tutti','Tutti'],...new Map(allArt.map(a=>[a.series,a.sname]))];const f=UI.artFilter||'tutti';
+    const list=(tArt.length?tArt:allArt).filter(a=>f==='tutti'||a.series===f);
+    const body=[seg(ser,f,v=>{UI.artFilter=v;renderLeft();},true),artGrid(list,a=>addArt(a.id)),
+      el('p',{},'Clic per aggiungere al centro della pagina attiva, o trascina lo sticker dove vuoi. Sono disegni vettoriali: in stampa restano nitidi.')];
+    artSec=tArt.length?sec(`Sticker illustrati · ${T.name} · ${tArt.length}`,...body)
+      :el('details',{class:'sec more'},el('summary',{},`Sticker illustrati (${[...new Set(allArt.map(a=>a.folder))].join(', ')}) · ${allArt.length}`),...body);}
   return[
+    artSec,
     sec('Aggiungi una decorazione',
       mine.length?seg(Object.entries(groups),UI.decoGroup,v=>{UI.decoGroup=v;renderLeft();},true):null,
       el('div',{class:'row'},el('span',{class:'u'},'Colore'),el('div',{class:'sw'},...palette.map(c=>el('button',{type:'button',class:col===c?'on':'',style:`background:${c}`,title:c,onclick:()=>{UI.decoColor=c;renderLeft();}}))),
@@ -466,7 +475,10 @@ function tabPages(){
     FX.failed?el('p',{class:'warn'},'Modulo effetti non disponibile: '+FX.failed+'. Il file fotolibro-effetti.js deve stare accanto all’app.'):null));
   out.push(sec('Sticker tra le foto',
     seg([['0','Nessuno'],['1','Pochi'],['2','Tanti']],String(BOOK.theme.stickers||0),v=>{BOOK.theme.stickers=+v;regenDecos();THUMBS.clear();commit();syncAll();},true),
-    el('p',{},`Sticker del tema “${T.name}” (${themeStickers().w.slice(0,3).join(', ')}…) sugli angoli delle foto. Per aggiungerne uno a mano usa il pannello Decori.`)));
+    artSeries(T.id).length>1?el('div',{class:'lbl'},el('span',{},'Quali sticker illustrati'),seg([['tutti','Tutti (una serie per doppia)'],...artSeries(T.id)],BOOK.theme.artSet||'tutti',v=>{BOOK.theme.artSet=v;regenDecos();THUMBS.clear();commit();syncAll();},true)):null,
+    el('p',{},artFor(T.id).length?`${artFor(T.id).length} sticker illustrati del tema “${T.name}” e qualche scritta (${themeStickers().w.slice(0,2).join(', ')}…) sugli angoli delle foto. Per aggiungerne uno a mano usa il pannello Decori.`
+      :`Sticker del tema “${T.name}” (${themeStickers().w.slice(0,3).join(', ')}…) sugli angoli delle foto. Per aggiungerne uno a mano usa il pannello Decori.`),
+    btn('Rimescola gli sticker',()=>{BOOK.stSeed=(BOOK.stSeed||0)+1;regenDecos();THUMBS.clear();commit();syncAll();toast('Sticker rimescolati',3500,'undo');},null,'Nuova disposizione degli sticker automatici; quelli messi a mano restano')));
   return out;
 }
 async function runEffect(mode){

@@ -48,6 +48,7 @@ function drawText(ctx,t,s,ox,oy,W,H){
 }
 function drawDeco(ctx,d,s,ox,oy,W,H){
   const x=ox+d.x*W*s,y=oy+d.y*H*s;
+  if(d.art){drawArt(ctx,d,x,y,s);return;}
   if(d.txt){drawBadge(ctx,d,x,y,s);return;}
   if(d.st){/* stile sticker: contorno bianco fustellato e ombra */
     const r=Math.max(.8,d.s*s*.045);ctx.save();ctx.shadowColor='rgba(0,0,0,.3)';ctx.shadowBlur=r*1.6;ctx.shadowOffsetY=r*.5;
@@ -127,6 +128,7 @@ function renderSpread(ctx,sp,o){
 }
 /* disegna su una tela nuova una zona (mm) di una doppia pagina, per bozze, flipbook e miniature */
 async function renderRegion(sp,x,y,w,h,pxPerMm,q,opts={}){
+  await ART_READY;
   const W=Math.max(1,Math.round(w*pxPerMm)),H=Math.max(1,Math.round(h*pxPerMm));
   const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);ctx.imageSmoothingQuality='high';

@@ -90,6 +90,7 @@ function printJobs(){
 function interiorRange(){const s=[];BOOK.spreads.forEach((sp,i)=>{if(!isInner(sp))return;for(const side of['L','R'])if(!isVerso(i,side))s.push(pageNum(i,side));});return s.length?[s[0],s[s.length-1]]:[1,1];}
 /* pag. 4 / terzultima: la pagina interna impaginata sul foglio dei risguardi, nella metà indicata */
 async function renderVersoJob(j){
+  await ART_READY;
   const sh=j.sheet,E=BOOK.endp,g=expGeom(E.bleed),PH=pgH(sh),SW=spW(sh),W=Math.round((SW+2*g.ext)*g.k),H=Math.round((PH+2*g.ext)*g.k);
   const src=j.src,P=BOOK.page,half=pageBox(sh,j.side),vis=visBox(sh,j.side),sb=pageBox(src,j.srcSide);
   const map=await loadOriginals(src),fxmap=await loadCutouts(src,true);await loadSpreadFonts(src);
@@ -108,6 +109,7 @@ async function renderVersoJob(j){
 }
 async function renderJobCanvas(j){
   if(j.verso)return renderVersoJob(j);
+  await ART_READY;
   const PH=pgH(j.sp),g=expGeom(j.bleed),W=Math.round((j.w+2*g.ext)*g.k),H=Math.round((PH+2*g.ext)*g.k);
   if(W*H>260e6)throw new Error('troppo grande');
   const map=await loadOriginals(j.sp),fxmap=await loadCutouts(j.sp,true);await loadSpreadFonts(j.sp);

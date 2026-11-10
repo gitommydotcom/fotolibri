@@ -198,7 +198,7 @@ function themeDecos(sp){
 }
 function applyTheme(id,opts={}){
   const oldT=TH();const keepDeco=BOOK.theme.deco==null?1:BOOK.theme.deco;
-  BOOK.theme={id,colors:{},fonts:{},deco:keepDeco,coverLayout:null,stickers:BOOK.theme.stickers||0};
+  BOOK.theme={id,colors:{},fonts:{},deco:keepDeco,coverLayout:null,stickers:BOOK.theme.stickers||0,artSet:BOOK.theme.artSet||'tutti'};
   const T=TH();
   Object.assign(BOOK.style,{radius:0,borderW:0,shadow:0,borderColor:'#ffffff',...(T.frame||{})});
   for(const sp of BOOK.spreads){if(!opts.keepBg){sp.bg=null;if(isEnd(sp)){sp.pat=null;sp.endv=null;sp.cells=sp.cells.filter(c=>!c.epPh);if(!sp.cells.length)sp.mode='pages';}}
@@ -236,6 +236,8 @@ function buildBook(o){
       if(pg.overlay)sp.texts.push(overlayText(sp,side,pg.overlay));});
     themeDecos(sp);}
   ensureStructure();
+  /* sticker tra le foto solo ora che il libro è completo: prima ogni doppia sembrava l'ultima (retro del risguardo) */
+  for(const sp of BOOK.spreads)if(isInner(sp)){sp.decos=(sp.decos||[]).filter(d=>!(d.sk&&d.auto));autoStickers(sp);}
   if(o.title&&(!BOOK.job.name||BOOK.job.name==='Nuovo fotolibro'))BOOK.job.name=o.title;
   UI.cur=Math.max(0,BOOK.spreads.findIndex(isInner));UI.side='L';sel=null;commit();syncAll();
   toast(`Libro creato: ${used.length} foto, ${bookPages()} pagine in tutto. Tutto si può modificare.`,4500);

@@ -45,6 +45,14 @@ Ogni foto può avere forma (rettangolo, arrotondato, ovale, arco, cuore) e bordo
   bianco e nero con soggetto a colori. Al massimo una per libro; se nessuna foto è adatta non viene creata.
 - **Le foto non si perdono**: sostituendo, svuotando o eliminando una pagina, le sue foto vengono ridistribuite nelle pagine vicine.
 
+## Sticker illustrati
+
+Gli SVG nelle cartelle `stickers <tema>` (per ora `stickers natale/`: 12 «Cartoon» e 12 «Disegnati a mano») entrano nell'app con la build, già ripuliti.
+- **Temi Natale e Natale nordico**: gli sticker automatici tra le foto sono questi disegni, con qualche scritta ogni tanto. Con «Tutti» ogni doppia pagina usa una sola serie, a turno; nel pannello Pagine si può scegliere una serie sola. «Rimescola gli sticker» cambia la disposizione e lascia quelli messi a mano.
+- **Pannello Decori**: tutti gli sticker, filtrabili per serie. Clic per aggiungerne uno, oppure trascinalo sul foglio. Uno sticker selezionato si ingrandisce, ruota, specchia o sostituisce con un altro.
+- **Libri salvati prima**: nel progetto è salvato solo il riferimento allo sticker, il disegno sta nell'app. Riaprendo un libro di Natale fatto prima di questi sticker, l'app propone una sola volta di inserirli: «Metti gli sticker» sostituisce solo quelli automatici, «Li scelgo io» apre il pannello Decori, «No, grazie» non lo chiede più. Con Ctrl+Z si annulla tutto.
+- **Nuove serie**: basta aggiungere SVG in `stickers natale/`, oppure una cartella `stickers <tema>`, e rifare la build (anche Netlify la rifà a ogni push). I nomi italiani si danno in `src/js/48-art.js`, dove si indica anche a quali temi appartiene una cartella.
+
 ## Struttura del libro
 
 `Copertina (pag. 1 e ultima)` → `Risguardo anteriore (pag. 2–3)` → `pag. 4 (retro del risguardo)` → `Interno` → `terzultima (retro del risguardo)` → `Risguardo posteriore (penultime due)`
@@ -90,6 +98,7 @@ node build.mjs        → dist/fotolibro-studio.html (file unico)
 node tests/smoke.mjs  prova automatica (temi + tutte le esportazioni)
 node tests/flow.mjs <out> <cartella>   prova con una cartella vera
 node tests/flow2.mjs <out> <cartella>  pagine speciali, effetto, export di stampa
+node tests/stickers.mjs <out> <cartella> sticker SVG: creazione, pannello, libri salvati prima, export
 node tests/full.mjs <out> <cartella>   controllo completo: creazione guidata, 16 temi, pagine speciali senza perdita di foto,
                                        conferma e annullamento, tastiera, export, salva/riapri, finestre da 1024 a 1920 px
 ```

@@ -111,7 +111,22 @@ function textProps(t){
   ];
 }
 
+function artProps(d){
+  const sp=cur(),a=ART.get(d.art),chg=()=>{d.auto=false;},others=a?[...ART.values()].filter(x=>x.folder===a.folder):[];
+  return[sec('Sticker',el('div',{class:'ph-head'},a?el('img',{src:a.url,alt:'',style:'object-fit:contain;background:transparent;border:0'}):null,
+      el('div',{style:'display:grid;gap:4px'},el('b',{},a?a.name:'Sticker non disponibile'),el('span',{class:'u'},(a?a.sname+' · ':'')+(d.auto?'messo in automatico':'aggiunto da te')))),
+    slider('Dimensione',()=>d.s,v=>{d.s=v;chg();},5,300,.5,'mm'),
+    slider('Rotazione',()=>d.rot,v=>{d.rot=v;chg();},-180,180,1,'°'),
+    slider('Opacità',()=>Math.round((d.op==null?1:d.op)*100),v=>{d.op=v/100;chg();},5,100,1,'%'),
+    el('div',{class:'row'},btn('⇋ Specchia',()=>{d.flip=!d.flip;chg();commit();draw();scheduleStrip();}),
+      btn(d.back?'Porta davanti alle foto':'Porta dietro le foto',()=>{d.back=!d.back;chg();commit();syncAll();}),
+      btn('Duplica',()=>{const n={...d,id:uid(),x:d.x+.03,y:d.y+.03,auto:false};sp.decos.push(n);sel={type:'deco',id:n.id};commit();syncAll();}),
+      btn('Elimina',()=>{sp.decos=sp.decos.filter(k=>k!==d);sel=null;commit();syncAll();},'danger')),
+    el('p',{},'Trascina per spostare, il quadratino in basso a destra per ingrandire. Canc per eliminare.')),
+    others.length?sec('Cambia con un altro sticker',artGrid(others,x=>{d.art=x.id;chg();commit();syncAll();},d.art)):null];
+}
 function decoProps(d){
+  if(d.art)return artProps(d);
   const sp=cur(),T=TH();
   const palette=[...(T.motifColors||[]),T.colors.accent,T.colors.title,T.colors.ink,'#ffffff','#C9A227','#000000'].filter((c,i,a)=>c&&a.indexOf(c)===i);
   const ms=el('select',{'aria-label':'Motivo',onchange:e=>{d.m=e.target.value;d.auto=false;commit();draw();scheduleStrip();}},...MOTIF_IDS.map(m=>el('option',{value:m,selected:m===d.m},MOTIFS[m].l)));

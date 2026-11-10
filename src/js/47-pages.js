@@ -53,7 +53,10 @@ const BADGES=['badge','ribbon','stamp','bubble','tag'];
 function themeStickers(){return STICKERS[BOOK.theme.id]||STICKERS.neutro;}
 function stickerDeco(sp,xmm,ymm,smm,R,kind){
   const T=TH(),S=themeStickers(),W=spW(sp),H=pgH(sp),cols=T.motifColors&&T.motifColors.length?T.motifColors:[T.colors.accent];
-  const word=kind==='word'||(kind!=='motif'&&R()<.32);
+  /* temi con sticker illustrati (es. Natale): soprattutto quelli, qualche scritta ogni tanto */
+  const hasArt=kind!=='word'&&kind!=='motif'&&spreadArt(sp).length>0,art=hasArt&&R()<.82?pickArt(sp,R):null;
+  if(art)return mkDeco({art:art.id,m:null,c:null,x:xmm/W,y:ymm/H,s:smm*1.6,rot:Math.round(R()*24-12),auto:true,sk:1});
+  const word=kind==='word'||hasArt||(kind!=='motif'&&R()<.32);
   if(word){const c=cols[Math.floor(R()*cols.length)];
     return mkDeco({m:BADGES[Math.floor(R()*BADGES.length)],txt:S.w[Math.floor(R()*S.w.length)],f:T.fonts.sub==='Montserrat'||T.fonts.sub==='Josefin Sans'?'Fredoka':T.fonts.sub,
       x:xmm/W,y:ymm/H,s:Math.max(7,smm*.5),rot:(R()*30-15),c,c2:contrastInk(c),auto:true,sk:1});}
@@ -63,17 +66,19 @@ function stickerDeco(sp,xmm,ymm,smm,R,kind){
 /* sticker automatici tra le foto: sugli angoli dei riquadri, lontano dai testi */
 function autoStickers(sp){
   const lvl=BOOK.theme.stickers||0;if(!lvl||!isInner(sp))return;
-  const R=rng(hashStr(sp.id+'st')),i=BOOK.spreads.indexOf(sp);
+  const R=rng(hashStr(sp.id+'st'+(BOOK.stSeed||''))),i=BOOK.spreads.indexOf(sp);
   for(const side of(sp.mode==='spread'?['S']:['L','R'])){
     if(isSpecial(sp,side)||(i>=0&&isVerso(i,side)))continue;
     const cells=sp.cells.filter(c=>c.side===side&&c.ph);if(!cells.length)continue;
-    const want=lvl>=2?(R()<.55?2:1):(R()<.5?1:0);if(!want)continue;
+    const want=lvl>=2?(R()<.7?2:1):(R()<.5?1:0);if(!want)continue;
     const V=visBox(sp,side),smm=Math.min(V.w,V.h)*(.13+R()*.04),tb=sp.texts.map(t=>textBox(sp,t));
     const pts=[];for(const c of cells){const r=cellRect(sp,c);pts.push([r.x+r.w,r.y],[r.x,r.y+r.h],[r.x+r.w,r.y+r.h],[r.x,r.y]);}
-    const ok=([x,y])=>x>V.x+smm*.7&&x<V.x+V.w-smm*.7&&y>V.y+smm*.7&&y<V.y+V.h-smm*.7&&!tb.some(b=>x>b.x0-smm&&x<b.x1+smm&&y>b.y0-smm&&y<b.y1+smm);
-    const cand=pts.filter(ok);for(let k=0;k<want&&cand.length;k++){const j=Math.floor(R()*cand.length),[x,y]=cand.splice(j,1)[0];
+    /* gli angoli vicini al bordo vengono spostati un po' verso l'interno invece di essere scartati */
+    const big=spreadArt(sp).length?smm*1.6:smm,in_=big*.62,inside=([x,y])=>[clamp(x,V.x+in_,V.x+V.w-in_),clamp(y,V.y+in_,V.y+V.h-in_)];
+    const ok=([x,y])=>!tb.some(b=>x>b.x0-big*.6&&x<b.x1+big*.6&&y>b.y0-big*.6&&y<b.y1+big*.6);
+    const cand=pts.map(inside).filter(ok);for(let k=0;k<want&&cand.length;k++){const j=Math.floor(R()*cand.length),[x,y]=cand.splice(j,1)[0];
       const jx=(R()-.5)*smm*.3,jy=(R()-.5)*smm*.3;sp.decos.push(stickerDeco(sp,x+jx,y+jy,smm,R));
-      for(let q=cand.length-1;q>=0;q--)if(Math.hypot(cand[q][0]-x,cand[q][1]-y)<smm*3)cand.splice(q,1);}
+      for(let q=cand.length-1;q>=0;q--)if(Math.hypot(cand[q][0]-x,cand[q][1]-y)<big*1.4)cand.splice(q,1);}
   }
 }
 

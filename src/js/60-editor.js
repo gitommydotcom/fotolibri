@@ -65,8 +65,8 @@ function overlays(ctx,sp){
   if(sel&&sel.type==='cell'){const c=byId(sel.id);if(c){const r=cellRect(sp,c),X=px(r.x,view.ox),Y=px(r.y,view.oy),Wc=r.w*s,Hc=r.h*s;
     ctx.strokeStyle=A;ctx.lineWidth=2;ctx.strokeRect(X+1,Y+1,Wc-2,Hc-2);
     if(UI.mode==='layout'){ctx.fillStyle='#fff';for(const[hx,hy] of handlePts(c)){ctx.beginPath();ctx.rect(hx-5,hy-5,10,10);ctx.fill();ctx.stroke();}}}}
-  if(sel&&sel.type==='deco'){const d=decoById(sel.id);if(d){const cx=px(d.x*W,view.ox),cy=px(d.y*H,view.oy),r=d.s*s/2;ctx.setLineDash([5,4]);ctx.strokeStyle=A;ctx.lineWidth=1.5;ctx.strokeRect(cx-r,cy-r,2*r,2*r);ctx.setLineDash([]);
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.rect(cx+r-5,cy+r-5,10,10);ctx.fill();ctx.stroke();}}
+  if(sel&&sel.type==='deco'){const d=decoById(sel.id);if(d){const cx=px(d.x*W,view.ox),cy=px(d.y*H,view.oy),[rx,ry]=decoHalf(d).map(v=>v*s);ctx.setLineDash([5,4]);ctx.strokeStyle=A;ctx.lineWidth=1.5;ctx.strokeRect(cx-rx,cy-ry,2*rx,2*ry);ctx.setLineDash([]);
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.rect(cx+rx-5,cy+ry-5,10,10);ctx.fill();ctx.stroke();}}
   if(sel&&sel.type==='text'){const t=txtById(sel.id);if(t){const m=measureText(mctx,t,s);ctx.translate(view.ox+t.x*W*s,view.oy+t.y*H*s);ctx.rotate(t.rot*Math.PI/180);
     ctx.setLineDash([5,4]);ctx.strokeStyle=A;ctx.lineWidth=1.5;ctx.strokeRect(-m.w/2-m.pad,-m.h/2-m.pad*.6,m.w+2*m.pad,m.h+1.2*m.pad);}}
   ctx.restore();
@@ -164,8 +164,8 @@ function hitCell(p){const sp=cur();for(let i=sp.cells.length-1;i>=0;i--){const r
 function hitText(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=sp.texts.length-1;i>=0;i--){const t=sp.texts[i],m=measureText(mctx,t,10);
   const hw=(m.w/2+m.pad)/10,hh=(m.h/2+m.pad*.6)/10,dx=p.x-t.x*W,dy=p.y-t.y*H,a=-t.rot*Math.PI/180;
   const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(lx)<=hw&&Math.abs(ly)<=hh)return t;}return null;}
-function hitDeco(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=(sp.decos||[]).length-1;i>=0;i--){const d=sp.decos[i];let rx=d.s/2,ry=d.s/2;if(d.txt){const B=badgeBox(d,1);rx=B.w/2+d.s*.3;ry=B.h/2;}if(Math.abs(p.x-d.x*W)<=rx&&Math.abs(p.y-d.y*H)<=ry)return d;}return null;}
-function hitDecoHandle(d,e){const sp=cur(),r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,cx=px(d.x*spW(sp),view.ox),cy=px(d.y*pgH(sp),view.oy),h=d.s*view.s/2;return Math.abs(mx-(cx+h))<=8&&Math.abs(my-(cy+h))<=8;}
+function hitDeco(p){const sp=cur(),H=pgH(sp),W=spW(sp);for(let i=(sp.decos||[]).length-1;i>=0;i--){const d=sp.decos[i];const[rx,ry]=decoHalf(d);if(Math.abs(p.x-d.x*W)<=rx&&Math.abs(p.y-d.y*H)<=ry)return d;}return null;}
+function hitDecoHandle(d,e){const sp=cur(),r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,cx=px(d.x*spW(sp),view.ox),cy=px(d.y*pgH(sp),view.oy),[hx,hy]=decoHalf(d).map(v=>v*view.s);return Math.abs(mx-(cx+hx))<=8&&Math.abs(my-(cy+hy))<=8;}
 const HCODES=['tl','t','tr','r','br','b','bl','l'];
 function handlePts(c){const r=cellRect(cur(),c),s=view.s,X=px(r.x,view.ox),Y=px(r.y,view.oy),W=r.w*s,H=r.h*s;
   return[[X,Y],[X+W/2,Y],[X+W,Y],[X+W,Y+H/2],[X+W,Y+H],[X+W/2,Y+H],[X,Y+H],[X,Y+H/2]];}
@@ -263,6 +263,8 @@ cv.addEventListener('dragover',e=>{e.preventDefault();const p=toMM(e),sp=cur();
 cv.addEventListener('dragleave',()=>{dropTarget=null;dropPage=null;draw();});
 cv.addEventListener('drop',async e=>{
   e.preventDefault();e.stopPropagation();const p=toMM(e),multi=dragKind==='multi';
+  const art=e.dataTransfer.getData('text/x-art');
+  if(art){dropTarget=null;dropPage=null;dragKind=null;addArt(art,p.x/spW(cur()),p.y/pgH(cur()));return;}
   const mot=e.dataTransfer.getData('text/x-motif');
   if(mot){dropTarget=null;dropPage=null;dragKind=null;addDeco(mot,p.x/spW(cur()),p.y/pgH(cur()));return;}
   dropTarget=null;dropPage=null;dragKind=null;

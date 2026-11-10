@@ -87,9 +87,12 @@ async function loadProject(d){
   progress(null);
   BOOK=normBook(d.book);if(d.v!==2)upgradeV1();Object.assign(EXP,d.exp||{});if(EXP.fmt==='zip')EXP.fmt='jpg';Object.assign(DRAFT,d.draft||{});ensureStructure();UI.sort=(d.ui&&d.ui.sort)||'date';UI.cur=Math.max(0,BOOK.spreads.findIndex(isInner));sel=null;TPREV.clear();THUMBS.clear();
   sortOrder();SIMS=findSimilar();syncChapters();resetHistory();updateBanner();syncAll();
+  queueNotice(artOffer);
   idbPut('kv','project',projectData());
 }
-function hideBanner(){$('#banner').hidden=true;}
+const NOTICES=[];
+function hideBanner(){$('#banner').hidden=true;const f=NOTICES.shift();if(f)setTimeout(f,0);}
+function queueNotice(f){if($('#banner').hidden)f();else NOTICES.push(f);}
 function showBanner(...kids){const b=$('#banner');b.replaceChildren(...kids);b.hidden=false;}
 function updateBanner(){
   const miss=[...LIB.values()].filter(e=>!e.sample&&!e.file);
