@@ -63,6 +63,16 @@ function stickerDeco(sp,xmm,ymm,smm,R,kind){
   const m=S.m[Math.floor(R()*S.m.length)];
   return mkDeco({m,x:xmm/W,y:ymm/H,s:smm,rot:(R()*36-18),c:cols[Math.floor(R()*cols.length)],c2:T.c2||T.colors.accent2,st:true,auto:true,sk:1,flip:R()<.5});
 }
+/* tiene uno sticker dentro la zona sicura della sua pagina: lontano dal taglio e mai a cavallo della piega
+   (misura reale: larghezza dello sticker e rotazione comprese) */
+function keepSafe(sp,d){
+  const W=spW(sp),H=pgH(sp),[hw0,hh0]=decoHalf(d),a=(d.rot||0)*Math.PI/180,c=Math.abs(Math.cos(a)),sn=Math.abs(Math.sin(a));
+  const hw=hw0*c+hh0*sn,hh=hw0*sn+hh0*c,m=Math.max(BOOK.safe||0,4),fx=foldX(sp),gap=Math.max(m,(BOOK.style.bind||0)*.5);
+  let x=d.x*W,y=d.y*H;const side=isCover(sp)?null:(x<fx?'L':'R');
+  const V=side?visBox(sp,side):{x:0,y:0,w:W,h:H};
+  let x0=V.x+m+hw,x1=V.x+V.w-m-hw;if(side==='L')x1=Math.min(x1,fx-gap-hw);if(side==='R')x0=Math.max(x0,fx+gap+hw);
+  x=x0<=x1?clamp(x,x0,x1):(x0+x1)/2;y=clamp(y,V.y+m+hh,Math.max(V.y+m+hh,V.y+V.h-m-hh));
+  d.x=x/W;d.y=y/H;return d;}
 /* sticker automatici tra le foto: sugli angoli dei riquadri, lontano dai testi */
 function autoStickers(sp){
   const lvl=BOOK.theme.stickers||0;if(!lvl||!isInner(sp))return;
@@ -77,7 +87,7 @@ function autoStickers(sp){
     const big=spreadArt(sp).length?smm*1.6:smm,in_=big*.62,inside=([x,y])=>[clamp(x,V.x+in_,V.x+V.w-in_),clamp(y,V.y+in_,V.y+V.h-in_)];
     const ok=([x,y])=>!tb.some(b=>x>b.x0-big*.6&&x<b.x1+big*.6&&y>b.y0-big*.6&&y<b.y1+big*.6);
     const cand=pts.map(inside).filter(ok);for(let k=0;k<want&&cand.length;k++){const j=Math.floor(R()*cand.length),[x,y]=cand.splice(j,1)[0];
-      const jx=(R()-.5)*smm*.3,jy=(R()-.5)*smm*.3;sp.decos.push(stickerDeco(sp,x+jx,y+jy,smm,R));
+      const jx=(R()-.5)*smm*.3,jy=(R()-.5)*smm*.3;sp.decos.push(keepSafe(sp,stickerDeco(sp,x+jx,y+jy,smm,R)));
       for(let q=cand.length-1;q>=0;q--)if(Math.hypot(cand[q][0]-x,cand[q][1]-y)<big*1.4)cand.splice(q,1);}
   }
 }
@@ -155,7 +165,7 @@ function buildSpecial(sp,side,kind,o={}){
       [[.05,.06,.42,.4],[.53,.08,.42,.4],[.07,.53,.42,.4],[.51,.52,.42,.4]],[[.04,.05,.38,.36],[.56,.05,.38,.36],[.3,.33,.4,.36],[.04,.6,.38,.36],[.58,.6,.37,.36]]][n-1]||[];
     spots.forEach((d,k)=>{const c=mkCell(d,side);c.ph={...phs[k],ox:0,oy:0,zoom:1};c.rot=Math.round((R()*14-7)*10)/10;c.bw=Math.max(2.5,Math.min(V.w,V.h)*.014);c.bc='#ffffff';c.sh=1.6;sp.cells.push(c);});
     for(let k=0;k<Math.max(2,n);k++){const d=spots[k%Math.max(1,spots.length)]||[.5,.5,.1,.1],A=areaOf(sp,side);
-      const x=A.x+(d[0]+(k%2?d[2]:0))*A.w,y=A.y+(d[1]+(k%2?d[3]:0))*A.h;sp.decos.push(stickerDeco(sp,clamp(x,V.x+14,V.x+V.w-14),clamp(y,V.y+14,V.y+V.h-14),Math.min(V.w,V.h)*.15,R,k===0?'word':null));}
+      const x=A.x+(d[0]+(k%2?d[2]:0))*A.w,y=A.y+(d[1]+(k%2?d[3]:0))*A.h;sp.decos.push(keepSafe(sp,stickerDeco(sp,clamp(x,V.x+14,V.x+V.w-14),clamp(y,V.y+14,V.y+V.h-14),Math.min(V.w,V.h)*.15,R,k===0?'word':null)));}
     sp.decos.forEach(d=>{if(d.sk)d.auto=false;});}
   else if(kind==='dedica'){sp.texts.push(...dedicaTexts(sp,side,o.text||'Con tutto il mio affetto'));}
   else if(kind==='chapter'){sp.texts.push(...titlePageTexts(sp,side,{title:o.text||'Titolo',sub:o.sub||null}));}
@@ -210,7 +220,7 @@ function makeEffectSpread(p1,p2){
     const q=nextQuote();sp.texts.push(...quoteTexts(sp,'R',q,.84,{wf:.78}));}
   else{MR.full=true;const b=mkCell([0,0,1,1],'R');b.ph=newPh(p1.id);b.fx='splash';sp.cells.push(b);}
   const R=rng(hashStr(sp.id));const V=visBox(sp,'L');
-  sp.decos.push(stickerDeco(sp,V.x+V.w*.2,V.y+V.h*.88,Math.min(V.w,V.h)*.16,R,'word'));sp.decos[sp.decos.length-1].auto=false;
+  sp.decos.push(keepSafe(sp,stickerDeco(sp,V.x+V.w*.2,V.y+V.h*.88,Math.min(V.w,V.h)*.16,R,'word')));sp.decos[sp.decos.length-1].auto=false;
   return sp;
 }
 async function createEffectPage(ids,{at,silent,onProg}={}){

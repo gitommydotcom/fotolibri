@@ -56,7 +56,7 @@ function cellProps(c){
     out.push(sec(null,el('div',{class:'row'},
       btn(im.fav?'★ Preferita':'☆ Preferita: più grande',()=>{im.fav=!im.fav;if(im.fav)relayoutPage(sp,c.side);sel=null;commit();syncAll();},im.fav?'alt':null,'Le preferite vanno nel riquadro più grande'),
       btn('Cambia foto…',()=>{UI.tab='photos';if(UI.filter==='excl')UI.filter='all';renderLeft();toast('Clic su una foto nel pannello a sinistra per metterla in questo riquadro',4500);},null,'Scegli un’altra foto per questo riquadro'),
-      btn('Togli',()=>{removeFromPage(c);commit();syncAll();toast('Foto tolta: la ritrovi tra quelle da usare',4500,'undo');},'danger','Toglie la foto e ridistribuisce le altre nella pagina')),
+      btn('Togli',()=>{removeFromPage(c);commit();syncAll();toast('Foto tolta: la ritrovi tra le «Libere» nel pannello Foto',4500,'undo');},'danger','Toglie la foto e ridistribuisce le altre nella pagina')),
       btn(UI.mode==='layout'?'Fine: torna a inquadrare le foto':'Sposta o ridimensiona il riquadro',()=>setMode(UI.mode==='layout'?'photo':'layout'),UI.mode==='layout'?'pri':null,'Tasto M')));
     out.push(fold('Colore e tono',[
       el('div',{class:'row'},...[['Originale',{br:100,ct:100,sat:100,gray:0,sepia:0}],['Vivace',{br:104,ct:112,sat:130,gray:0,sepia:0}],['Bianco e nero',{br:100,ct:110,sat:100,gray:100,sepia:0}],['Vintage',{br:104,ct:92,sat:85,gray:0,sepia:45}]]
@@ -78,7 +78,7 @@ function cellProps(c){
       el('div',{class:'u'},`${im.name} · ${im.w} × ${im.h} px`)]));
   }else{
     out.push(sec(`Riquadro ${idx} · vuoto`,el('p',{},'Trascina una foto dal pannello Foto, oppure caricala direttamente qui.'),
-      el('div',{class:'row'},btn('Carica foto qui…',()=>{pickFor=c.id;$('#fileIn').click();},'pri'),btn('Vai alle foto non usate',()=>{UI.tab='photos';UI.filter='unused';renderLeft();}),
+      el('div',{class:'row'},btn('Carica foto qui…',()=>{pickFor=c.id;$('#fileIn').click();},'pri'),btn('Scegli tra le libere',()=>{UI.tab='photos';UI.filter='unused';renderLeft();}),
         btn('Togli riquadro',()=>{removeFromPage(c);commit();syncAll();},'danger'))));
   }
   const pct=(lab,key)=>{const i=el('input',{type:'number',class:'num',style:'width:100%',step:.5,min:0,max:100,value:+(c[key]*100).toFixed(1),'aria-label':lab});

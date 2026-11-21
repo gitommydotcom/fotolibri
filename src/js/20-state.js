@@ -144,6 +144,15 @@ function textStr(t){const s=String(t.text||' ');return t.upper?s.toLocaleUpperCa
 function textBox(sp,t){const m=measureText(mctx,t,1),a=t.rot*Math.PI/180,c=Math.abs(Math.cos(a)),s=Math.abs(Math.sin(a));
   const w=m.w+(t.boxOp>0?2*m.pad:0),h=m.h+(t.boxOp>0?1.2*m.pad:0);
   const hw=c*w/2+s*h/2,hh=s*w/2+c*h/2,cx=t.x*spW(sp),cy=t.y*pgH(sp);return{x0:cx-hw,x1:cx+hw,y0:cy-hh,y1:cy+hh,cx,cy};}
+/* sticker illustrati e scritte: nella piega o oltre la zona di sicurezza (i motivi decorativi possono stare al vivo di proposito) */
+function decoProblem(sp,d){
+  if(!(d.art||d.txt!=null)||isCover(sp))return null;
+  const W=spW(sp),H=pgH(sp),[hw0,hh0]=decoHalf(d),a=(d.rot||0)*Math.PI/180,c=Math.abs(Math.cos(a)),sn=Math.abs(Math.sin(a));
+  const hw=hw0*c+hh0*sn,hh=hw0*sn+hh0*c,x=d.x*W,y=d.y*H,sf=BOOK.safe,fx=foldX(sp);
+  if(isInner(sp)&&x-hw<fx-1&&x+hw>fx+1)return'finisce nella piega';
+  const V=visBox(sp,sp.mode==='spread'&&isInner(sp)?'S':(x<fx?'L':'R'));
+  if(x-hw<V.x+sf-1||x+hw>V.x+V.w-sf+1||y-hh<V.y+sf-1||y+hh>V.y+V.h-sf+1)return'esce dalla zona di sicurezza';
+  return null;}
 function textProblem(sp,t){
   const b=textBox(sp,t),sf=BOOK.safe,H=pgH(sp);
   if(isCover(sp)&&BOOK.cover.spine>0){const s0=coverPW(),s1=s0+BOOK.cover.spine;

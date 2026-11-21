@@ -56,6 +56,9 @@ await p.evaluate(()=>{UI.tab='deco';goSpread(2);renderLeft();});await p.waitForT
 const before=await p.evaluate(()=>cur().decos.length);await p.click('.artg .art >> nth=0');await p.waitForTimeout(200);
 ok(await p.evaluate(()=>cur().decos.length)===before+1&&await p.evaluate(()=>sel&&decoById(sel.id)&&!!decoById(sel.id).art),'clic su uno sticker del pannello lo aggiunge e lo seleziona');
 await p.screenshot({path:OUT+'/s3-pannello.png'});
+const sz=await p.evaluate(()=>{let n=0,bad=0;for(const t of ['neutro','valentino','estate','bimbo']){applyTheme(t);BOOK.theme.stickers=2;regenDecos();
+  for(const sp of BOOK.spreads)for(const d of sp.decos||[])if(d.sk){n++;if(decoProblem(sp,d))bad++;}}applyTheme('natale');regenDecos();commit();return{n,bad};});
+ok(sz.n>20&&sz.bad===0,`sticker automatici dentro la zona sicura e mai sulla piega (${sz.n} controllati, ${sz.bad} fuori)`);
 console.log('5. Sticker con scritta');
 await p.evaluate(()=>{goSpread(2);sel=null;UI.tab='deco';syncAll();});await p.waitForTimeout(200);
 const nB=await p.evaluate(()=>cur().decos.filter(d=>d.txt!=null).length);await p.click('.bgrid .bpick >> nth=0');await p.waitForTimeout(200);

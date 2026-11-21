@@ -134,7 +134,7 @@ function tabLayout(){
     sec(`Impaginazione · ${pageLabel(UI.cur,side)}`,sideSeg,
       el('div',{class:'row'},
         btn('↻ Un’altra',nextVar,'pri','Prova la prossima impaginazione (tasto V)'),
-        btn('− foto',()=>{if(!n)return;const i=phs.lastIndexOf(null);if(i>=0)phs.splice(i,1);else phs.pop();relayoutPage(sp,side,{phs});sel=null;commit();syncAll();},null,'Un riquadro in meno (la foto torna tra quelle da usare)'),
+        btn('− foto',()=>{if(!n)return;const i=phs.lastIndexOf(null);if(i>=0)phs.splice(i,1);else phs.pop();relayoutPage(sp,side,{phs});sel=null;commit();syncAll();},null,'Un riquadro in meno (la foto torna tra le libere)'),
         btn('+ riquadro',()=>{phs.push(null);relayoutPage(sp,side,{phs});sel=null;commit();syncAll();},null,'Un riquadro vuoto in più')),
       n?g:el('p',{},'Pagina vuota: trascina qui le foto, oppure fai doppio clic su una miniatura nel pannello Foto.'),
       n?el('p',{},'Dal più adatto alle tue foto (meno ritaglio). Tasto V: prova la successiva.'):null),

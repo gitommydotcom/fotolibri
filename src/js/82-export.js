@@ -13,17 +13,19 @@ function bookIssues(){
     const e=LIB.get(c.ph.img);if(!e||(!e.file&&!e.sample))miss.add(c.ph.img);
     const d=effDpi(sp,c);if(d!=null&&d<200)low.push({i,side:c.side,d,name:e?e.name:''});}));
   const txt=[];BOOK.spreads.forEach((sp,i)=>sp.texts.forEach(t=>{const pr=textProblem(sp,t);if(pr)txt.push({i,pr,t});}));
-  low.sort((a,b)=>a.d-b.d);return{low,empty,miss,txt};
+  const dec=[];BOOK.spreads.forEach((sp,i)=>(sp.decos||[]).forEach(d=>{const pr=decoProblem(sp,d);if(pr)dec.push({i,pr,d});}));
+  low.sort((a,b)=>a.d-b.d);return{low,empty,miss,txt,dec};
 }
 function issueList(forPrint){
-  const{low,empty,miss,txt}=bookIssues(),ws=[],go=i=>()=>{$('#dlg').close();goSpread(i);};
+  const{low,empty,miss,txt,dec}=bookIssues(),ws=[],go=i=>()=>{$('#dlg').close();goSpread(i);};
   const L=(cls,...k)=>el('div',{},el('span',{class:cls},'●'),el('span',{},...k));
   if(txt.length)ws.push(L('e',`${txt.length} ${txt.length>1?'testi':'testo'} a rischio taglio: “${String(txt[0].t.text).split('\n')[0].slice(0,30)}” ${txt[0].pr}, in `,el('button',{type:'button',class:'linkb',onclick:()=>{$('#dlg').close();goSpread(txt[0].i);sel={type:'text',id:txt[0].t.id};syncAll();}},spreadLabel(txt[0].i)),'.'));
+  if(dec.length)ws.push(L('w',`${dec.length} sticker ${dec[0].pr}${dec.length>1?' (o vicino al taglio)':''}: il primo in `,el('button',{type:'button',class:'linkb',onclick:()=>{$('#dlg').close();goSpread(dec[0].i);sel={type:'deco',id:dec[0].d.id};syncAll();}},spreadLabel(dec[0].i)),'.'));
   const ip=printPages();if(forPrint&&ip%4)ws.push(L('w',`Interno: ${ip} pagine. Molte tipografie vogliono un multiplo di 4.`));
   if(forPrint&&miss.size)ws.push(L('e',`${miss.size} foto senza originale: verrebbero stampate dall’anteprima (bassa qualità). `,el('button',{type:'button',class:'linkb',onclick:()=>$('#dirIn').click()},'Ricollega la cartella')));
   if(forPrint&&low.length)ws.push(L('w',`${low.length} foto sotto i 200 dpi, la peggiore ${Math.round(low[0].d)} dpi in `,el('button',{type:'button',class:'linkb',onclick:go(low[0].i)},pageLabel(low[0].i,low[0].side)),'.'));
   if(empty.length)ws.push(L('w',`${empty.length} riquadri vuoti, il primo in `,el('button',{type:'button',class:'linkb',onclick:go(empty[0].i)},pageLabel(empty[0].i,empty[0].side)),'.'));
-  if(!ws.length)ws.push(L('o',forPrint?'Nessun problema: risoluzione buona, testi al sicuro, nessun riquadro vuoto.':'Nessun problema trovato.'));
+  if(!ws.length)ws.push(L('o',forPrint?'Nessun problema: risoluzione buona, testi e sticker al sicuro, nessun riquadro vuoto.':'Nessun problema trovato.'));
   return el('div',{class:'warnl'},...ws);
 }
 /* ---------- pagine della bozza (ordine di lettura) ---------- */
