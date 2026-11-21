@@ -59,7 +59,7 @@ function renderStart(){
   /* 3. formato e testi */
   const profs=allProfiles(),cm=matchProfile();
   const ps=el('select',{id:'sProf',onchange:e=>{const p=profs[+e.target.value];if(p){applyProfile(p);renderStart();}}},
-    cm?null:el('option',{value:'',selected:true},'Impostazioni personalizzate (pannello Libro)'),...profs.map((p,i)=>el('option',{value:String(i),selected:cm===p},p.name)));
+    cm?null:el('option',{value:'',selected:true},'Impostazioni personalizzate (scheda Formato)'),...profs.map((p,i)=>el('option',{value:String(i),selected:cm===p},p.name)));
   if(!WZ.title)WZ.title=fillTpl(T.texts.title);
   const seg=(label,key,opts)=>el('div',{class:'lbl'},el('span',{id:'lb-'+key},label),el('div',{class:'seg full',role:'group','aria-labelledby':'lb-'+key},
     ...opts.map(([v,l])=>el('button',{type:'button','aria-pressed':String(WZ[key]===v),class:WZ[key]===v?'on':'',onclick:()=>{WZ[key]=v;renderStart();}},l))));
@@ -70,17 +70,19 @@ function renderStart(){
       onkeydown:e=>{if(e.key==='Enter')startCreate();}})),
     fld('sSub','Sottotitolo',el('input',{id:'sSub',class:'inp',value:WZ.sub,placeholder:autoSub(T),maxlength:80,oninput:e=>WZ.sub=e.target.value})),
     fld('sDed','Dedica (facoltativa, sulla prima pagina)',el('input',{id:'sDed',class:'inp',value:WZ.dedica,placeholder:'Es. Per la nonna, con amore',maxlength:160,oninput:e=>WZ.dedica=e.target.value})),
+    fold('Altre scelte',[
     seg('Numero di pagine','pagesMode',[['auto','In base alle foto'],['fixed','Numero esatto']]),
     WZ.pagesMode==='fixed'?el('div',{class:'row'},el('input',{type:'number',class:'num','aria-label':'Numero di pagine interne',min:4,max:400,step:2,value:WZ.pages,onchange:e=>{WZ.pages=clamp(parseInt(e.target.value)||4,4,400);renderStartLive();}}),
         ...[20,24,30,40].map(v=>btn(String(v),()=>{WZ.pages=v;renderStart();},WZ.pages===v?'on':null))):el('p',{class:'u'},'Circa 4 foto per pagina, impaginazioni variate.'),
     chk('Risguardi stampati (pag. 2 e penultima)',()=>BOOK.endp.on,v=>{BOOK.endp.on=v;ensureStructure();syncAll();renderStartLive();}),
     seg('Pagine con frasi e citazioni','quotes',[[0,'Nessuna'],[1,'Qualcuna'],[2,'Di più']]),
     seg('Sticker a tema tra le foto','stickers',[[0,'Nessuno'],[1,'Pochi'],[2,'Tanti']]),
-    chk('Pagina effetto con le foto migliori (soggetto scontornato, solo se ci sono foto adatte)',()=>WZ.effect,v=>{WZ.effect=v;}));
+    chk('Pagina effetto con le foto migliori (soggetto scontornato, solo se ci sono foto adatte)',()=>WZ.effect,v=>{WZ.effect=v;})],
+      {key:'start-more',hint:[WZ.pagesMode==='fixed'?WZ.pages+' pagine':'pagine automatiche',['niente frasi','qualche frase','più frasi'][WZ.quotes],['niente sticker','pochi sticker','tanti sticker'][WZ.stickers]].join(' · ')}));
   const saved=START.saved?el('div',{class:'sres'},el('span',{},el('b',{},'Lavoro in corso: '),`${START.saved.photos.length} foto, salvato ${new Date(START.saved.saved).toLocaleString('it-IT',{dateStyle:'medium',timeStyle:'short'})}`),
       btn('Riprendi',async()=>{const s=START.saved;START.saved=null;closeStart();await loadProject(s);toast('Lavoro ripreso');},'pri')):null;
   const head=el('div',{class:'shead'},el('div',{class:'brand big',html:BRAND_SVG+'<span>Fotolibro Studio</span>'}),
-    el('p',{},'Dalla cartella al fotolibro pronto per la stampa in tre passi. Tutto resta modificabile.'),
+    el('p',{},'Scegli le foto e il tema: al resto penso io. Dopo puoi cambiare tutto.'),
     el('div',{class:'sacts'},btn('Apri un progetto salvato…',()=>$('#projIn').click()),
       btn(realCount()?'Vai all’editor':'Guarda l’esempio nell’editor',()=>closeStart())));
   $('#startBody').replaceChildren(head,saved||'',el('div',{class:'sgrid'},startCol1(),c2,c3),startBar());
@@ -88,9 +90,9 @@ function renderStart(){
 /* dopo la creazione: i prossimi passi in una riga, con i controlli che contano */
 function nextStepsBanner(){
   let lowN=0,txt=0;try{const b=bookIssues();lowN=b.low.length;txt=b.txt.length;}catch(e){}
-  showBanner(el('span',{},el('b',{},'Il libro è pronto. '),'Scorri le pagine con le frecce o la striscia in basso: clic su una foto per inquadrarla, trascinala per scambiarla.',
-      lowN||txt?el('span',{class:'warn'},` Da controllare: ${[lowN?`${lowN} foto a bassa risoluzione`:'',txt?`${txt} testi vicini al taglio`:''].filter(Boolean).join(' e ')} (li trovi elencati nella finestra Stampa).`):''),
-    btn('Scegli la copertina',()=>{goSpread(Math.max(0,BOOK.spreads.findIndex(isCover)));UI.tab='theme';renderLeft();}),btn('Sfoglia il libro',()=>previewFlipbook()),btn('Bozza per il cliente',()=>openExport('draft')),btn('File per la stampa',()=>openExport('print'),'pri'),
+  showBanner(el('span',{},el('b',{},'Il libro è pronto. '),'Clic su una foto per sistemarla, trascinala su un’altra per scambiarle. Quando hai finito: ',el('b',{},'Esporta'),' in alto a destra.',
+      lowN||txt?el('span',{class:'warn'},` Da controllare: ${[lowN?`${lowN} foto a bassa risoluzione`:'',txt?`${txt} testi vicini al taglio`:''].filter(Boolean).join(' e ')}.`):''),
+    btn('Scegli la copertina',()=>{goSpread(Math.max(0,BOOK.spreads.findIndex(isCover)));UI.tab='theme';UI.openSec.add('Copertina');renderLeft();}),
     el('button',{type:'button',class:'btn ib','aria-label':'Chiudi',title:'Chiudi',onclick:hideBanner},'×'));
 }
 /* Ctrl+Invio crea il libro dalla schermata iniziale */

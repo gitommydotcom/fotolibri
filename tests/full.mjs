@@ -45,9 +45,9 @@ const sp=await p.evaluate(()=>{applyTheme('matrimonio');commit();const res=[];co
 for(const [k,w,a,c] of sp)ok(a===c,`${k} (${w==='replace'?'al posto della pagina':'nuova doppia'}): foto ${a} → ${c}`);
 const del=await p.evaluate(async()=>{const before=usage().size,snap=JSON.stringify(BOOK.spreads.map(s=>s.cells.map(c=>c.ph&&c.ph.img)));
   const i=BOOK.spreads.findIndex((s,j)=>isInner(s)&&j>3&&s.cells.some(c=>c.ph));goSpread(i);
-  const btn=[...document.querySelectorAll('#pbar button')].find(b=>b.textContent.trim()==='Elimina');btn.click();const armed=btn.textContent;btn.click();
-  const afterDel=usage().size,n1=BOOK.spreads.length;undo();const back=JSON.stringify(BOOK.spreads.map(s=>s.cells.map(c=>c.ph&&c.ph.img)))===snap;return{before,armed,afterDel,back};});
-ok(del.armed.includes('Confermi'),'Elimina chiede conferma');
+  const n0=BOOK.spreads.length;$('#pbar .menu > button').click();const it=[...document.querySelectorAll('#pbar .mpop button')].find(b=>b.textContent.includes('Elimina questa doppia pagina'));it.click();
+  const afterDel=usage().size,n1=BOOK.spreads.length,undoT=$('#toast').textContent;undo();const back=JSON.stringify(BOOK.spreads.map(s=>s.cells.map(c=>c.ph&&c.ph.img)))===snap;return{before,armed:n1===n0-1&&/Annulla/.test(undoT),afterDel,back};});
+ok(del.armed,'Elimina dal menu ⋯ della doppia pagina, con «Annulla» nel messaggio');
 ok(del.before===del.afterDel,`doppia eliminata: foto ${del.before} → ${del.afterDel}`);ok(del.back,'Annulla ripristina esattamente il libro');
 console.log('5. Tastiera');
 const kb=await p.evaluate(()=>{sel=null;goSpread(2);return UI.cur;});await p.locator('#cv').click({position:{x:3,y:3}});await p.keyboard.press('PageDown');
@@ -73,9 +73,9 @@ const after=await p.evaluate(()=>({sp:BOOK.spreads.length,theme:BOOK.theme.id,us
 ok(JSON.stringify(before)===JSON.stringify(after),`progetto riaperto uguale (${JSON.stringify(after)})`);
 console.log('8. Dimensioni della finestra');
 for(const [w,h] of [[1024,768],[1280,720],[1366,768],[1920,1080]]){await p.setViewportSize({width:w,height:h});await p.waitForTimeout(400);
-  const r=await p.evaluate(()=>{const pr=$('#bPrint').getBoundingClientRect();return{print:pr.right<=innerWidth&&pr.width>0,over:document.documentElement.scrollWidth-innerWidth};});
-  ok(r.print&&r.over<=0,`${w}×${h}: «Stampa» visibile, nessuno scorrimento orizzontale`);
+  const r=await p.evaluate(()=>{const pr=$('#mExp > button').getBoundingClientRect();return{print:pr.right<=innerWidth&&pr.width>0,over:document.documentElement.scrollWidth-innerWidth};});
+  ok(r.print&&r.over<=0,`${w}×${h}: «Esporta» visibile, nessuno scorrimento orizzontale`);
   await p.evaluate(()=>openStart());await p.waitForTimeout(300);const c=await p.locator('#sbar .btn.pri').boundingBox();ok(c&&c.y+c.height<=h&&c.x+c.width<=w,`${w}×${h}: pulsante Crea visibile nella schermata iniziale`);
-  await p.screenshot({path:`${OUT}/f-start-${w}.png`});await p.evaluate(()=>closeStart());}
+  await p.screenshot({path:`${OUT}/f-start-${w}.png`});await p.evaluate(()=>closeStart());await p.waitForTimeout(200);await p.screenshot({path:`${OUT}/f-editor-${w}.png`});}
 ok(!errs.length,'nessun errore in console'+(errs.length?': '+errs.slice(0,3).join(' | '):''));
 console.log(fails.length?`\n${fails.length} CONTROLLI FALLITI`:'\nTUTTI I CONTROLLI SUPERATI');await b.close();process.exit(fails.length?1:0);

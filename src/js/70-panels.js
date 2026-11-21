@@ -20,10 +20,21 @@ function numIn(label,get,set,min,max,step=1){const i=el('input',{type:'number',c
   i.onchange=()=>{const v=clamp(parseFloat(i.value)||0,min,max);i.value=v;set(v);};return el('label',{class:'lbl'},el('span',{class:'u'},label),i);}
 
 /* ============ pannello sinistro ============ */
+/* sezione richiudibile: resta aperta o chiusa anche quando il pannello si ridisegna */
+function fold(title,kids,o={}){const key=o.key||title,open=UI.openSec.has(key)||(!!o.open&&!UI.openSec.has('-'+key));
+  const d=el('details',{class:'sec fold',open},el('summary',{},title,o.hint?el('small',{},o.hint):null),el('div',{class:'secb'},...kids.flat().filter(Boolean)));
+  d.addEventListener('toggle',()=>{if(d.open){UI.openSec.add(key);UI.openSec.delete('-'+key);}else{UI.openSec.delete(key);UI.openSec.add('-'+key);}});return d;}
+/* schede: le vecchie Layout e Testo vivono dentro Pagine e Decora */
+const TAB_ALIAS={layout:'pages',text:'deco'};
 function renderLeft(){
+  if(TAB_ALIAS[UI.tab])UI.tab=TAB_ALIAS[UI.tab];
   document.querySelectorAll('#tabs button').forEach(b=>{const on=b.dataset.t===UI.tab;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});
-  const L=$('#leftBody'),y=L.scrollTop;L.replaceChildren(...({photos:tabPhotos,theme:tabTheme,pages:tabPages,layout:tabLayout,text:tabText,deco:tabDeco,book:tabBook}[UI.tab])().filter(Boolean));L.scrollTop=y;
+  const L=$('#leftBody'),y=L.scrollTop;L.replaceChildren(...({photos:tabPhotos,theme:tabTheme,pages:tabPagesAll,deco:tabDecoAll,book:tabBook}[UI.tab]||tabPhotos)().flat().filter(Boolean));L.scrollTop=y;
 }
+function tabPagesAll(){const sp=cur(),side=activeSide(sp),special=isInner(sp)&&isSpecial(sp,side);
+  const sw=special&&sp.mode!=='spread'?sec(null,seg([['L','Pagina sinistra'],['R','Pagina destra']],side,v=>{UI.side=v;sel=null;renderLeft();draw();},true)):null;
+  return[sw,...(special?[]:tabLayout()),...tabPages()];}
+function tabDecoAll(){return[...tabText(),...tabDeco()];}
 function tabPhotos(){
   const U=usage(),all=ORDER.map(id=>LIB.get(id)).filter(Boolean);
   const nUsed=all.filter(e=>U.has(e.id)).length,nEx=all.filter(e=>e.excl).length,nFav=all.filter(e=>e.fav).length;
@@ -31,7 +42,7 @@ function tabPhotos(){
     onkeydown:e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickFor=null;$('#fileIn').click();}},
     ondragover:e=>{e.preventDefault();e.currentTarget.classList.add('over');},ondragleave:e=>e.currentTarget.classList.remove('over'),
     ondrop:e=>e.currentTarget.classList.remove('over')},
-    el('b',{},'Aggiungi foto'),el('br'),'clicca o trascina qui anche centinaia di file');
+    el('b',{},'Aggiungi foto'),el('br'),'clicca o trascina qui foto o cartelle');
   const chs=BOOK.chapters,cnt=new Map();for(const e of all)cnt.set(e.folder||'',(cnt.get(e.folder||'')||0)+1);
   if(UI.folder!=='*'&&!cnt.has(UI.folder))UI.folder='*';
   const list=all.filter(e=>(UI.folder==='*'||(e.folder||'')===UI.folder)&&(UI.filter==='all'?true:UI.filter==='unused'?!U.has(e.id)&&!e.excl:UI.filter==='excl'?e.excl:e.fav));
@@ -59,15 +70,15 @@ function tabPhotos(){
         UI.cur++;TSEL.clear();sel=null;commit();syncAll();}),
       btn('★',()=>{const on=![...TSEL].every(id=>LIB.get(id).fav);TSEL.forEach(id=>LIB.get(id).fav=on);scheduleSave();renderLeft();},null,'Preferite sì/no'),
       btn('Scarta',()=>{TSEL.forEach(id=>{const e=LIB.get(id);e.excl=true;e.exclWhy='manuale';});TSEL.clear();scheduleSave();renderLeft();}))):null;
-  const simSec=SIMS.length?sec(`Scatti simili e doppioni · ${SIMS.length} gruppi`,
+  const simSec=SIMS.length?fold('Scatti simili e doppioni',[
     el('p',{},'Bordo verde = tenuta. Clicca una foto per tenerla o scartarla. Di solito basta tenere la più nitida.'),
     el('div',{class:'row'},btn('Tieni la più nitida di ogni gruppo',()=>{const n=applySimilar();scheduleSave();renderLeft();toast(n?`${n} scatti simili scartati`:'Già fatto');},'pri'),
       btn('Tieni tutte',()=>{SIMS.flat().forEach(id=>{const e=LIB.get(id);if(e.exclWhy==='simile'){e.excl=false;e.exclWhy='';}});scheduleSave();renderLeft();})),
     ...SIMS.slice(0,40).map(g=>el('div',{class:'simg'},...g.map(id=>{const e=LIB.get(id);return el('button',{type:'button',class:e.excl?'out':'',title:`${e.name}${e.excl?' · scartata':' · tenuta'}`,
       onclick:()=>{e.excl=!e.excl;e.exclWhy=e.excl?'simile':'';scheduleSave();renderLeft();}},e.thumbURL?el('img',{src:e.thumbURL,alt:''}):null,id===bestOf(g)?el('span',{},'nitida'):null);}))),
-    SIMS.length>40?el('p',{},`…e altri ${SIMS.length-40} gruppi.`):null):null;
+    SIMS.length>40?el('p',{},`…e altri ${SIMS.length-40} gruppi.`):null],{hint:`${SIMS.length} gruppi`}):null;
   const mv=(i,d)=>{const j=i+d;if(j<0||j>=chs.length)return;[chs[i],chs[j]]=[chs[j],chs[i]];commit();renderLeft();};
-  const chapSec=chs.length>1?sec(`Capitoli · ${chs.length} cartelle`,
+  const chapSec=chs.length>1?fold('Capitoli',[
     el('p',{},'Ogni cartella diventa un capitolo, in quest’ordine. Rinomina i titoli, riordina o escludi una cartella, poi crea il libro.'),
     el('div',{class:'chl'},...chs.map((ch,i)=>el('div',{class:'chr'+(ch.on?'':' off')},
       el('div',{class:'mv'},el('button',{type:'button',title:'Sposta su','aria-label':'Sposta su',disabled:i===0,onclick:()=>mv(i,-1)},'▲'),el('button',{type:'button',title:'Sposta giù','aria-label':'Sposta giù',disabled:i===chs.length-1,onclick:()=>mv(i,1)},'▼')),
@@ -75,23 +86,20 @@ function tabPhotos(){
       el('input',{class:'inp',value:ch.title,title:'Cartella: '+(ch.folder||'(file senza cartella)'),'aria-label':'Titolo del capitolo',onchange:e=>{ch.title=e.target.value;commit();}}),
       el('button',{type:'button',class:'n'+(UI.folder===ch.folder?' on':''),title:'Mostra solo le foto di questa cartella',onclick:()=>{UI.folder=UI.folder===ch.folder?'*':ch.folder;renderLeft();}},String(cnt.get(ch.folder)||0))))),
     el('div',{class:'row'},btn('Crea libro dai capitoli…',()=>{WZ.group='folder';WZ.userGroup=true;openWizard();},'alt'),
-      btn('Ordina per nome cartella',()=>{chs.sort((a,b)=>a.folder.localeCompare(b.folder,'it',{numeric:true}));commit();renderLeft();}))):null;
+      btn('Ordina per nome cartella',()=>{chs.sort((a,b)=>a.folder.localeCompare(b.folder,'it',{numeric:true}));commit();renderLeft();}))],{hint:`${chs.length} cartelle`}):null;
   const folderSel=chs.length>1?el('select',{'aria-label':'Cartella',onchange:e=>{UI.folder=e.target.value;renderLeft();}},
-    el('option',{value:'*',selected:UI.folder==='*'},`Tutte (${all.length})`),...chs.map(ch=>el('option',{value:ch.folder,selected:UI.folder===ch.folder},`${ch.title} (${cnt.get(ch.folder)||0})`))):null;
+    el('option',{value:'*',selected:UI.folder==='*'},'Tutte le cartelle'),...chs.map(ch=>el('option',{value:ch.folder,selected:UI.folder===ch.folder},`${ch.title} (${cnt.get(ch.folder)||0})`))):null;
+  const cntL=(l,n)=>el('span',{},l,el('span',{class:'fcount'},String(n)));
   return[
-    sec(`Foto · ${all.length}`,drop,
-      el('div',{class:'row'},btn('Scegli cartella (anche con sottocartelle)…',()=>$('#dirIn').click(),'pri','Ogni sottocartella diventa un capitolo. Puoi anche caricare una cartella alla volta.')),
-      el('p',{},'Trascina qui anche una o più cartelle. Le sottocartelle diventano capitoli; puoi aggiungere altre cartelle in qualsiasi momento.')),
-    chapSec,
-    sec(null,
-      el('div',{class:'row2'},folderSel||el('span',{}),
+    sec(null,drop,el('div',{class:'row'},btn('Scegli una cartella…',()=>$('#dirIn').click(),null,'Ogni sottocartella diventa un capitolo. Puoi aggiungere altre cartelle quando vuoi.'))),
+    sec(`Le tue foto · ${all.length}`,
+      seg([['all',cntL('Tutte',all.length)],['unused',cntL('Libere',all.length-nUsed-nEx)],['fav',cntL('★',nFav)],['excl',cntL('Scartate',nEx)]],UI.filter,v=>{UI.filter=v;renderLeft();},true),
+      chs.length>1||all.length>40?el('div',{class:'row2'},folderSel||el('span',{}),
         el('select',{'aria-label':'Ordina',onchange:e=>{UI.sort=e.target.value;sortOrder();renderLeft();}},
-          el('option',{value:'date',selected:UI.sort==='date'},'Per data di scatto'),el('option',{value:'name',selected:UI.sort==='name'},'Per nome file'))),
-      el('div',{class:'stats'},el('span',{},el('b',{},String(nUsed)),' nel libro'),el('span',{},el('b',{},String(all.length-nUsed-nEx)),' libere'),el('span',{},el('b',{},String(nEx)),' scartate'),el('span',{},el('b',{},String(nFav)),' ★')),
-      seg([['all','Tutte'],['unused','Non usate'],['fav','★ Preferite'],['excl','Scartate']],UI.filter,v=>{UI.filter=v;renderLeft();},true),
+          el('option',{value:'date',selected:UI.sort==='date'},'Per data di scatto'),el('option',{value:'name',selected:UI.sort==='name'},'Per nome file'))):null,
       act,list.length?tray:el('p',{},UI.filter==='unused'?'Tutte le foto sono già nel libro.':'Nessuna foto qui.'),
-      el('p',{},'Clic = seleziona (Ctrl/Maiusc per più foto) · doppio clic = aggiungi alla pagina attiva · ★ preferita = più grande nel libro.')),
-    simSec
+      el('p',{},'Trascina una foto su una pagina. Doppio clic: va nella pagina aperta. ★ = più grande nel libro.')),
+    chapSec,simSec
   ];
 }
 function trayClick(id,ev,visible){
@@ -123,24 +131,24 @@ function tabLayout(){
     seg([['L',isCover(sp)?'Retro':isEnd(sp)?'Metà sinistra':'Pagina sinistra'],['R',isCover(sp)?'Fronte':isEnd(sp)?'Metà destra':'Pagina destra']],side,v=>{UI.side=v;sel=null;renderLeft();draw();},true);
   const nextVar=()=>{if(!cands.length)return;const i=cands.findIndex(c=>c.key===M.lay);relayoutPage(sp,side,{key:cands[(i+1)%cands.length].key});sel=null;commit();syncAll();};
   return[
-    sec(`${pageLabel(UI.cur,side)} · ${n} ${n===1?'riquadro':'riquadri'}`,sideSeg,
+    sec(`Impaginazione · ${pageLabel(UI.cur,side)}`,sideSeg,
       el('div',{class:'row'},
-        btn('− riquadro',()=>{if(!n)return;const i=phs.lastIndexOf(null);if(i>=0)phs.splice(i,1);else phs.pop();relayoutPage(sp,side,{phs});sel=null;commit();syncAll();},null,'Un riquadro in meno (la foto torna tra le libere)'),
-        btn('+ riquadro',()=>{phs.push(null);relayoutPage(sp,side,{phs});sel=null;commit();syncAll();},null,'Un riquadro vuoto in più'),
-        btn('↻ Altra variante',nextVar,'pri','Prova il prossimo layout (tasto V)')),
+        btn('↻ Un’altra',nextVar,'pri','Prova la prossima impaginazione (tasto V)'),
+        btn('− foto',()=>{if(!n)return;const i=phs.lastIndexOf(null);if(i>=0)phs.splice(i,1);else phs.pop();relayoutPage(sp,side,{phs});sel=null;commit();syncAll();},null,'Un riquadro in meno (la foto torna tra quelle da usare)'),
+        btn('+ riquadro',()=>{phs.push(null);relayoutPage(sp,side,{phs});sel=null;commit();syncAll();},null,'Un riquadro vuoto in più')),
+      n?g:el('p',{},'Pagina vuota: trascina qui le foto, oppure fai doppio clic su una miniatura nel pannello Foto.'),
+      n?el('p',{},'Dal più adatto alle tue foto (meno ritaglio). Tasto V: prova la successiva.'):null),
+    fold('Altre opzioni di impaginazione',[
       chk('Al vivo: niente margini su questa pagina',()=>M.full,v=>{M.full=v;relayoutPage(sp,side,{key:M.lay});syncAll();}),
       chk('Spazio per un titolo in alto',()=>!!M.band,v=>{M.band=v?.13:0;relayoutPage(sp,side,{key:M.lay});syncAll();}),
-      n?el('p',{},'Layout ordinati dal più adatto alle tue foto (meno ritaglio). Le preferite ★ vanno nel riquadro più grande.'):el('p',{},'Pagina vuota: trascina qui le foto, oppure fai doppio clic su una miniatura nel pannello Foto.'),
-      n?g:null),
-    sec('Tutto il libro',
-      el('div',{class:'row'},btn('Nuove varianti per tutte le pagine',()=>{relayoutAll(false);sel=null;commit();syncAll();toast('Layout rimescolati: Ctrl+Z per tornare indietro');}),
-        btn('Crea libro automatico…',openWizard,'alt'))),
-    sec('Riquadri liberi',
+      el('div',{class:'row'},btn('Nuove varianti per tutte le pagine',()=>{relayoutAll(false);sel=null;commit();syncAll();toast('Impaginazioni rimescolate',4000,'undo');}),
+        btn('Rifai il libro in automatico…',openWizard)),
       el('div',{class:'row'},btn('Aggiungi riquadro libero',()=>{const c=mkCell([.3,.3,.4,.4],side);sp.cells.push(c);sel={type:'cell',id:c.id};setMode('layout');commit();syncAll();}),
-        btn('Svuota questa pagina',()=>{const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));const r=redistribute(ph,pageNum(UI.cur,side==='S'?'L':side),{afterIdx:UI.cur,exclude:x=>x.sp===sp&&x.side===side});sel=null;commit();syncAll();toast('Pagina svuotata'+redistMsg(r),4500,'undo');},'danger','Le foto vengono spostate nelle pagine vicine')),
+        btn('Svuota la pagina',()=>{const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));const r=redistribute(ph,pageNum(UI.cur,side==='S'?'L':side),{afterIdx:UI.cur,exclude:x=>x.sp===sp&&x.side===side});sel=null;commit();syncAll();toast('Pagina svuotata'+redistMsg(r),4500,'undo');},'danger','Le foto vengono spostate nelle pagine vicine')),
       chk('Bordi in comune si muovono insieme',()=>UI.link,v=>UI.link=v),
       chk('Aggancio a griglia e bordi',()=>UI.snap,v=>UI.snap=v),
-      el('p',{},'In modalità Riquadri (tasto M) trascina un riquadro per spostarlo e i bordi o gli angoli per ridimensionarlo.'))
+      el('div',{class:'row'},btn(UI.mode==='layout'?'Fine modifica riquadri':'Sposta e ridimensiona i riquadri',()=>setMode(UI.mode==='layout'?'photo':'layout'),UI.mode==='layout'?'pri':null,'Tasto M')),
+      el('p',{},'Con «Sposta e ridimensiona» trascina un riquadro per spostarlo, i bordi o gli angoli per cambiarne la misura.')])
   ];
 }
 
@@ -179,32 +187,31 @@ const LOOKS=[
 ];
 function tabTheme(){
   const T=TH(),bt=BOOK.theme,sp=cur();
-  const groups=THEME_GROUPS.map(g=>sec(g==='Neutri'?'Neutri':g==='Feste'?'Feste e ricorrenze':'Eventi e momenti',
-    el('div',{class:'themes'},...THEMES.filter(t=>t.group===g).map(t=>el('button',{type:'button',class:'thc'+(t.id===bt.id?' on':''),title:t.desc,
-      onclick:()=>{if(t.id===bt.id)return;applyTheme(t.id);THUMBS.clear();TPREV.clear();commit();syncAll();toast(`Tema “${t.name}”: copertina, risguardi, titoli e decorazioni aggiornati. Ctrl+Z per tornare indietro.`,4000);}},
-      el('div',{class:'thp'},themePreview(t.id)),el('b',{},t.name))))));
+  const grid=el('div',{class:'themes t3'},...THEMES.map(t=>el('button',{type:'button',class:'thc'+(t.id===bt.id?' on':''),title:t.desc,'aria-pressed':String(t.id===bt.id),
+      onclick:()=>{if(t.id===bt.id)return;applyTheme(t.id);THUMBS.clear();TPREV.clear();commit();syncAll();toast(`Tema “${t.name}”: copertina, risguardi, titoli e decorazioni aggiornati.`,4000,'undo');}},
+      el('div',{class:'thp'},themePreview(t.id,84)),el('b',{},t.name))));
   const C=T.colors,colorRow=(lab,k)=>colorCtl(lab,()=>C[k],v=>{bt.colors[k]=v;},null,()=>themeChanged());
   return[
-    sec(`Tema del libro · ${T.name}`,el('p',{},T.desc+'. Il tema imposta copertina, retro, dorso, risguardi, titoli e decorazioni. Le tue foto e l’impaginazione restano.')),
-    ...groups,
-    sec('Copertina · proposte per questo tema',
+    sec(`Tema · ${T.name}`,grid,el('p',{},'Cambia copertina, risguardi, titoli e decorazioni. Foto e impaginazione restano.')),
+    fold('Copertina',[
       el('div',{class:'themes'},...coverProposals(T).map(v=>el('button',{type:'button',class:'thc'+(T.coverLayout===v.coverLayout&&T.coverBg===v.coverBg?' on':''),title:v.name,
         onclick:()=>{bt.coverLayout=v.coverLayout;bt.coverBg=v.coverBg;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},el('div',{class:'thp'},themePreview(T.id,118,v)),el('b',{},v.name)))),
       el('div',{class:'lbl'},el('span',{},'Impaginazione'),el('div',{class:'covl'},...COVER_LAYOUTS.map(([v,l,tip])=>el('button',{type:'button',class:'cl'+(T.coverLayout===v?' on':''),title:tip,onclick:()=>{bt.coverLayout=v;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},covIcon(v),l)))),
       el('label',{class:'lbl'},el('span',{},'Sfondo'),el('select',{onchange:e=>{bt.coverBg=e.target.value;themeChanged({cover:true});goSpread(BOOK.spreads.findIndex(isCover));}},...COVER_BGS.map(([v,l])=>el('option',{value:v,selected:T.coverBg===v},l)))),
-      el('p',{},'La copertina viene ricreata con le stesse foto e lo stesso titolo. Poi puoi spostare e cambiare tutto.')),
+      el('p',{},'La copertina viene ricreata con le stesse foto e lo stesso titolo. Poi puoi spostare e cambiare tutto.')],{hint:'proposte'}),
     BOOK.endp.on?tabEndpapers(T):null,
-    sec('Decorazioni del tema',
+    fold('Colori e caratteri',[
+      colorRow('Pagine interne','paper'),colorRow('Titoli','title'),colorRow('Testi','ink'),colorRow('Accento e ornamenti','accent'),
+      colorRow('Copertina','cover'),colorRow('Scritte in copertina','coverInk'),colorRow('Risguardi','endpaper'),
+      Object.keys(bt.colors).length?btn('Ripristina i colori del tema',()=>{bt.colors={};themeChanged();}):null,
+      fontSel('Carattere dei titoli',()=>T.fonts.title,v=>{bt.fonts.title=v;themeChanged();}),fontSel('Sottotitoli e didascalie',()=>T.fonts.sub,v=>{bt.fonts.sub=v;themeChanged();}),
+      Object.keys(bt.fonts).length?btn('Ripristina i caratteri del tema',()=>{bt.fonts={};themeChanged();}):null]),
+    fold('Decorazioni del tema',[
       seg([['0','Nessuna'],['1','Leggere'],['2','Ricche']],String(T.deco),v=>{bt.deco=+v;themeChanged({decos:true});},true),
       chk('Motivo sullo sfondo della copertina',()=>bt.coverPattern!==false,v=>{bt.coverPattern=v;THUMBS.clear();syncAll();}),
       chk('Motivo sui risguardi',()=>bt.endPattern!==false,v=>{bt.endPattern=v;THUMBS.clear();syncAll();}),
-      el('p',{},'“Ricche” aggiunge anche un motivo leggero sulle pagine interne. Ogni decorazione si può spostare, cambiare o togliere.')),
-    sec('Colori',colorRow('Pagine interne','paper'),colorRow('Titoli','title'),colorRow('Testi','ink'),colorRow('Accento e ornamenti','accent'),
-      colorRow('Copertina','cover'),colorRow('Scritte in copertina','coverInk'),colorRow('Risguardi','endpaper'),
-      Object.keys(bt.colors).length?btn('Ripristina i colori del tema',()=>{bt.colors={};themeChanged();}):null),
-    sec('Caratteri',fontSel('Titoli',()=>T.fonts.title,v=>{bt.fonts.title=v;themeChanged();}),fontSel('Sottotitoli e didascalie',()=>T.fonts.sub,v=>{bt.fonts.sub=v;themeChanged();}),
-      Object.keys(bt.fonts).length?btn('Ripristina i caratteri del tema',()=>{bt.fonts={};themeChanged();}):null),
-    sec('Spaziature e cornici (tutto il libro)',
+      el('p',{},'“Ricche” aggiunge anche un motivo leggero sulle pagine interne. Ogni decorazione si può spostare, cambiare o togliere.')],{hint:['nessuna','leggere','ricche'][T.deco]||''}),
+    fold('Spaziature e cornici delle foto',[
       el('div',{class:'looks'},...LOOKS.map(([name,v,tip])=>el('button',{type:'button',class:'look',title:tip,onclick:()=>{Object.assign(BOOK.style,v);relayoutAll(true);THUMBS.clear();commit();syncAll();toast('Spaziature: '+name);}},
         el('i',{style:`--m:${Math.max(2,v.margin/2.5)}px;--g:${Math.max(1,v.gutter/2)}px;--r:${v.radius}px`},el('u'),el('u')),name))),
       slider('Margine esterno',()=>BOOK.style.margin,v=>BOOK.style.margin=v,0,40,.5,'mm',()=>THUMBS.clear()),
@@ -213,15 +220,14 @@ function tabTheme(){
       slider('Angoli arrotondati',()=>BOOK.style.radius,v=>BOOK.style.radius=v,0,30,.5,'mm'),
       slider('Bordo delle foto',()=>BOOK.style.borderW,v=>BOOK.style.borderW=v,0,10,.25,'mm'),
       colorCtl('Colore del bordo',()=>BOOK.style.borderColor,v=>BOOK.style.borderColor=v),
-      slider('Ombra',()=>BOOK.style.shadow,v=>BOOK.style.shadow=v,0,10,.5,'mm')),
-    sec(`Sfondo di questa doppia pagina · ${spreadLabel(UI.cur)}`,
+      slider('Ombra',()=>BOOK.style.shadow,v=>BOOK.style.shadow=v,0,10,.5,'mm')],{hint:'tutto il libro'}),
+    fold('Sfondo di questa doppia pagina',[
       colorCtl('Colore',()=>bgOf(sp),v=>sp.bg=v,null,()=>{commit();syncAll();}),
       el('div',{class:'sw'},...[C.paper,C.cover,C.endpaper,C.accent,C.title,'#ffffff','#F4EFE6','#1C1C1C'].filter((c,i,a)=>a.indexOf(c)===i).map(c=>el('button',{type:'button',style:`background:${c}`,title:c,'aria-label':'Sfondo '+c,onclick:()=>{sp.bg=c;restyleTexts();commit();syncAll();}}))),
       el('label',{class:'lbl'},el('span',{},'Motivo di sfondo'),el('select',{onchange:e=>{const v=e.target.value;sp.pat=v==='theme'?null:v==='none'?'none':customPattern(v);commit();syncAll();}},
         el('option',{value:'theme',selected:sp.pat==null},'Come il tema'),el('option',{value:'none',selected:sp.pat==='none'},'Nessuno'),
         ...Object.entries(PATTERNS).filter(([k])=>k!=='none').map(([k,v])=>el('option',{value:k,selected:sp.pat&&sp.pat.type===k},v.l+' (motivi del tema)')))),
-      sp.bg||sp.pat!=null?btn('Torna allo sfondo del tema',()=>{sp.bg=null;sp.pat=null;restyleTexts();commit();syncAll();}):null),
-    sec('Guide',chk('Mostra margini, taglio e zone di sicurezza',()=>UI.guides,v=>UI.guides=v))
+      sp.bg||sp.pat!=null?btn('Torna allo sfondo del tema',()=>{sp.bg=null;sp.pat=null;restyleTexts();commit();syncAll();}):null],{hint:spreadLabel(UI.cur)})
   ];
 }
 function customPattern(type){const T=TH(),cols=T.motifColors&&T.motifColors.length?T.motifColors:[T.colors.accent];
@@ -266,36 +272,37 @@ function tabDeco(){
     const f=ser.some(x=>x[0]===UI.artFilter)?UI.artFilter:'tutti',list=inF.filter(a=>f==='tutti'||a.series===f);
     const pick=el('select',{'aria-label':'Sticker di quale tema',onchange:e=>{UI.artFolder=e.target.value;UI.artFilter='tutti';renderLeft();}},
       ...folders.map(fo=>el('option',{value:fo,selected:fo===fsel},artFolderName(fo)+(mineF.includes(fo)?' · questo tema':''))));
-    artSec=sec(`Sticker illustrati · ${artFolderName(fsel)} · ${inF.length}`,
-      folders.length>1?el('label',{class:'lbl'},el('span',{class:'u'},'Serie'),pick):null,
+    artSec=sec(`Sticker · ${artFolderName(fsel)}`,
+      folders.length>1?el('label',{class:'lbl'},el('span',{class:'u'},'Sticker di un altro tema'),pick):null,
       ser.length>1?seg([['tutti','Tutti'],...ser],f,v=>{UI.artFilter=v;renderLeft();},true):null,
       artGrid(list,a=>addArt(a.id)),
-      el('p',{},'Clic per aggiungere al centro della pagina attiva, o trascina lo sticker dove vuoi. Sono disegni vettoriali: in stampa restano nitidi.'));}
+      el('p',{},'Clic per aggiungerlo, oppure trascinalo sul foglio.'));}
   /* sticker con scritta */
   const S=themeStickers(),bf=T.fonts.sub==='Montserrat'||T.fonts.sub==='Josefin Sans'?'Fredoka':T.fonts.sub,bcols=badgePalette();
   const words=[...new Set([...S.w,'Wow','Che bello!','Ricordi'])].slice(0,8),shapes=['badge','ribbon','stamp','bubble','burst','tag','heart','cloud'];
   const bspec=(w,i)=>{const c=bcols[i%Math.min(bcols.length,4)];return{m:shapes[i%shapes.length],txt:w,f:bf,c,c2:contrastInk(c)};};
   const custom=el('input',{type:'text',class:'inp',style:'flex:1;min-width:0',placeholder:'La tua scritta…','aria-label':'Testo per un nuovo sticker',maxlength:40,
     onkeydown:e=>{if(e.key==='Enter'&&e.target.value.trim()){addBadge({...bspec(e.target.value.trim(),0),m:'badge'});e.target.value='';}}});
-  const badgeSec=sec('Sticker con scritta',
+  const badgeSec=sec('Scritte',
     el('div',{class:'bgrid'},...words.map((w,i)=>{const sp_=bspec(w,i);return el('button',{type:'button',class:'bpick',title:`${w} — clic per aggiungere, oppure trascina sul foglio`,draggable:'true',
       ondragstart:e=>{e.dataTransfer.setData('text/x-badge',JSON.stringify(sp_));e.dataTransfer.effectAllowed='copy';dragKind='motif';},onclick:()=>addBadge(sp_)},badgeThumb(sp_,64));})),
     el('div',{class:'row'},custom,btn('Aggiungi',()=>{const v=custom.value.trim()||'Ciao!';addBadge({...bspec(v,0),m:'badge'});custom.value='';},'pri')),
-    el('p',{},'Dopo averlo aggiunto puoi cambiare testo, forma, colori e carattere nel pannello a destra (o con doppio clic sullo sticker).'));
+    el('p',{},'Poi cambi testo, forma e colori nel pannello a destra.'));
   return[
     artSec,
     badgeSec,
-    sec('Aggiungi una decorazione',
+    stickerAutoSec(),
+    fold('Motivi decorativi',[
       mine.length?seg(Object.entries(groups),UI.decoGroup,v=>{UI.decoGroup=v;renderLeft();},true):null,
       el('div',{class:'row'},el('span',{class:'u'},'Colore'),el('div',{class:'sw'},...palette.map(c=>el('button',{type:'button',class:col===c?'on':'',style:`background:${c}`,title:c,onclick:()=>{UI.decoColor=c;renderLeft();}}))),
         el('input',{type:'color',value:col,'aria-label':'Altro colore',oninput:e=>{UI.decoColor=e.target.value;},onchange:()=>renderLeft()})),
-      lib,el('p',{},'Clic per aggiungere al centro della pagina attiva, o trascina il motivo dove vuoi. Le decorazioni sono vettoriali: in stampa restano nitide.')),
-    sec(`Su ${pageLabel(UI.cur,side)}`,
-      el('div',{class:'row'},btn('Angoli decorati',corners,null,'Quattro motivi agli angoli della pagina'),
-        btn('Togli le decorazioni da questa doppia pagina',()=>{sp.decos=[];sel=null;commit();syncAll();},'danger'))),
-    sec('Decorazioni automatiche del tema',el('p',{},`${autoN} nel libro, vicino a titoli e in copertina.`),
-      el('div',{class:'row'},btn('Rigenera',()=>{regenDecos();commit();syncAll();toast('Decorazioni del tema rigenerate');}),
-        btn('Togli tutte',()=>{for(const s of BOOK.spreads)s.decos=(s.decos||[]).filter(d=>!d.auto);commit();syncAll();},'danger')))
+      lib,el('p',{},'Clic per aggiungere al centro della pagina, o trascina il motivo dove vuoi.'),
+      el('div',{class:'row'},btn('Angoli decorati',corners,null,'Quattro motivi agli angoli della pagina'))],{hint:`${MOTIF_IDS.length}`}),
+    fold('Pulizia',[
+      el('p',{},`${autoN} decorazioni e sticker messi in automatico nel libro.`),
+      el('div',{class:'row'},btn('Rigenera quelli automatici',()=>{regenDecos();commit();syncAll();toast('Decorazioni del tema rigenerate',4000,'undo');}),
+        btn('Togli quelli automatici',()=>{for(const s of BOOK.spreads)s.decos=(s.decos||[]).filter(d=>!d.auto);commit();syncAll();toast('Tolti',4000,'undo');},'danger')),
+      el('div',{class:'row'},btn('Togli tutto da questa doppia pagina',()=>{sp.decos=[];sel=null;commit();syncAll();toast('Decorazioni tolte',4000,'undo');},'danger'))])
   ];
 }
 
@@ -307,7 +314,7 @@ function tabText(){
   const list=el('div',{class:'tlist'});
   sp.texts.forEach(t=>list.append(el('button',{type:'button',class:sel&&sel.id===t.id?'on':'',onclick:()=>{sel={type:'text',id:t.id};syncAll();}},(t.text||'(vuoto)').split('\n')[0])));
   return[
-    sec(`Aggiungi su ${pageLabel(UI.cur,side)}`,el('div',{class:'tadd'},
+    sec(`Testi · ${pageLabel(UI.cur,side)}`,el('div',{class:'tadd'},
       btn('Titolo',R('chapter','Titolo',.12,Math.round(30*fScale(T.fonts.title)))),
       btn('Sottotitolo',R('chapter-sub','SOTTOTITOLO',.2,11)),
       btn('Didascalia',R('caption','Una didascalia breve',.94,10)),
@@ -315,8 +322,8 @@ function tabText(){
       btn('Scritta a mano',R('caption','che bei ricordi',.5,28,{font:'Caveat'})),
       btn('Data',R('caption',today,.94,12,{upper:true,ls:14})),
       btn('Etichetta',R('caption','ESTATE',.5,26,{font:'Bebas Neue',ls:20,boxOp:88,boxColor:T.colors.accent,color:contrastInk(T.colors.accent)}))),
-      el('p',{},'I testi prendono caratteri e colori del tema. Trascinali sul foglio, doppio clic per scrivere. Si agganciano al centro della pagina.')),
-    sp.texts.length?sec(`Testi su queste pagine · ${sp.texts.length}`,list):null
+      el('p',{},'Prendono caratteri e colori del tema. Trascinali sul foglio, doppio clic per scrivere.'),
+      sp.texts.length?el('div',{class:'lbl'},el('span',{class:'u'},`Già su queste pagine (${sp.texts.length})`),list):null)
   ];
 }
 
@@ -376,28 +383,27 @@ function tabBook(){
       cm&&profs.indexOf(cm)>=nB?btn('Elimina profilo',()=>{saveCustomProfiles(customProfiles().filter(p=>p.name!==cm.name));renderLeft();toast('Profilo eliminato');},'danger'):null);
   const endF=BOOK.spreads.findIndex(s=>s.kind==='endF');
   return[
-    sec('Profilo di stampa',ps,
-      el('p',{},'Un profilo imposta in un colpo formato, abbondanza, margini, copertina e risguardi. Salva le specifiche di ogni tipografia con cui lavori.'),saveRow),
-    sec('Il libro',el('div',{class:'summary'},
+    sec('Formato e tipografia',ps,
+      el('p',{},'Il profilo imposta in un colpo formato, abbondanza, margini, copertina e risguardi.'),saveRow),
+    sec('Il tuo libro',el('div',{class:'summary'},
       el('div',{class:'srow'},el('span',{class:'k'},'Pagine interne'),el('span',{class:'v'},`${ip} (${ip/2} doppie pagine)`)),
       el('div',{class:'srow'},el('span',{class:'k'},'Foto nel libro'),el('span',{class:'v'},`${U.size} di ${realCount()||LIB.size}`)),
       el('div',{class:'srow'},el('span',{class:'k'},'Copertina'),el('span',{class:'v'},BOOK.cover.on?'sì':'no')),
       el('div',{class:'srow'},el('span',{class:'k'},'Risguardi stampati'),el('span',{class:'v'},E.on?`sì · ${nf(E.w)}×${nf(E.h)} mm`:'no'))),
       ip%4?el('div',{class:'row'},el('span',{style:'color:var(--warn);font-size:12px'},`${ip} pagine: non è un multiplo di 4.`),
         btn('Aggiungi 2 pagine in fondo',()=>{UI.cur=lastInnerIdx();addSpread();})):null,
-      chk('Il libro automatico arriva sempre a un multiplo di 4',()=>BOOK.mult4,v=>BOOK.mult4=v),
-      el('div',{class:'row'},btn('Crea libro automatico…',openWizard,'alt'))),
-    sec('Formato pagina (una facciata rifilata)',s,el('div',{class:'row2'},pageMM('Larghezza','w'),pageMM('Altezza','h')),
+      chk('Il libro automatico arriva sempre a un multiplo di 4',()=>BOOK.mult4,v=>BOOK.mult4=v)),
+    fold('Misure della pagina',[s,el('div',{class:'row2'},pageMM('Larghezza','w'),pageMM('Altezza','h')),
       seg([['p','Verticale'],['l','Orizzontale']],isLand?'l':'p',v=>{if((v==='l')!==(P.w>P.h)){[P.w,P.h]=[P.h,P.w];reflow();THUMBS.clear();commit();syncAll();}},true),
-      el('p',{},`Doppia pagina aperta: ${nf(2*P.w)} × ${nf(P.h)} mm. Cambiando formato i layout si ricalcolano con le stesse foto.`)),
-    sec('Copertina',
+      el('p',{},`Doppia pagina aperta: ${nf(2*P.w)} × ${nf(P.h)} mm. Cambiando formato i layout si ricalcolano con le stesse foto.`)],{hint:`${nf(P.w/10)}×${nf(P.h/10)} cm`}),
+    fold('Copertina: dorso, cartone, risvolto',[
       chk('Il libro ha la copertina',()=>BOOK.cover.on,v=>{BOOK.cover.on=v;ensureStructure();if(v)rebuildCover();THUMBS.clear();syncAll();}),
       BOOK.cover.on?el('div',{class:'row3'},
         mmField('Dorso (mm)',()=>BOOK.cover.spine,v=>BOOK.cover.spine=v,0,80,.5,rebuildCover),
         mmField('Cartone +mm/lato',()=>BOOK.cover.over,v=>BOOK.cover.over=v,0,15,.5),
         mmField('Risvolto (mm)',()=>BOOK.cover.wrap,v=>BOOK.cover.wrap=v,0,30,.5)):null,
-      BOOK.cover.on?el('p',{},`File copertina: ${nf(2*(P.w+BOOK.cover.over)+BOOK.cover.spine+2*(BOOK.cover.wrap+EXP.bleed))} × ${nf(P.h+2*BOOK.cover.over+2*(BOOK.cover.wrap+EXP.bleed))} mm (retro + dorso + fronte, con risvolto e abbondanza). Il dorso dipende da pagine e carta: chiedilo alla tipografia.`):null),
-    sec('Risguardi (pag. 2 e penultima)',
+      BOOK.cover.on?el('p',{},`File copertina: ${nf(2*(P.w+BOOK.cover.over)+BOOK.cover.spine+2*(BOOK.cover.wrap+EXP.bleed))} × ${nf(P.h+2*BOOK.cover.over+2*(BOOK.cover.wrap+EXP.bleed))} mm (retro + dorso + fronte, con risvolto e abbondanza). Il dorso dipende da pagine e carta: chiedilo alla tipografia.`):null]),
+    fold('Risguardi: foglio di stampa',[
       chk('Risguardi stampati, impaginati su foglio a parte',()=>E.on,v=>{E.on=v;ensureStructure();THUMBS.clear();syncAll();}),
       E.on?el('div',{class:'row2'},
         mmField('Larghezza foglio (mm)',()=>E.w,v=>{const r=E.fold/E.w;E.w=v;E.fold=+(v*r).toFixed(1);},50,2000,.5),
@@ -408,16 +414,16 @@ function tabBook(){
         mmField('Zona stampata per lato, alt. (0 = pagina + abbondanza)',()=>E.visH,v=>E.visH=v,0,1000,.5)):null,
       E.on?chk(`Stampa sul foglio dei risguardi anche pag. 4 e pag. ${bookPages()-3} (retro dei fogli)`,()=>E.verso!==false,v=>{E.verso=v;THUMBS.clear();syncAll();},'Pag. 4 e la terzultima finiscono nel PDF dei risguardi invece che nell’interno'):null,
       E.on?el('p',{},'Ogni lato del foglio stampa solo la pagina con la sua abbondanza, appoggiata alla piega e centrata in altezza (riquadro verde): il resto del foglio resta bianco, anche con un motivo. Il tratteggio interno è la pagina rifilata.'):null,
-      E.on&&endF>=0?btn('Vai al risguardo anteriore',()=>goSpread(endF)):null),
-    sec('Sicurezza di stampa',
+      E.on&&endF>=0?btn('Vai al risguardo anteriore',()=>goSpread(endF)):null]),
+    fold('Abbondanza e zone di sicurezza',[
+      chk('Mostra margini, taglio e zone di sicurezza sul foglio',()=>UI.guides,v=>UI.guides=v),
       slider('Abbondanza (bleed)',()=>EXP.bleed,v=>EXP.bleed=v,0,10,.5,'mm'),
       slider('Zona di sicurezza per i testi',()=>BOOK.safe,v=>BOOK.safe=v,0,20,.5,'mm'),
       slider('Margine verso la piega',()=>BOOK.style.bind,v=>BOOK.style.bind=v,0,40,.5,'mm'),
-      el('p',{},'Linea azzurra = taglio, rossa = zona di sicurezza. I testi fuori zona o nella piega vengono segnati in rosso e segnalati prima dell’export.')),
-    sec('Rilegatura',chk('La prima pagina interna è a destra',()=>BOOK.firstRight,v=>BOOK.firstRight=v,'Vale per la prossima impaginazione automatica')),
-    sec('Pixel necessari per una pagina',el('div',{class:'summary'},
-      el('div',{class:'srow'},el('span',{class:'k'},'a 200 dpi'),el('span',{class:'v'},pxAt(200))),
-      el('div',{class:'srow'},el('span',{class:'k'},'a 300 dpi'),el('span',{class:'v'},pxAt(300)))))
+      el('p',{},'Linea azzurra = taglio, rossa = zona di sicurezza. I testi fuori zona o nella piega vengono segnati in rosso e segnalati prima dell’export.')]),
+    fold('Rilegatura e risoluzione',[chk('La prima pagina interna è a destra',()=>BOOK.firstRight,v=>BOOK.firstRight=v,'Vale per la prossima impaginazione automatica'),
+      el('div',{class:'summary'},el('div',{class:'srow'},el('span',{class:'k'},'Pixel per una pagina a 200 dpi'),el('span',{class:'v'},pxAt(200))),
+        el('div',{class:'srow'},el('span',{class:'k'},'a 300 dpi'),el('span',{class:'v'},pxAt(300))))])
   ];
 }
 
@@ -457,11 +463,11 @@ function tabEndpapers(T){
     THUMBS.clear();commit();syncAll();goSpread(BOOK.spreads.indexOf(UI.endpTarget==='B'?B:F));};
   const grid=list=>el('div',{class:'themes'},...list.map(v=>el('button',{type:'button',class:'thc'+((curId(F)===v.id&&UI.endpTarget!=='B')||(curId(B)===v.id&&UI.endpTarget==='B')?' on':''),title:v.name,onclick:()=>apply(v)},
     el('div',{class:'thp'},endpPreview(v)),el('b',{},v.name))));
-  return sec('Risguardi',
+  return fold('Risguardi',[
     seg([['both','Entrambi'],['F','Solo anteriore'],['B','Solo posteriore']],UI.endpTarget,v=>{UI.endpTarget=v;renderLeft();},true),
     grid(vs.filter(v=>!v.other)),
     el('details',{class:'more'},el('summary',{},'Risguardi degli altri temi'),grid(vs.filter(v=>v.other))),
-    el('p',{},'Il risguardo resta modificabile: puoi aggiungere foto, testi e decorazioni dal foglio.'));
+    el('p',{},'Il risguardo resta modificabile: puoi aggiungere foto, testi e decorazioni dal foglio.')],{hint:'pag. 2 e penultima'});
 }
 
 /* ============ pagine speciali ============ */
@@ -470,7 +476,7 @@ function tabPages(){
   const sp=cur(),side=activeSide(sp),inner=isInner(sp),T=TH(),M=inner?meta(sp,side):null,qs=themeQuotes();
   const q=()=>UI.quoteCustom.trim()?[UI.quoteCustom.trim(),'']:qs[UI.quoteIdx%qs.length];
   const out=[];
-  if(!inner)out.push(sec('Pagine speciali',el('p',{},'Vai su una pagina interna per inserire frasi, collage o la pagina effetto.'),btn('Vai alla prima pagina interna',()=>goSpread(firstInnerIdx()),'pri')));
+  if(!inner)out.push(fold('Pagine speciali',[el('p',{},'Frasi, dedica, collage e pagina effetto si mettono sulle pagine interne.'),btn('Vai alla prima pagina interna',()=>goSpread(firstInnerIdx()),'pri')]));
   else{
     if(M.special&&M.special!=='effect'){const K=SPECIALS.find(k=>k[0]===M.special);
       out.push(sec(`${pageLabel(UI.cur,side)} · ${K?K[1]:'pagina speciale'}`,
@@ -478,7 +484,7 @@ function tabPages(){
           if(t){UI.quoteIdx++;const nq=qs[UI.quoteIdx%qs.length];t.text=nq[0];wrapText(t,visBox(sp,side).w*.72);const a=sp.texts.find(x=>x.role==='quote-author'&&Math.abs(x.x-t.x)<.05);if(a)a.text=nq[1]?'— '+nq[1]:'';commit();syncAll();}},'pri')):null,
         btn('Rendi pagina normale (tiene le foto)',()=>{unspecial(sp,side);commit();syncAll();})));}
     const quoteSel=el('select',{'aria-label':'Frase',onchange:e=>{UI.quoteIdx=+e.target.value;UI.quoteCustom='';renderLeft();}},...qs.map((x,k)=>el('option',{value:k,selected:k===UI.quoteIdx%qs.length},(x[0].length>60?x[0].slice(0,58)+'…':x[0])+(x[1]?' — '+x[1]:''))));
-    out.push(sec('Inserisci una pagina speciale',
+    out.push(fold('Pagine speciali: frasi, dedica, collage…',[
       seg([['replace','Al posto di questa pagina'],['after','In una nuova doppia pagina']],UI.spWhere,v=>{UI.spWhere=v;renderLeft();},true),
       el('p',{},UI.spWhere==='replace'?`Va su ${pageLabel(UI.cur,side)}: le sue foto vengono spostate nelle pagine vicine, nessuna si perde.`:'Si aggiunge una doppia pagina dopo questa: metà delle foto della pagina attuale va accanto alla pagina speciale.'),
       el('label',{class:'lbl'},el('span',{},'Frase (per le pagine con frase)'),quoteSel),
@@ -486,23 +492,27 @@ function tabPages(){
       el('div',{class:'specials'},...SPECIALS.map(([k,l,d])=>el('button',{type:'button',class:'spc',title:d,onclick:()=>{
         const o={quote:q()};if(k==='dedica'){o.text=UI.quoteCustom.trim()||(WZ.dedica||'Con tutto il mio affetto');}if(k==='chapter'){o.text=UI.quoteCustom.trim()||'Nuovo capitolo';}
         if(isVerso(UI.cur,side)&&UI.spWhere==='replace'&&k==='scrap'){toast('Questa pagina è il retro del risguardo: scegli un’altra pagina per il collage');return;}
-        placeSpecial(k,UI.spWhere,o);}},specIcon(k),el('b',{},l),el('small',{},d))))));
+        placeSpecial(k,UI.spWhere,o);}},specIcon(k),el('b',{},l),el('small',{},d))))]));
   }
   const ei=effectIdx();
-  out.push(sec('Pagina effetto · le foto migliori',
+  out.push(fold('Pagina effetto con le foto migliori',[
     el('p',{},'Il programma sceglie le foto migliori con una persona o un animale ben visibile, scontorna il soggetto e crea una doppia pagina con effetto “fuori cornice” e sticker. Al massimo una per libro: se non ci sono foto adatte non viene creata.'),
     ei>=0?el('div',{class:'row'},btn('Vai alla pagina effetto',()=>goSpread(ei),'pri'),btn('Rifai con le foto migliori',()=>runEffect('same')),
       btn('Elimina',()=>{const s2=BOOK.spreads[ei];const ph=s2.cells.filter(c=>c.ph&&!c.fx).map(c=>c.ph);BOOK.spreads.splice(ei,1);normalizeOrder();redistribute(ph,pageNum(Math.max(firstInnerIdx(),ei-1),'R'));UI.cur=clamp(UI.cur,0,BOOK.spreads.length-1);commit();syncAll();},'danger'))
     :el('div',{class:'row'},btn(fxBusy?'Analisi in corso…':'Crea la pagina effetto',()=>runEffect('replace'),'pri','Sostituisce una doppia pagina centrale; le sue foto vanno nelle pagine vicine'),
       btn('Come doppia pagina in più',()=>runEffect('add'))),
-    FX.failed?el('p',{class:'warn'},'Modulo effetti non disponibile: '+FX.failed+'. Il file fotolibro-effetti.js deve stare accanto all’app.'):null));
-  out.push(sec('Sticker tra le foto',
+    FX.failed?el('p',{class:'warn'},'Modulo effetti non disponibile: '+FX.failed+'. Il file fotolibro-effetti.js deve stare accanto all’app.'):null],{hint:ei>=0?'presente':''}));
+  return out;
+}
+/* sticker messi in automatico tra le foto (pannello Decora) */
+function stickerAutoSec(){const T=TH();
+  return fold('Sticker automatici tra le foto',[
     seg([['0','Nessuno'],['1','Pochi'],['2','Tanti']],String(BOOK.theme.stickers||0),v=>{BOOK.theme.stickers=+v;regenDecos();THUMBS.clear();commit();syncAll();},true),
     artSeries(T.id).length>1?el('div',{class:'lbl'},el('span',{},'Quali sticker illustrati'),seg([['tutti','Tutti (una serie per doppia)'],...artSeries(T.id)],BOOK.theme.artSet||'tutti',v=>{BOOK.theme.artSet=v;regenDecos();THUMBS.clear();commit();syncAll();},true)):null,
-    el('p',{},artFor(T.id).length?`${artFor(T.id).length} sticker illustrati del tema “${T.name}” e qualche scritta (${themeStickers().w.slice(0,2).join(', ')}…) sugli angoli delle foto. Per aggiungerne uno a mano usa il pannello Decori.`
-      :`Sticker del tema “${T.name}” (${themeStickers().w.slice(0,3).join(', ')}…) sugli angoli delle foto. Per aggiungerne uno a mano usa il pannello Decori.`),
-    btn('Rimescola gli sticker',()=>{BOOK.stSeed=(BOOK.stSeed||0)+1;regenDecos();THUMBS.clear();commit();syncAll();toast('Sticker rimescolati',3500,'undo');},null,'Nuova disposizione degli sticker automatici; quelli messi a mano restano')));
-  return out;
+    el('p',{},artFor(T.id).length?`${artFor(T.id).length} sticker illustrati del tema “${T.name}” e qualche scritta (${themeStickers().w.slice(0,2).join(', ')}…) sugli angoli delle foto. Quelli messi a mano restano.`
+      :`Sticker del tema “${T.name}” (${themeStickers().w.slice(0,3).join(', ')}…) sugli angoli delle foto. Quelli messi a mano restano.`),
+    btn('Rimescola gli sticker',()=>{BOOK.stSeed=(BOOK.stSeed||0)+1;regenDecos();THUMBS.clear();commit();syncAll();toast('Sticker rimescolati',3500,'undo');},null,'Nuova disposizione degli sticker automatici; quelli messi a mano restano')],
+    {hint:['nessuno','pochi','tanti'][BOOK.theme.stickers||0]});
 }
 async function runEffect(mode){
   if(fxBusy)return;fxBusy=true;renderLeft();

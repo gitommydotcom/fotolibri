@@ -103,34 +103,42 @@ function renderStrip(){
   S.replaceChildren(...items);
   S.scrollLeft=y;const on=S.querySelector('.sth.on');if(on){const r=on.getBoundingClientRect(),R=S.getBoundingClientRect();if(r.left<R.left||r.right>R.right)on.scrollIntoView({block:'nearest',inline:'center'});}
 }
-function goSpread(i){if(i<0||i>=BOOK.spreads.length)return;UI.cur=i;sel=null;UI.side=BOOK.spreads[i].mode==='spread'?'S':'L';syncAll();}
+/* aprendo una doppia pagina diventa attiva la prima pagina «normale» (non il retro del risguardo né una pagina speciale) */
+function goSpread(i){if(i<0||i>=BOOK.spreads.length)return;UI.cur=i;sel=null;const sp=BOOK.spreads[i];
+  UI.side=sp.mode==='spread'?'S':(isInner(sp)&&(isVerso(i,'L')||isSpecial(sp,'L'))&&!isVerso(i,'R')&&!isSpecial(sp,'R'))?'R':'L';syncAll();}
 function moveSpread(a,b){const sps=BOOK.spreads;if(a===b||!isInner(sps[a]))return;
   const[x]=sps.splice(a,1);sps.splice(Math.min(b,sps.length),0,x);normalizeOrder();UI.cur=sps.indexOf(x);UI.cur=BOOK.spreads.indexOf(x);commit();syncAll();}
 function addSpread(){const sp=mkSpread('inner');let at=UI.cur+1;const s=BOOK.spreads;
   if(!isInner(s[UI.cur])){at=s[UI.cur]&&s[UI.cur].kind==='endB'?UI.cur:Math.max(0,s.findIndex(isInner));}
   s.splice(at,0,sp);normalizeOrder();UI.cur=BOOK.spreads.indexOf(sp);sel=null;commit();syncAll();toast('Doppia pagina aggiunta: trascinaci le foto');}
-let delArmed=0;
+/* menu a tendina creato al volo: items = [[titolo, sottotitolo, azione, classe?] | 'hr'] */
+function menuEl(label,items,o={}){
+  const m=el('div',{class:'menu'+(o.right?' mright':'')},el('button',{type:'button',class:'btn '+(o.cls||''),'aria-haspopup':'menu','aria-expanded':'false',title:o.title||null,'aria-label':o.aria||null},label),
+    el('div',{class:'mpop',role:'menu',hidden:true},...items.filter(Boolean).map(it=>it==='hr'?el('hr'):el('button',{type:'button',role:'menuitem',class:it[3]||'',onclick:it[2]},el('b',{},it[0]),it[1]?el('small',{},it[1]):null))));
+  wireMenu(m);return m;}
+function deleteSpread(i){
+  if(BOOK.spreads.filter(isInner).length<=1){toast('L’interno deve avere almeno una doppia pagina');return;}
+  const old=BOOK.spreads[i],ph=old.cells.filter(c=>c.ph&&!c.fx&&!c.epPh).map(c=>c.ph),pos=pageNum(i,'L');BOOK.spreads.splice(i,1);
+  const keep=ph.filter(p=>!usedInInterior(p.img));const r=redistribute(keep,pos,{afterIdx:Math.max(0,i-1)});
+  UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();toast('Doppia pagina eliminata'+redistMsg(r),4500,'undo');}
+function duplicateSpread(i){const sp=BOOK.spreads[i],d=clone(sp);d.id=uid();d.cells.forEach(c=>c.id=uid());d.texts.forEach(t=>t.id=uid());(d.decos||[]).forEach(t=>t.id=uid());BOOK.spreads.splice(i+1,0,d);UI.cur=i+1;commit();syncAll();toast('Doppia pagina duplicata');}
 function renderPbar(){
-  const sp=cur(),i=UI.cur,n=BOOK.spreads.length;if(!sp)return;
+  const sp=cur(),i=UI.cur;if(!sp)return;
   const ttl=isCover(sp)?'Copertina':isEnd(sp)?(sp.kind==='endF'?'Risguardo anteriore':'Risguardo posteriore'):`Pagine ${spreadLabel(i)}`;
-  const N=bookPages(),sub=isCover(sp)?`pag. 1 e ${N} · retro · dorso · fronte`:isEnd(sp)?(sp.kind==='endF'?'pag. 2–3 · foglio dei risguardi':`pag. ${N-2}–${N-1} · foglio dei risguardi`):`${innerIdx(i)+1} di ${innerPages()/2} doppie · libro di ${N} pagine`;
-  const del=btn('Elimina',e=>{if(Date.now()-delArmed>3000){delArmed=Date.now();e.currentTarget.textContent='Confermi?';return;}delArmed=0;
-    if(BOOK.spreads.filter(isInner).length<=1){toast('L’interno deve avere almeno una doppia pagina');return;}
-    const old=BOOK.spreads[i],ph=old.cells.filter(c=>c.ph&&!c.fx&&!c.epPh).map(c=>c.ph),pos=pageNum(i,'L');BOOK.spreads.splice(i,1);
-    const keep=ph.filter(p=>!usedInInterior(p.img));const r=redistribute(keep,pos,{afterIdx:Math.max(0,i-1)});
-    UI.cur=Math.min(i,BOOK.spreads.length-1);sel=null;commit();syncAll();toast('Doppia pagina eliminata'+redistMsg(r),4500,'undo');},'danger','Elimina questa doppia pagina: le sue foto vanno nelle pagine vicine (clicca due volte)');
-  $('#pbar').replaceChildren(...[
-    btn('◀',()=>goSpread(i-1),'nav','Doppia pagina precedente (PagSu)'),
-    el('div',{class:'ttl'},ttl,el('small',{},sub)),
-    btn('▶',()=>goSpread(i+1),'nav','Doppia pagina successiva (PagGiù)'),
-    el('div',{class:'sep'}),
-    btn('+ Doppia pagina',addSpread,null,'Aggiunge una doppia pagina vuota dopo questa'),
-    isInner(sp)?btn('Duplica',()=>{const d=clone(sp);d.id=uid();d.cells.forEach(c=>c.id=uid());d.texts.forEach(t=>t.id=uid());(d.decos||[]).forEach(t=>t.id=uid());BOOK.spreads.splice(i+1,0,d);UI.cur++;commit();syncAll();}):null,
-    isInner(sp)?del:null,
-    isCover(sp)?btn('Rigenera copertina dal tema',()=>{rebuildCover();sel=null;commit();syncAll();toast('Copertina ricreata con le stesse foto e titoli (Ctrl+Z per annullare)');},'alt'):null,
-    el('div',{class:'sep'}),
-    isCover(sp)||(isInner(sp)&&(isVerso(i,'L')||isVerso(i,'R')))?null:el('label',{class:'chk',title:'Una sola impaginazione su entrambe le pagine, anche attraverso la piega'},
-      el('input',{type:'checkbox',checked:sp.mode==='spread',onchange:e=>{setSpreadMode(sp,e.target.checked?'spread':'pages');UI.side=e.target.checked?'S':'L';sel=null;commit();syncAll();}}),'Unisci le due pagine')].filter(Boolean));
+  const N=bookPages(),sub=isCover(sp)?'retro · dorso · fronte':isEnd(sp)?(sp.kind==='endF'?'pag. 2–3':`pag. ${N-2}–${N-1}`):`doppia ${innerIdx(i)+1} di ${innerPages()/2}`;
+  const canJoin=!(isCover(sp)||(isInner(sp)&&(isVerso(i,'L')||isVerso(i,'R'))));
+  const more=menuEl('⋯',[
+    isInner(sp)?['Duplica questa doppia pagina',null,()=>duplicateSpread(i)]:null,
+    canJoin?[sp.mode==='spread'?'Separa le due pagine':'Unisci le due pagine',sp.mode==='spread'?'Ogni pagina con la sua impaginazione':'Una sola impaginazione attraverso la piega',
+      ()=>{const on=sp.mode!=='spread';setSpreadMode(sp,on?'spread':'pages');UI.side=on?'S':'L';sel=null;commit();syncAll();}]:null,
+    isCover(sp)?['Rigenera la copertina dal tema','Stesse foto e titoli, impaginazione del tema',()=>{rebuildCover();sel=null;commit();syncAll();toast('Copertina ricreata (Ctrl+Z per annullare)',4000,'undo');}]:null,
+    ['Svuota le pagine','Le foto vanno nelle pagine vicine',()=>{for(const side of(sp.mode==='spread'?['S']:['L','R'])){const ph=clearSide(sp,side).filter(p=>!usedInInterior(p.img,sp,side));redistribute(ph,pageNum(i,side==='S'?'L':side),{afterIdx:i,exclude:x=>x.sp===sp});}sel=null;commit();syncAll();toast('Pagine svuotate',4000,'undo');}],
+    isInner(sp)?'hr':null,
+    isInner(sp)?['Elimina questa doppia pagina','Le sue foto vanno nelle pagine vicine',()=>deleteSpread(i),'danger']:null],{right:true,cls:'ib',title:'Altre azioni sulla doppia pagina',aria:'Altre azioni sulla doppia pagina'});
+  $('#pbar').replaceChildren(
+    el('div',{class:'pl'},UI.mode==='layout'?el('div',{class:'pmode',role:'status'},el('b',{},'Modifica riquadri'),btn('Fine',()=>setMode('photo'),'pri','Torna a inquadrare le foto (M)')):null),
+    el('div',{class:'pc'},btn('◀',()=>goSpread(i-1),'nav','Doppia pagina precedente (PagSu)'),el('div',{class:'ttl'},ttl,el('small',{},sub)),btn('▶',()=>goSpread(i+1),'nav','Doppia pagina successiva (PagGiù)')),
+    el('div',{class:'pr'},btn('+ Pagine',addSpread,null,'Aggiunge una doppia pagina vuota dopo questa'),more));
 }
 
 /* ============ storia e autosalvataggio ============ */
@@ -190,7 +198,7 @@ function snapVal(v,axis,exclude,thr,side){
   for(const k of cur().cells){if(exclude.has(k.id)||k.side!==side)continue;cands.push(k[axis],k[axis]+k[len]);}
   let best=v,bd=thr;for(const c of cands){const d=Math.abs(c-v);if(d<bd){bd=d;best=c;}}return best;
 }
-function setSideFrom(p){const sp=cur();if(!inSpread(p))return;const s=sideAt(sp,p.x);if(s!==UI.side){UI.side=s;if(UI.tab==='layout'||UI.tab==='text')renderLeft();}}
+function setSideFrom(p){const sp=cur();if(!inSpread(p))return;const s=sideAt(sp,p.x);if(s!==UI.side){UI.side=s;if(UI.tab==='pages'||UI.tab==='deco')renderLeft();}}
 cv.addEventListener('pointerdown',e=>{
   if(e.button!==0&&e.pointerType==='mouse')return;
   const p=toMM(e);cv.setPointerCapture(e.pointerId);setSideFrom(p);

@@ -53,7 +53,7 @@ function normBook(b){const d=newBook();b.job=b.job||d.job;b.page={...d.page,...(
   for(const sp of b.spreads){sp.decos=sp.decos||[];sp.texts=sp.texts||[];sp.cells=sp.cells||[];sp.meta=sp.meta||{};if(sp.pat===undefined)sp.pat=null;}
   return b;}
 let BOOK=newBook();
-const UI={cur:0,side:'R',mode:'photo',tab:'photos',filter:'all',folder:'*',sort:'date',link:true,snap:true,guides:true};
+const UI={cur:0,side:'R',mode:'photo',tab:'photos',filter:'all',folder:'*',sort:'date',link:true,snap:true,guides:true,openSec:new Set()};
 const view={zoom:1,s:1,ox:0,oy:0,b:0,cw:0,ch:0,dpr:1};
 const EXP={covFmt:'cmyk',endFmt:'pdf',fmt:'pdf',dpi:300,quality:92,bleed:3,marks:false,name:'fotolibro',cover:true,endp:true,inner:true,pages:'single',from:1,to:9999,zipAll:false};
 const DRAFT={pdf:true,flip:true,dpi:120,quality:82,wm:true,wmText:'BOZZA',pages:'spread',name:'fotolibro'};

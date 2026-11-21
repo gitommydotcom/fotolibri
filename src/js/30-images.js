@@ -142,7 +142,7 @@ async function afterImport(ids){
   if(!ids.length){syncAll();return;}
   if(!bookHasRealPhotos()){applySuggestions();commit();syncAll();if(START.open)renderStart();else openStart(2);return;}
   UI.filter='unused';UI.tab='photos';commit();syncAll();
-  toast(`${ids.length} foto aggiunte: le trovi in “Non usate”. Trascinale sulle pagine o premi Crea libro automatico.`,5000);
+  toast(`${ids.length} foto aggiunte: le trovi tra le «Libere». Trascinale sulle pagine, oppure Progetto › Rifai il libro in automatico.`,5000);
 }
 /* doppioni e scatti simili */
 function findSimilar(){

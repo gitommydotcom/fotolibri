@@ -20,19 +20,26 @@ Mentre importi, l'app propone da sola, senza mai sovrascrivere quello che scegli
 
 La barra in basso resta sempre visibile e mostra il riepilogo (foto, capitoli, tema, pagine stimate, formato) con il pulsante per creare il libro. Durante l'importazione indica l'avanzamento.
 
-Dopo la creazione, una barra in alto suggerisce i passi successivi: scegliere la copertina, sfogliare il libro, preparare la bozza per il cliente o i file per la stampa. Se ci sono foto a bassa risoluzione o testi vicini al taglio, lo segnala lì.
+Dopo la creazione, una riga in alto dice che il libro è pronto, segnala foto a bassa risoluzione o testi vicini al taglio e porta alla scelta della copertina.
 
-Poi tutto è modificabile nell'editor:
+### L'editor
 
-| Pannello | Cosa fa |
-|---|---|
-| Foto | libreria, capitoli, preferite ★, scatti simili |
-| Tema | cambia tema in un clic; per ogni tema 8 proposte di copertina (7 impaginazioni × 5 sfondi: motivo, tinta, chiaro, motivo fitto, foto sfocata); 10 varianti di risguardi più quelli di tutti gli altri temi, anche diversi davanti e dietro; colori, caratteri, decorazioni, spaziature |
-| Pagine | pagine speciali (frase, frase su colore, frase con cornice, frase sulla foto, foto e frase, collage con sticker, dedica, titolo), pagina effetto, sticker tra le foto |
-| Layout | layout per pagina ordinati per adattamento alle foto, riquadri liberi |
-| Testo | titoli, dediche, didascalie già nello stile del tema |
-| Decori | sticker illustrati del tema (e degli altri temi), sticker con scritta modificabili, 43 motivi vettoriali (fiocchi, agrifoglio, cuori, cravatte, baffi, fiori, palloncini…) da aggiungere, spostare, colorare |
-| Libro | profili tipografia, formato, copertina (dorso, cartone, risvolto), **risguardi**, abbondanza e zone di sicurezza |
+L'interfaccia mostra solo l'essenziale; tutto il resto è a un clic, nelle sezioni richiudibili (▸) di ogni pannello, che restano aperte finché non le chiudi.
+
+- **Barra in alto**: nome del libro, menu *Progetto* (nuovo, apri, schermata iniziale, rifai in automatico, scorciatoie), *Salva*, Annulla/Ripeti, *Anteprima* (il libro sfogliabile) ed *Esporta* (bozza per il cliente o file per la tipografia).
+- **Sopra il foglio**: la doppia pagina aperta con le frecce, *+ Pagine* e il menu **⋯** (duplica, unisci/separa le due pagine, svuota, elimina; sulla copertina: rigenera dal tema).
+- **In basso a destra sul foglio**: zoom e ⛶ «solo il libro» (tasto F).
+- **Pannello destro**: senza selezione propone le azioni utili per quelle pagine; con una foto, un testo o uno sticker selezionato mostra i suoi comandi principali, e i dettagli (colore e tono, inquadratura precisa, forma e bordo, posizione esatta, effetti del testo…) nelle sezioni richiudibili.
+- **Spostare e ridimensionare i riquadri**: pulsante «Sposta o ridimensiona il riquadro» nel pannello della foto (o tasto M); sopra il foglio compare «Modifica riquadri · Fine».
+- Tasto **?**: tutte le scorciatoie e i gesti.
+
+| Scheda | In vista | Nelle sezioni richiudibili |
+|---|---|---|
+| Foto | aggiungi foto o cartelle, filtri Tutte / Libere / ★ / Scartate, miniature | capitoli (rinomina, riordina, escludi), scatti simili e doppioni |
+| Pagine | impaginazioni della pagina ordinate per adattamento alle foto, «Un’altra», ± riquadri | altre opzioni (al vivo, spazio per titolo, varianti per tutto il libro, riquadri liberi, aggancio), pagine speciali (frase, frase su colore, con cornice, sulla foto, foto e frase, collage con sticker, dedica, titolo), pagina effetto |
+| Tema | i 16 temi in un clic | copertina (8 proposte, 7 impaginazioni × 5 sfondi), risguardi (10 varianti più quelli degli altri temi), colori e caratteri, decorazioni del tema, spaziature e cornici, sfondo della doppia pagina |
+| Decora | testi nello stile del tema, sticker illustrati del tema (e degli altri temi), scritte modificabili | sticker automatici tra le foto, 43 motivi vettoriali, pulizia delle decorazioni automatiche |
+| Formato | profilo di stampa, riepilogo del libro, multiplo di 4 | misure della pagina, copertina (dorso, cartone, risvolto), foglio dei risguardi, abbondanza e zone di sicurezza (con le guide), rilegatura e risoluzione |
 
 Ogni foto può avere forma (rettangolo, arrotondato, ovale, arco, cuore) e bordo propri.
 
@@ -64,27 +71,27 @@ Ogni tema ha la sua serie di sticker disegnati, con contorno, ombre, lucidi e bo
 | `stickers autunno/` | Autunno | foglie, ghianda, zucca, funghetto, castagne, mela, cioccolata calda, ombrello, riccio |
 | `stickers ricordi/` | Neutro, Avorio, Nero galleria | macchina fotografica, polaroid, cuore, stella, aeroplanino, mongolfiera, caffè, arcobaleno, fiori, segnaposto |
 
-- **Automatici**: gli sticker tra le foto sono questi disegni, con qualche scritta ogni tanto. Con più serie (Natale) ogni doppia pagina ne usa una sola, a turno; nel pannello Pagine si può sceglierne una. «Rimescola gli sticker» cambia la disposizione e lascia quelli messi a mano.
-- **Pannello Decori**: gli sticker del tema, e dal menu «Serie» quelli di tutti gli altri temi. Clic per aggiungerne uno, oppure trascinalo sul foglio. Uno sticker selezionato si ingrandisce, ruota, specchia o sostituisce con un altro della stessa serie.
-- **Sticker con scritta** («Ho ho ho!», «Ti amo», «Super papà»…): stesso stile degli illustrati. Si aggiungono dal pannello Decori (anche con una scritta propria); selezionandoli, il pannello a destra permette di cambiare **testo** (anche su più righe), **forma** (etichetta, nastro, timbro, fumetto, cartellino, esplosione, cuore, nuvola), **colori**, **carattere**, misura e rotazione. Doppio clic sullo sticker per scrivere subito.
-- **Libri salvati prima**: nel progetto è salvato solo il riferimento allo sticker, il disegno sta nell'app. Riaprendo un libro fatto prima di questi sticker, l'app propone una sola volta di inserirli: «Metti gli sticker» sostituisce solo quelli automatici, «Li scelgo io» apre il pannello Decori, «No, grazie» non lo chiede più. Con Ctrl+Z si annulla tutto.
+- **Automatici**: gli sticker tra le foto sono questi disegni, con qualche scritta ogni tanto. Con più serie (Natale) ogni doppia pagina ne usa una sola, a turno; nella scheda Decora (Sticker automatici) si può sceglierne una. «Rimescola gli sticker» cambia la disposizione e lascia quelli messi a mano.
+- **Scheda Decora**: gli sticker del tema, e dal menu «Sticker di un altro tema» quelli di tutti gli altri. Clic per aggiungerne uno, oppure trascinalo sul foglio. Uno sticker selezionato si ingrandisce, ruota, specchia o sostituisce con un altro della stessa serie.
+- **Sticker con scritta** («Ho ho ho!», «Ti amo», «Super papà»…): stesso stile degli illustrati. Si aggiungono dalla scheda Decora (anche con una scritta propria); selezionandoli, il pannello a destra permette di cambiare **testo** (anche su più righe), **forma** (etichetta, nastro, timbro, fumetto, cartellino, esplosione, cuore, nuvola), **colori**, **carattere**, misura e rotazione. Doppio clic sullo sticker per scrivere subito.
+- **Libri salvati prima**: nel progetto è salvato solo il riferimento allo sticker, il disegno sta nell'app. Riaprendo un libro fatto prima di questi sticker, l'app propone una sola volta di inserirli: «Metti gli sticker» sostituisce solo quelli automatici, «Li scelgo io» apre la scheda Decora, «No, grazie» non lo chiede più. Con Ctrl+Z si annulla tutto.
 - **Nuovi disegni**: gli sticker delle cartelle (tranne Natale, che sono file forniti) sono generati da `tools/stickers/sets/*.mjs` con `node tools/stickers/make.mjs` (forme, ombre e bordo fustellato in `tools/stickers/lib.mjs`). Si possono anche aggiungere SVG a mano in una cartella `stickers <tema>`; a quali temi appartiene una cartella si indica in `src/js/48-art.js`. Poi si rifà la build (Netlify la rifà a ogni push).
 
 ## Struttura del libro
 
 `Copertina (pag. 1 e ultima)` → `Risguardo anteriore (pag. 2–3)` → `pag. 4 (retro del risguardo)` → `Interno` → `terzultima (retro del risguardo)` → `Risguardo posteriore (penultime due)`
 
-I risguardi sono fogli a parte, di default **650 × 330 mm**, con piega al centro. Nel pannello *Libro* si impostano
+I risguardi sono fogli a parte, di default **650 × 330 mm**, con piega al centro. Nella scheda *Formato* si impostano
 larghezza, altezza, posizione della piega, abbondanza e la zona visibile a libro finito (riquadro verde nell'editor).
 
 ## Esportazione
 
-**1 · Bozza per il cliente** (pulsante *Bozza cliente*)
+**1 · Bozza per il cliente** (*Esporta › Bozza per il cliente*)
 - PDF leggero (doppie pagine o pagine singole) con filigrana "BOZZA" facoltativa
 - Flipbook sfogliabile: un unico file `.html` da inviare, si apre offline su computer, tablet e telefono, con pagine che si girano, indice e schermo intero
-- *Sfoglia* mostra subito l'anteprima del flipbook dentro l'app
+- *Anteprima* mostra subito il flipbook dentro l'app
 
-**2 · File per la stampa** (pulsante *Stampa*)
+**2 · File per la stampa** (*Esporta › File per la tipografia*, Ctrl+E)
 - `…_copertina_CMYK-FOGRA39.jpg` – JPEG CMYK 300 dpi, profilo ISO Coated v2 (ECI) per FOGRA39 incorporato
   (conversione con littleCMS, colorimetrico relativo + compensazione del punto nero), retro + dorso + fronte con risvolto e abbondanza
 - `…_risguardi.pdf` – 4 pagine sul foglio dei risguardi: 1) pag. 2–3 · 2) pag. 4 sul lato sinistro · 3) terzultima sul lato destro · 4) penultime due

@@ -237,7 +237,7 @@ function renderExport(){
         el('label',{class:'chk'},el('input',{type:'checkbox',checked:EXP.marks,onchange:e=>{EXP.marks=e.target.checked;renderExport();}}),'Crocini di taglio e piega'),
         el('label',{class:'chk'},el('input',{type:'checkbox',checked:EXP.zipAll,onchange:e=>{EXP.zipAll=e.target.checked;renderExport();}}),'Tutto in un .zip con scheda tecnica')),
       el('label',{class:'lbl'},el('span',{},'Nome dei file'),el('input',{class:'inp',value:EXP.name,oninput:e=>EXP.name=e.target.value})),
-      el('p',{class:'u'},`CMYK: profilo ISO Coated v2 (ECI) per FOGRA39, intento colorimetrico relativo con compensazione del punto nero, profilo incorporato nel file. Misure dei risguardi nel pannello Libro (abbondanza ${nf(E.bleed)} mm).`),
+      el('p',{class:'u'},`CMYK: profilo ISO Coated v2 (ECI) per FOGRA39, intento colorimetrico relativo con compensazione del punto nero, profilo incorporato nel file. Misure dei risguardi nella scheda Formato (abbondanza ${nf(E.bleed)} mm).`),
       issueList(true)];
   }
   const res=RESULTS.length?el('div',{class:'eres'},el('b',{},RESULTS.length>1?'File pronti':'File pronto'),

@@ -2,20 +2,31 @@
 const PANELS={L:true,R:true,S:true};
 try{Object.assign(PANELS,JSON.parse(localStorage.getItem('fotolibro-studio-pannelli')||'{}'));}catch(e){}
 function applyPanels(){const m=$('.main');m.classList.toggle('noL',!PANELS.L);m.classList.toggle('noR',!PANELS.R);m.classList.toggle('noS',!PANELS.S);
-  $('#tL').classList.toggle('on',!PANELS.L);$('#tR').classList.toggle('on',!PANELS.R);const focus=!PANELS.L&&!PANELS.R&&!PANELS.S;$('#tF').classList.toggle('on',focus);
-  $('#tF').textContent=focus?'Esci da vista libro':'Vista libro';
+  const focus=!PANELS.L&&!PANELS.R&&!PANELS.S;$('#tF').classList.toggle('on',focus);$('#tF').title=focus?'Mostra di nuovo i pannelli (F)':'Solo il libro, senza pannelli (F)';
   try{localStorage.setItem('fotolibro-studio-pannelli',JSON.stringify(PANELS));}catch(e){}draw();}
 function togglePanel(k){PANELS[k]=!PANELS[k];applyPanels();}
-function toggleFocus(){const focus=!PANELS.L&&!PANELS.R&&!PANELS.S;PANELS.L=PANELS.R=PANELS.S=focus;applyPanels();if(!focus)toast('Vista libro: F o il pulsante in alto per tornare ai pannelli · PagSu/PagGiù per sfogliare',3500);}
-$('#tL').onclick=()=>togglePanel('L');$('#tR').onclick=()=>togglePanel('R');$('#tF').onclick=toggleFocus;
+function toggleFocus(){const focus=!PANELS.L&&!PANELS.R&&!PANELS.S;PANELS.L=PANELS.R=PANELS.S=focus;applyPanels();if(!focus)toast('Solo il libro: premi F o il pulsante ⛶ in basso a destra per riavere i pannelli',3500);}
+$('#tF').onclick=toggleFocus;
 applyPanels();
 
 /* ============ modalità / zoom / tastiera ============ */
-function setMode(m){UI.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>{b.classList.toggle('on',b.dataset.m===m);b.setAttribute('aria-pressed',b.dataset.m===m);});renderProps();draw();}
+/* modalità: 'photo' (inquadrare e scambiare le foto, normale) o 'layout' (spostare e ridimensionare i riquadri), attivata dal pannello della foto o con M */
+function setMode(m){UI.mode=m;document.body.classList.toggle('layoutmode',m==='layout');renderProps();renderPbar();if(UI.tab==='pages')renderLeft();draw();}
 function setZoom(z){view.zoom=clamp(z,.25,6);draw();}
-document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.t;renderLeft();});
-$('#zIn').onclick=()=>setZoom(view.zoom*1.25);$('#zOut').onclick=()=>setZoom(view.zoom/1.25);$('#zFit').onclick=()=>setZoom(1);
+$('#zIn').onclick=()=>setZoom(view.zoom*1.25);$('#zOut').onclick=()=>setZoom(view.zoom/1.25);$('#zLbl').onclick=()=>setZoom(1);
+/* menu a tendina (Progetto, Esporta, ⋯): si chiudono con Esc, con un clic fuori o scegliendo una voce */
+function closeMenus(except){document.querySelectorAll('.menu.open').forEach(m=>{if(m===except)return;m.classList.remove('open');m.querySelector('.mpop').hidden=true;m.firstElementChild.setAttribute('aria-expanded','false');});}
+function wireMenu(m){const b=m.firstElementChild,pop=m.querySelector('.mpop');
+  b.addEventListener('click',e=>{e.stopPropagation();const open=!m.classList.contains('open');closeMenus(m);m.classList.toggle('open',open);pop.hidden=!open;b.setAttribute('aria-expanded',String(open));
+    if(open){const f=pop.querySelector('button:not(:disabled)');if(f)f.focus();}});
+  pop.addEventListener('click',e=>{if(e.target.closest('button'))closeMenus();});
+  pop.addEventListener('keydown',e=>{const it=[...pop.querySelectorAll('button:not(:disabled)')],i=it.indexOf(document.activeElement);
+    if(e.key==='ArrowDown'){e.preventDefault();it[(i+1)%it.length].focus();}else if(e.key==='ArrowUp'){e.preventDefault();it[(i-1+it.length)%it.length].focus();}
+    else if(e.key==='Escape'){e.stopPropagation();closeMenus();b.focus();}});}
+document.querySelectorAll('.menu').forEach(wireMenu);
+document.addEventListener('click',e=>{if(!e.target.closest('.menu'))closeMenus();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenus();});
 $('#bUndo').onclick=undo;$('#bRedo').onclick=redo;
 new ResizeObserver(()=>draw()).observe(stage);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{renderLeft();draw();});
@@ -27,7 +38,8 @@ window.addEventListener('keydown',e=>{
     if(k==='y'||(k==='z'&&e.shiftKey)){e.preventDefault();redo();return;}
     if(k==='s'){e.preventDefault();saveProject();return;}
     if(k==='e'){e.preventDefault();openExport('print');return;}}
-  if(typing||$('#dlg').open||$('#wiz').open||$('#flipDlg').open||START.open)return;
+  if(typing||$('#dlg').open||$('#wiz').open||$('#flipDlg').open||START.open||($('#keysDlg')&&$('#keysDlg').open))return;
+  if(e.key==='?'){showKeys();return;}
   if(e.key==='['){togglePanel('L');return;}
   if(e.key===']'){togglePanel('R');return;}
   if(e.key==='f'||e.key==='F'){toggleFocus();return;}
@@ -57,8 +69,7 @@ function deleteSelection(){
 /* ============ progetto ============ */
 let newArmed=0;
 $('#bNew').onclick=e=>{
-  const b=e.currentTarget;if(Date.now()-newArmed>3000){newArmed=Date.now();b.textContent='Confermi? Clicca ancora';setTimeout(()=>b.textContent='Nuovo',3000);return;}
-  newArmed=0;b.textContent='Nuovo';clearLibrary();idbClear('kv');idbClear('prev');
+  if(realCount()&&!confirm('Iniziare un nuovo fotolibro? Il libro attuale viene chiuso (salvalo prima con «Salva» se vuoi riprenderlo).'))return;clearLibrary();idbClear('kv');idbClear('prev');
   BOOK=freshBookKeepingSettings(true);UI.cur=0;sel=null;UI.tab='photos';UI.filter='all';UI.folder='*';WZ.userGroup=false;
   Object.assign(START,{userTheme:false,titleSrc:'theme',sugg:null});WZ.title='';WZ.sub='';WZ.dedica='';
   resetHistory();hideBanner();syncAll();openStart();
@@ -145,6 +156,15 @@ function upgradeV1(){BOOK.endp.on=false;BOOK.theme={id:'neutro',colors:BOOK.them
 
 /* ============ avvio ============ */
 $('#bWizard').onclick=openWizard;
+$('#bStart').onclick=()=>openStart();
+$('#bKeys').onclick=()=>showKeys();
+function showKeys(){let d=$('#keysDlg');if(!d){d=el('dialog',{id:'keysDlg'});document.body.append(d);}
+  const K=[['Clic su una foto','inquadrala, regola colori e forma'],['Trascina una foto','sposta l’inquadratura · su un’altra foto: scambiale'],['Doppio clic su un testo','scrivi'],
+    ['PagGiù / PagSu','doppia pagina successiva / precedente'],['← →','sfoglia (senza nulla selezionato)'],['V','prova un’altra impaginazione della pagina'],['M','sposta e ridimensiona i riquadri (e ritorno)'],
+    ['Canc','togli la foto o l’elemento selezionato'],['Frecce','sposta di poco l’elemento selezionato (Maiusc: di più)'],['Ctrl+Z / Ctrl+Y','annulla / ripeti'],['Ctrl+S','salva il progetto'],['Ctrl+E','file per la tipografia'],
+    ['Ctrl+rotellina','zoom della vista'],['F','solo il libro, senza pannelli'],['[ ]','nascondi il pannello sinistro / destro'],['?','questo elenco']];
+  d.replaceChildren(el('form',{method:'dialog'},el('h2',{},'Scorciatoie e gesti'),el('div',{class:'keys'},...K.flatMap(([k,v])=>[el('kbd',{},k),el('span',{},v)])),
+    el('div',{class:'row',style:'justify-content:flex-end;margin-top:14px'},el('button',{class:'btn pri',value:'ok'},'Ho capito'))));d.showModal();}
 $('#bDraft').onclick=()=>openExport('draft');
 $('#bPrint').onclick=()=>openExport('print');
 $('#bFlip').onclick=()=>previewFlipbook();

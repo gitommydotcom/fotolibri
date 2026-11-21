@@ -12,62 +12,64 @@
 <body>
 
 <header class="top">
-  <button class="brand" id="bHome" title="Schermata iniziale: foto, tema, formato">
+  <button class="brand" id="bHome" title="Schermata iniziale: foto, tema, formato" aria-label="Schermata iniziale">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5.5C9.5 4 6 3.6 2.5 4.2v14.6C6 18.2 9.5 18.6 12 20.1c2.5-1.5 6-1.9 9.5-1.3V4.2C18 3.6 14.5 4 12 5.5Z"/><path d="M12 5.5v14.6"/><rect x="4.6" y="7.2" width="5.2" height="4.4" rx=".4" fill="currentColor" stroke="none" opacity=".55"/><rect x="14.2" y="7.2" width="5.2" height="8.6" rx=".4" fill="currentColor" stroke="none"/></svg>
-    <span>Fotolibro Studio</span>
   </button>
-  <input class="job" id="jobName" type="text" value="Nuovo fotolibro" aria-label="Nome del lavoro" title="Nome del lavoro (cliente, evento…)">
-  <div class="grp">
-    <button class="btn sm" id="bNew" title="Ricomincia con un libro vuoto">Nuovo</button>
-    <button class="btn sm" id="bOpen" title="Apri un progetto salvato (.fotolibro.json)">Apri</button>
-    <button class="btn sm" id="bSave" title="Salva il progetto per riprenderlo dopo (Ctrl+S)">Salva</button>
+  <input class="job" id="jobName" type="text" value="Nuovo fotolibro" aria-label="Nome del fotolibro" title="Nome del fotolibro (clic per rinominarlo)">
+  <div class="menu" id="mProj">
+    <button class="btn" type="button" aria-haspopup="menu" aria-expanded="false">Progetto <span class="car" aria-hidden="true">▾</span></button>
+    <div class="mpop" role="menu" hidden>
+      <button type="button" role="menuitem" id="bNew"><b>Nuovo fotolibro</b><small>Ricomincia da altre foto</small></button>
+      <button type="button" role="menuitem" id="bOpen"><b>Apri un progetto…</b><small>File .fotolibro.json salvato prima</small></button>
+      <hr>
+      <button type="button" role="menuitem" id="bStart"><b>Foto, tema e formato</b><small>Torna alla schermata iniziale</small></button>
+      <button type="button" role="menuitem" id="bWizard"><b>Rifai il libro in automatico…</b><small>Reimpagina tutte le foto con più opzioni</small></button>
+      <hr>
+      <button type="button" role="menuitem" id="bKeys"><b>Scorciatoie da tastiera</b></button>
+    </div>
   </div>
-  <div class="sep"></div>
+  <button class="btn" id="bSave" title="Salva il progetto per riprenderlo dopo (Ctrl+S)">Salva</button>
   <div class="grp">
     <button class="btn ib" id="bUndo" title="Annulla (Ctrl+Z)" aria-label="Annulla"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
     <button class="btn ib" id="bRedo" title="Ripeti (Ctrl+Y)" aria-label="Ripeti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
   </div>
-  <div class="seg" id="modeSeg" role="group" aria-label="Modalità">
-    <button data-m="photo" title="Inquadra, ingrandisci e scambia le foto (M)">Foto</button>
-    <button data-m="layout" title="Sposta e ridimensiona i riquadri (M)">Riquadri</button>
-  </div>
   <div class="prog" id="prog" hidden><span id="progL"></span><div class="pb"><i id="progB"></i></div></div>
   <div class="spacer"></div>
-  <div class="grp" role="group" aria-label="Vista">
-    <button class="btn ib" id="tL" title="Pannello di sinistra ( [ )" aria-label="Pannello di sinistra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
-    <button class="btn ib" id="tR" title="Pannello di destra ( ] )" aria-label="Pannello di destra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg></button>
-    <button class="btn sm" id="tF" title="Solo il libro (F)">Vista libro</button>
-    <button class="btn ib" id="zOut" title="Riduci vista" aria-label="Riduci vista">−</button>
-    <span class="zl" id="zLbl">100%</span>
-    <button class="btn ib" id="zIn" title="Ingrandisci vista" aria-label="Ingrandisci vista">+</button>
-    <button class="btn sm" id="zFit" title="Adatta alla finestra">Adatta</button>
+  <button class="btn" id="bFlip" title="Sfoglia il libro come lo vedrà il cliente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Anteprima</button>
+  <div class="menu mright" id="mExp">
+    <button class="btn pri" type="button" aria-haspopup="menu" aria-expanded="false">Esporta <span class="car" aria-hidden="true">▾</span></button>
+    <div class="mpop" role="menu" hidden>
+      <button type="button" role="menuitem" id="bDraft"><b>Bozza per il cliente</b><small>PDF leggero e libro sfogliabile da inviare</small></button>
+      <button type="button" role="menuitem" id="bPrint"><b>File per la tipografia</b><small>Copertina, risguardi e interno in alta qualità · Ctrl+E</small></button>
+    </div>
   </div>
-  <div class="sep"></div>
-  <button class="btn alt" id="bWizard" title="Impagina tutte le foto in automatico">Crea automatico</button>
-  <button class="btn" id="bFlip" title="Sfoglia il libro come lo vedrà il cliente">Sfoglia</button>
-  <button class="btn" id="bDraft" title="PDF leggero e flipbook da inviare al cliente">Bozza cliente</button>
-  <button class="btn pri" id="bPrint" title="Copertina, risguardi e interno per la tipografia (Ctrl+E)">Stampa</button>
 </header>
 <div class="banner" id="banner" hidden></div>
 
 <div class="main">
   <aside class="left">
     <nav class="tabs" id="tabs" aria-label="Strumenti">
-      <button data-t="photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>Foto</button>
-      <button data-t="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.6 0-1.3-1-1.6-1-2.7 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>Tema</button>
-      <button data-t="pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="3" width="13" height="17" rx="1.5"/><path d="M8 8h5M8 11.5h5M8 15h3"/><path d="m18.5 13 1 2.2 2.3.3-1.7 1.5.5 2.3-2.1-1.2-2 1.2.4-2.3-1.7-1.5 2.3-.3Z" fill="currentColor" stroke="none"/></svg>Pagine</button>
-      <button data-t="layout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M12 12h9"/></svg>Layout</button>
-      <button data-t="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg>Testo</button>
-      <button data-t="deco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 2.4 5.6 6 .5-4.6 4 1.4 5.9L12 16l-5.2 3 1.4-5.9-4.6-4 6-.5Z"/></svg>Decori</button>
-      <button data-t="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19V5M8 7h7"/></svg>Libro</button>
+      <button data-t="photos" title="Le tue foto: aggiungile, scegli le preferite, trascinale sulle pagine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>Foto</button>
+      <button data-t="pages" title="Impaginazione della pagina e pagine speciali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M12 12h9"/></svg>Pagine</button>
+      <button data-t="theme" title="Tema, copertina, risguardi, colori"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.6 0-1.3-1-1.6-1-2.7 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>Tema</button>
+      <button data-t="deco" title="Testi, sticker e decorazioni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7V5h9v2M8.5 5v11M6.5 16h4"/><path d="m17.5 9 1.3 2.9 3.2.3-2.4 2.1.7 3.1-2.8-1.6-2.8 1.6.7-3.1-2.4-2.1 3.2-.3Z"/></svg>Decora</button>
+      <button data-t="book" title="Formato, copertina e impostazioni di stampa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19V5M8 7h7"/></svg>Formato</button>
     </nav>
     <div class="lbody" id="leftBody"></div>
   </aside>
 
   <section class="stagewrap">
     <div class="pbar" id="pbar"></div>
-    <div class="stage" id="stage"><canvas id="cv" role="img" aria-label="Doppia pagina in modifica: clic per selezionare foto e testi, frecce PagSu/PagGiù per sfogliare"></canvas></div>
-    <div class="hint"><span id="hint"></span><span class="dim" id="dimInfo"></span></div>
+    <div class="stagebox"><div class="stage" id="stage"><canvas id="cv" role="img" aria-label="Doppia pagina in modifica: clic per selezionare foto e testi, frecce PagSu/PagGiù per sfogliare"></canvas></div>
+      <div class="viewctl" role="group" aria-label="Vista">
+        <button class="btn ib" id="zOut" title="Riduci" aria-label="Riduci">−</button>
+        <button class="zl" id="zLbl" title="Adatta alla finestra">100%</button>
+        <button class="btn ib" id="zIn" title="Ingrandisci" aria-label="Ingrandisci">+</button>
+        <span class="vsep"></span>
+        <button class="btn ib" id="tF" title="Solo il libro, senza pannelli (F)" aria-label="Solo il libro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      </div>
+    </div>
+    <div class="hint"><span id="hint"></span><span class="dim" id="dimInfo" hidden></span></div>
     <div class="strip" id="strip"></div>
   </section>
 
