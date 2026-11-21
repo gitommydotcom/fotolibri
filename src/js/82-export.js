@@ -184,11 +184,14 @@ async function runExport(kind){
       else RESULTS.push(...files);
     }
     prog('Fatto',1,1);
-    download(RESULTS[0].blob,RESULTS[0].name);
-    toast(RESULTS.length>1?'Primo file in download: scarica gli altri dalla finestra':'File in download nella cartella Download',5000);
+    downloadAll(RESULTS);
+    toast(RESULTS.length>1?`${RESULTS.length} file in download nella cartella Download. Se il browser chiede di consentire più download, rispondi «Consenti».`:'File in download nella cartella Download',6500);
   }catch(err){if(err.message==='annullato')toast('Esportazione annullata');else if(err.message==='vuoto')toast('Scegli almeno un file da creare');else{console.error(err);toast('Esportazione non riuscita: prova una risoluzione più bassa.',4500);}}
-  finally{exporting=false;renderExport();}
+  finally{exporting=false;renderExport();const r=document.querySelector('#dlg .eres');if(r)r.scrollIntoView({block:'nearest',behavior:'smooth'});}
 }
+/* scarica tutti i file uno dopo l'altro: i browser scartano i download lanciati nello stesso istante */
+function downloadAll(list){list.forEach((f,i)=>setTimeout(()=>{download(f.blob,f.name);f.done=true;
+  const b=document.querySelector(`#dlg [data-dl="${i}"]`);if(b&&RESULTS[i]===f){b.textContent='Scaricato ✓';b.classList.remove('pri');}},i*800));}
 /* ---------- finestra ---------- */
 function renderExport(){
   const F=$('#expForm'),tab=UI.expTab,P=BOOK.page,ip=innerPages();
@@ -242,9 +245,10 @@ function renderExport(){
       el('p',{class:'u'},`CMYK: profilo ISO Coated v2 (ECI) per FOGRA39, intento colorimetrico relativo con compensazione del punto nero, profilo incorporato nel file. Misure dei risguardi nella scheda Formato (abbondanza ${nf(E.bleed)} mm).`),
       issueList(true)];
   }
-  const res=RESULTS.length?el('div',{class:'eres'},el('b',{},RESULTS.length>1?'File pronti':'File pronto'),
-    ...RESULTS.map(f=>el('div',{class:'srow'},el('span',{title:f.name},`${f.name} · ${nf(f.blob.size/1048576,1)} MB`),
-      el('button',{type:'button',class:'btn sm pri',onclick:e=>{download(f.blob,f.name);e.currentTarget.textContent='Scaricato ✓';}},'Scarica')))):null;
+  const res=RESULTS.length?el('div',{class:'eres'},el('div',{class:'srow'},el('b',{},RESULTS.length>1?`${RESULTS.length} file pronti`:'File pronto'),
+      RESULTS.length>1?el('button',{type:'button',class:'btn sm',onclick:()=>downloadAll(RESULTS)},'Scarica tutti di nuovo'):null),
+    ...RESULTS.map((f,i)=>el('div',{class:'srow'},el('span',{title:f.name},`${f.name} · ${nf(f.blob.size/1048576,1)} MB`),
+      el('button',{type:'button',class:'btn sm'+(f.done?'':' pri'),'data-dl':String(i),title:'Scarica questo file',onclick:e=>{download(f.blob,f.name);f.done=true;e.currentTarget.textContent='Scaricato ✓';e.currentTarget.classList.remove('pri');}},f.done?'Scaricato ✓':'Scarica')))):null;
   const prog=el('div',{class:'row',hidden:!exporting},el('div',{class:'pb',style:'flex:1;width:auto'},el('i',{id:'eProgB'})),el('span',{id:'eProgL',class:'u'}));
   const can=tab==='draft'?(DRAFT.pdf||DRAFT.flip):(printJobs().length>0);
   F.replaceChildren(head,el('div',{class:'dlg-b'},...body,res,prog),

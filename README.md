@@ -98,6 +98,7 @@ larghezza, altezza, posizione della piega, abbondanza e la zona visibile a libro
   (i lati delle pagine singole si possono cambiare)
 - `…_interno.pdf` – tutto il resto, 300 dpi
 - in alternativa JPEG RGB/PDF per la copertina e JPEG per gli altri file; crocini; zip con scheda tecnica
+- a fine esportazione tutti i file vengono scaricati, uno dopo l’altro (Chrome può chiedere una volta di consentire più download); nella finestra restano anche i pulsanti per riscaricarli
 
 Prima dell'export vengono segnalati: testi a rischio taglio, foto sotto i 200 dpi, riquadri vuoti, foto da ricollegare, pagine non multiple di 4.
 
