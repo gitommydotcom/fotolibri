@@ -240,6 +240,10 @@ function motifIcon(m,c,c2,sz=34){const dpr=window.devicePixelRatio||1,cv2=el('ca
 function addDeco(m,x,y,o={}){const sp=cur(),T=TH();if(x==null){const pb=visBox(sp,activeSide(sp));x=(pb.x+pb.w/2)/spW(sp);y=.5;}
   const d=mkDeco({m,x,y,s:o.s||Math.round(Math.min(BOOK.page.w,BOOK.page.h)*.09),c:UI.decoColor||(T.motifColors&&T.motifColors[0])||T.colors.accent,c2:T.c2||T.colors.accent2,...o});
   sp.decos.push(d);sel={type:'deco',id:d.id};commit();syncAll();return d;}
+function addBadge(o,x,y){const sp=cur();if(x==null){const pb=visBox(sp,activeSide(sp));x=(pb.x+pb.w/2)/spW(sp);y=.5;}
+  const d=mkDeco({m:'badge',txt:'Ciao!',f:'Fredoka',c:'#E8344E',c2:'#ffffff',...o,x,y,s:o.s||Math.max(8,Math.round(Math.min(BOOK.page.w,BOOK.page.h)*.07)),rot:o.rot!=null?o.rot:Math.round(Math.random()*12-6),auto:false});
+  sp.decos.push(d);sel={type:'deco',id:d.id};commit();syncAll();
+  if(document.fonts&&document.fonts.load)document.fonts.load(badgeFont(d,30)).then(()=>{draw();scheduleStrip();}).catch(()=>{});return d;}
 function tabDeco(){
   const T=TH(),sp=cur(),side=activeSide(sp),mine=(T.motifs||[]).filter(m=>MOTIFS[m]);
   const palette=[...(T.motifColors||[]),T.colors.accent,T.colors.title,T.colors.ink,'#ffffff','#C9A227'].filter((c,i,a)=>c&&a.indexOf(c)===i);
@@ -254,14 +258,33 @@ function tabDeco(){
     [[V.x+o,V.y+o,-15],[V.x+V.w-o,V.y+o,15],[V.x+o,V.y+V.h-o,15],[V.x+V.w-o,V.y+V.h-o,-15]].forEach(([x,y,r],k)=>sp.decos.push(mkDeco({m:list[k%list.length]||m,x:x/W,y:y/H,s,rot:r,c:palette[k%palette.length],c2:T.c2||T.colors.accent2})));commit();syncAll();};
   const tArt=artFor(T.id),allArt=[...ART.values()];
   let artSec=null;
-  if(allArt.length){const ser=[['tutti','Tutti'],...new Map(allArt.map(a=>[a.series,a.sname]))];const f=UI.artFilter||'tutti';
-    const list=(tArt.length?tArt:allArt).filter(a=>f==='tutti'||a.series===f);
-    const body=[seg(ser,f,v=>{UI.artFilter=v;renderLeft();},true),artGrid(list,a=>addArt(a.id)),
-      el('p',{},'Clic per aggiungere al centro della pagina attiva, o trascina lo sticker dove vuoi. Sono disegni vettoriali: in stampa restano nitidi.')];
-    artSec=tArt.length?sec(`Sticker illustrati · ${T.name} · ${tArt.length}`,...body)
-      :el('details',{class:'sec more'},el('summary',{},`Sticker illustrati (${[...new Set(allArt.map(a=>a.folder))].join(', ')}) · ${allArt.length}`),...body);}
+  if(allArt.length){
+    /* sticker del tema; con «Altri temi» si sfogliano anche quelli delle altre cartelle */
+    const folders=[...new Set(allArt.map(a=>a.folder))],mineF=[...new Set(tArt.map(a=>a.folder))];
+    const fsel=UI.artFolder&&folders.includes(UI.artFolder)?UI.artFolder:(mineF[0]||folders[0]);
+    const inF=allArt.filter(a=>a.folder===fsel),ser=[...new Map(inF.map(a=>[a.series,a.sname]))];
+    const f=ser.some(x=>x[0]===UI.artFilter)?UI.artFilter:'tutti',list=inF.filter(a=>f==='tutti'||a.series===f);
+    const pick=el('select',{'aria-label':'Sticker di quale tema',onchange:e=>{UI.artFolder=e.target.value;UI.artFilter='tutti';renderLeft();}},
+      ...folders.map(fo=>el('option',{value:fo,selected:fo===fsel},artFolderName(fo)+(mineF.includes(fo)?' · questo tema':''))));
+    artSec=sec(`Sticker illustrati · ${artFolderName(fsel)} · ${inF.length}`,
+      folders.length>1?el('label',{class:'lbl'},el('span',{class:'u'},'Serie'),pick):null,
+      ser.length>1?seg([['tutti','Tutti'],...ser],f,v=>{UI.artFilter=v;renderLeft();},true):null,
+      artGrid(list,a=>addArt(a.id)),
+      el('p',{},'Clic per aggiungere al centro della pagina attiva, o trascina lo sticker dove vuoi. Sono disegni vettoriali: in stampa restano nitidi.'));}
+  /* sticker con scritta */
+  const S=themeStickers(),bf=T.fonts.sub==='Montserrat'||T.fonts.sub==='Josefin Sans'?'Fredoka':T.fonts.sub,bcols=badgePalette();
+  const words=[...new Set([...S.w,'Wow','Che bello!','Ricordi'])].slice(0,8),shapes=['badge','ribbon','stamp','bubble','burst','tag','heart','cloud'];
+  const bspec=(w,i)=>{const c=bcols[i%Math.min(bcols.length,4)];return{m:shapes[i%shapes.length],txt:w,f:bf,c,c2:contrastInk(c)};};
+  const custom=el('input',{type:'text',class:'inp',style:'flex:1;min-width:0',placeholder:'La tua scritta…','aria-label':'Testo per un nuovo sticker',maxlength:40,
+    onkeydown:e=>{if(e.key==='Enter'&&e.target.value.trim()){addBadge({...bspec(e.target.value.trim(),0),m:'badge'});e.target.value='';}}});
+  const badgeSec=sec('Sticker con scritta',
+    el('div',{class:'bgrid'},...words.map((w,i)=>{const sp_=bspec(w,i);return el('button',{type:'button',class:'bpick',title:`${w} — clic per aggiungere, oppure trascina sul foglio`,draggable:'true',
+      ondragstart:e=>{e.dataTransfer.setData('text/x-badge',JSON.stringify(sp_));e.dataTransfer.effectAllowed='copy';dragKind='motif';},onclick:()=>addBadge(sp_)},badgeThumb(sp_,64));})),
+    el('div',{class:'row'},custom,btn('Aggiungi',()=>{const v=custom.value.trim()||'Ciao!';addBadge({...bspec(v,0),m:'badge'});custom.value='';},'pri')),
+    el('p',{},'Dopo averlo aggiunto puoi cambiare testo, forma, colori e carattere nel pannello a destra (o con doppio clic sullo sticker).'));
   return[
     artSec,
+    badgeSec,
     sec('Aggiungi una decorazione',
       mine.length?seg(Object.entries(groups),UI.decoGroup,v=>{UI.decoGroup=v;renderLeft();},true):null,
       el('div',{class:'row'},el('span',{class:'u'},'Colore'),el('div',{class:'sw'},...palette.map(c=>el('button',{type:'button',class:col===c?'on':'',style:`background:${c}`,title:c,onclick:()=>{UI.decoColor=c;renderLeft();}}))),

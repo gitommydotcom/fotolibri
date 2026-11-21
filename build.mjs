@@ -22,7 +22,8 @@ for(const dir of readdirSync(root).filter(d=>/^stickers\s+\S/i.test(d)&&statSync
     const [,,w,h]=vb.trim().split(/[\s,]+/).map(Number);
     /* dimensione intrinseca grande: il disegno resta nitido anche a 300 dpi */
     const H=2000,W=Math.round(H*w/h);svg=svg.replace(/<svg\b([^>]*)>/,(m,a)=>'<svg'+a.replace(/\s(width|height)\s*=\s*"[^"]*"/g,'')+` width="${W}" height="${H}">`);
-    art.push({folder,file:f.replace(/\.svg$/i,''),w,h,svg});}}
+    const title=(svg.match(/<title>([^<]*)<\/title>/)||[])[1];
+    art.push({folder,file:f.replace(/\.svg$/i,''),w,h,svg,...(title?{name:title.trim()}:{})});}}
 js.unshift(`/* ---- sticker illustrati (${art.length}) ---- */\nwindow.__ART=${JSON.stringify(art)};\n`);
 const bundle=js.join('\n').replace(/<\/script/gi,'<\\/script');
 html=html.replace('</body>',()=>`<script>\n${bundle}\n</script>\n</body>`);

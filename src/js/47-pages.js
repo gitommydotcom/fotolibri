@@ -49,7 +49,7 @@ const STICKERS={
   laurea:{w:['Dottore!','Ce l’ho fatta','110 e lode','Brava!'],m:['cap','laurel','star']},
   autunno:{w:['Autunno','Cozy','Castagne'],m:['leaf','pumpkin','branch']},
 };
-const BADGES=['badge','ribbon','stamp','bubble','tag'];
+const BADGES=['badge','ribbon','stamp','bubble','tag','burst'];
 function themeStickers(){return STICKERS[BOOK.theme.id]||STICKERS.neutro;}
 function stickerDeco(sp,xmm,ymm,smm,R,kind){
   const T=TH(),S=themeStickers(),W=spW(sp),H=pgH(sp),cols=T.motifColors&&T.motifColors.length?T.motifColors:[T.colors.accent];

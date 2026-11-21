@@ -125,8 +125,46 @@ function artProps(d){
     el('p',{},'Trascina per spostare, il quadratino in basso a destra per ingrandire. Canc per eliminare.')),
     others.length?sec('Cambia con un altro sticker',artGrid(others,x=>{d.art=x.id;chg();commit();syncAll();},d.art)):null];
 }
+/* sticker con scritta: testo, forma, colori e carattere modificabili */
+const BADGE_FONTS=['Fredoka','Pacifico','Caveat','Dancing Script','Great Vibes','Amatic SC','Bebas Neue','Oswald','Montserrat','Playfair Display','Mountains of Christmas'];
+function badgePalette(){const T=TH();return[...(T.motifColors||[]),T.colors.accent,T.colors.title,'#E8344E','#F6B93B','#3FA7D6','#06D6A0','#9B72CF','#FF8FAB','#2D2333','#ffffff']
+  .filter((c,i,a)=>c&&/^#[0-9a-f]{6}$/i.test(c)&&a.findIndex(x=>x.toLowerCase()===c.toLowerCase())===i).slice(0,14);}
+function badgeProps(d){
+  const sp=cur(),chg=()=>{d.auto=false;},m=badgeShape(d.m);
+  const redraw=()=>{draw();scheduleStrip();};
+  const ta=el('textarea',{'aria-label':'Testo dello sticker',rows:2,placeholder:'Scrivi qui…'});ta.value=d.txt;
+  ta.oninput=()=>{d.txt=ta.value;chg();draw();thumb.replaceWith(thumb=badgeThumb(d,52));};ta.onchange=()=>{commit();scheduleStrip();renderLeft();};
+  let thumb=badgeThumb(d,52);
+  const words=[...new Set([...themeStickers().w,'Wow','Che bello!','Ricordi','Ti voglio bene'])].slice(0,10);
+  const fsel=el('select',{'aria-label':'Carattere',onchange:e=>{d.f=e.target.value;chg();commit();if(document.fonts&&document.fonts.load)document.fonts.load(badgeFont(d,30)).then(()=>{syncAll();}).catch(()=>{});syncAll();}},
+    ...[...new Set([d.f||'Fredoka',TH().fonts.title,TH().fonts.sub,...BADGE_FONTS])].filter(Boolean).map(f=>el('option',{value:f,selected:f===(d.f||'Fredoka'),style:`font-family:"${f}"`},f)));
+  return[
+    sec('Sticker con scritta',
+      el('div',{class:'ph-head'},thumb,el('div',{style:'display:grid;gap:4px'},el('b',{},(BADGE_SHAPES.find(x=>x[0]===m)||[0,'Etichetta'])[1]),el('span',{class:'u'},d.auto?'messo in automatico':'aggiunto da te'))),
+      el('label',{class:'lbl'},el('span',{},'Testo (Invio per andare a capo)'),ta),
+      el('div',{class:'chips'},...words.map(w=>el('button',{type:'button',class:'chip'+(w===d.txt?' on':''),onclick:()=>{d.txt=w;chg();commit();syncAll();}},w)))),
+    sec('Forma',el('div',{class:'bshapes'},...BADGE_SHAPES.map(([k,l])=>el('button',{type:'button',class:'bshape'+(k===m?' on':''),title:l,'aria-label':l,
+      onclick:()=>{d.m=k;chg();commit();syncAll();}},badgeThumb({...d,m:k,txt:d.txt&&d.txt.length<=12?d.txt:'Ciao!'},40),el('span',{},l))))),
+    sec('Colori',
+      el('div',{class:'sw'},...badgePalette().map(c=>el('button',{type:'button',class:(d.c||'').toLowerCase()===c.toLowerCase()?'on':'',style:`background:${c}`,title:c,'aria-label':'Colore '+c,
+        onclick:()=>{d.c=c;d.c2=contrastInk(c);chg();commit();syncAll();}}))),
+      colorCtl('Colore dello sticker',()=>d.c||'#C2185B',v=>{d.c=v;chg();},null,()=>{commit();syncAll();}),
+      colorCtl('Colore della scritta',()=>d.c2&&d.c2!==d.c?d.c2:contrastInk(d.c||'#C2185B'),v=>{d.c2=v;chg();},null,()=>{commit();syncAll();}),
+      chk('Stile morbido (senza contorno scuro)',()=>!!d.flat,v=>{d.flat=v;chg();scheduleStrip();},'Solo bordo bianco e ombra sfumata, più delicato')),
+    sec('Carattere',fsel,chk('Grassetto',()=>d.bold!==false,v=>{d.bold=v;chg();scheduleStrip();})),
+    sec('Misura e posizione',
+      slider('Dimensione',()=>d.s,v=>{d.s=v;chg();},4,120,.5,'mm'),
+      slider('Rotazione',()=>d.rot,v=>{d.rot=v;chg();},-180,180,1,'°'),
+      slider('Opacità',()=>Math.round((d.op==null?1:d.op)*100),v=>{d.op=v/100;chg();},5,100,1,'%'),
+      el('div',{class:'row'},
+        btn(d.back?'Porta davanti alle foto':'Porta dietro le foto',()=>{d.back=!d.back;chg();commit();syncAll();}),
+        btn('Duplica',()=>{const n={...d,id:uid(),x:d.x+.03,y:d.y+.03,auto:false};sp.decos.push(n);sel={type:'deco',id:n.id};commit();syncAll();}),
+        btn('Elimina',()=>{sp.decos=sp.decos.filter(k=>k!==d);sel=null;commit();syncAll();},'danger')),
+      el('p',{},'Doppio clic sullo sticker per scrivere. Trascina per spostare, il quadratino in basso a destra per ingrandire. Canc per eliminare.'))];
+}
 function decoProps(d){
   if(d.art)return artProps(d);
+  if(d.txt!=null)return badgeProps(d);
   const sp=cur(),T=TH();
   const palette=[...(T.motifColors||[]),T.colors.accent,T.colors.title,T.colors.ink,'#ffffff','#C9A227','#000000'].filter((c,i,a)=>c&&a.indexOf(c)===i);
   const ms=el('select',{'aria-label':'Motivo',onchange:e=>{d.m=e.target.value;d.auto=false;commit();draw();scheduleStrip();}},...MOTIF_IDS.map(m=>el('option',{value:m,selected:m===d.m},MOTIFS[m].l)));

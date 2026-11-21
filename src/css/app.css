@@ -353,3 +353,17 @@ body:has(#start:not([hidden])) .toast{bottom:auto;top:18px}
 .art:hover{border-color:var(--accent);transform:translateY(-1px)}
 .art.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--soft)}
 .right .ph-head img{background:transparent}
+
+/* sticker con scritta */
+.bgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bpick,.bshape{min-width:0;display:grid;place-items:center;gap:2px;padding:4px;border:1px solid var(--line);border-radius:8px;background:transparent;cursor:grab;font:inherit;color:inherit}
+.bpick canvas,.bshape canvas{max-width:100%;height:auto;pointer-events:none}
+.bpick:hover,.bshape:hover{border-color:var(--accent);transform:translateY(-1px)}
+.bshapes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bshape{cursor:pointer;font-size:11px}
+.bshape.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--soft)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{border:1px solid var(--line);background:transparent;color:inherit;border-radius:999px;padding:3px 9px;font:inherit;font-size:12px;cursor:pointer}
+.chip:hover,.chip.on{border-color:var(--accent);background:var(--soft)}
+.sw button.on{outline:2px solid var(--accent);outline-offset:1px}
+.ph-head canvas.bth{flex:none}

@@ -31,7 +31,7 @@ Poi tutto è modificabile nell'editor:
 | Pagine | pagine speciali (frase, frase su colore, frase con cornice, frase sulla foto, foto e frase, collage con sticker, dedica, titolo), pagina effetto, sticker tra le foto |
 | Layout | layout per pagina ordinati per adattamento alle foto, riquadri liberi |
 | Testo | titoli, dediche, didascalie già nello stile del tema |
-| Decori | 43 motivi vettoriali (fiocchi, agrifoglio, cuori, cravatte, baffi, fiori, palloncini…) da aggiungere, spostare, colorare |
+| Decori | sticker illustrati del tema (e degli altri temi), sticker con scritta modificabili, 43 motivi vettoriali (fiocchi, agrifoglio, cuori, cravatte, baffi, fiori, palloncini…) da aggiungere, spostare, colorare |
 | Libro | profili tipografia, formato, copertina (dorso, cartone, risvolto), **risguardi**, abbondanza e zone di sicurezza |
 
 Ogni foto può avere forma (rettangolo, arrotondato, ovale, arco, cuore) e bordo propri.
@@ -39,7 +39,7 @@ Ogni foto può avere forma (rettangolo, arrotondato, ovale, arco, cuore) e bordo
 ## Pagine speciali
 
 - **Frasi e citazioni** per ogni tema (scritte apposta o di autori classici), inserite in automatico tra i capitoli o a mano.
-- **Sticker a tema** con bordo bianco fustellato e scritte ("Ho ho ho!", "Super papà", "Ti amo"…), sugli angoli delle foto.
+- **Sticker a tema** illustrati, con bordo bianco fustellato, e scritte ("Ho ho ho!", "Super papà", "Ti amo"…) sugli angoli delle foto.
 - **Pagina effetto**: il programma analizza le foto migliori, riconosce persone e animali (modello DeepLab v3 di MediaPipe,
   eseguito nel browser), scontorna il soggetto e crea una doppia pagina con effetto "fuori cornice", sticker del soggetto e
   bianco e nero con soggetto a colori. Al massimo una per libro; se nessuna foto è adatta non viene creata.
@@ -47,11 +47,28 @@ Ogni foto può avere forma (rettangolo, arrotondato, ovale, arco, cuore) e bordo
 
 ## Sticker illustrati
 
-Gli SVG nelle cartelle `stickers <tema>` (per ora `stickers natale/`: 12 «Cartoon» e 12 «Disegnati a mano») entrano nell'app con la build, già ripuliti.
-- **Temi Natale e Natale nordico**: gli sticker automatici tra le foto sono questi disegni, con qualche scritta ogni tanto. Con «Tutti» ogni doppia pagina usa una sola serie, a turno; nel pannello Pagine si può scegliere una serie sola. «Rimescola gli sticker» cambia la disposizione e lascia quelli messi a mano.
-- **Pannello Decori**: tutti gli sticker, filtrabili per serie. Clic per aggiungerne uno, oppure trascinalo sul foglio. Uno sticker selezionato si ingrandisce, ruota, specchia o sostituisce con un altro.
-- **Libri salvati prima**: nel progetto è salvato solo il riferimento allo sticker, il disegno sta nell'app. Riaprendo un libro di Natale fatto prima di questi sticker, l'app propone una sola volta di inserirli: «Metti gli sticker» sostituisce solo quelli automatici, «Li scelgo io» apre il pannello Decori, «No, grazie» non lo chiede più. Con Ctrl+Z si annulla tutto.
-- **Nuove serie**: basta aggiungere SVG in `stickers natale/`, oppure una cartella `stickers <tema>`, e rifare la build (anche Netlify la rifà a ogni push). I nomi italiani si danno in `src/js/48-art.js`, dove si indica anche a quali temi appartiene una cartella.
+Ogni tema ha la sua serie di sticker disegnati, con contorno, ombre, lucidi e bordo bianco fustellato (146 in tutto):
+
+| Cartella | Temi | Sticker |
+|---|---|---|
+| `stickers natale/` | Natale, Natale nordico | 12 «Cartoon» + 12 «Disegnati a mano» |
+| `stickers amore/` | San Valentino | cuore, due cuori, lettera, rosa, cuore con freccia, lucchetto, cioccolatini, palloncino, bacio, orsetto |
+| `stickers papa/` | Festa del papà | cravatta, baffi, papillon, tazza, attrezzi, coppa n° 1, cappello, occhiali e baffi, pallone, super papà |
+| `stickers mamma/` | Festa della mamma | tulipani, mazzo di fiori, farfalla, margherita, tè, cupcake, girasole, coccinella, vaso, borsetta |
+| `stickers compleanno/` | Compleanno | torta, palloncini, cappellino, regalo, trombetta, cupcake, gelato, lecca-lecca, ciambella, coriandoli |
+| `stickers matrimonio/` | Matrimonio | fedi, torta nuziale, colomba, bouquet, brindisi, campane, partecipazione, champagne, cuore con ali, diamante |
+| `stickers nascita azzurro/` · `nascita rosa/` | Nascita | biberon, ciuccio, sonaglio, tutina, orsetto, luna, carrozzina, scarpine, paperella, nuvoletta |
+| `stickers estate/` | Estate e viaggi | sole, palma, anguria, occhiali, aereo, valigia, salvagente, ombrellone, infradito, stella marina, conchiglia, ghiacciolo |
+| `stickers pasqua/` | Pasqua | uova decorate, coniglietto, pulcino, cestino, carota, uovo di cioccolato, narcisi, nido, agnellino |
+| `stickers laurea/` | Laurea | tocco, diploma, alloro, libri, gufo, medaglia, mappamondo, lampadina, razzo, stella |
+| `stickers autunno/` | Autunno | foglie, ghianda, zucca, funghetto, castagne, mela, cioccolata calda, ombrello, riccio |
+| `stickers ricordi/` | Neutro, Avorio, Nero galleria | macchina fotografica, polaroid, cuore, stella, aeroplanino, mongolfiera, caffè, arcobaleno, fiori, segnaposto |
+
+- **Automatici**: gli sticker tra le foto sono questi disegni, con qualche scritta ogni tanto. Con più serie (Natale) ogni doppia pagina ne usa una sola, a turno; nel pannello Pagine si può sceglierne una. «Rimescola gli sticker» cambia la disposizione e lascia quelli messi a mano.
+- **Pannello Decori**: gli sticker del tema, e dal menu «Serie» quelli di tutti gli altri temi. Clic per aggiungerne uno, oppure trascinalo sul foglio. Uno sticker selezionato si ingrandisce, ruota, specchia o sostituisce con un altro della stessa serie.
+- **Sticker con scritta** («Ho ho ho!», «Ti amo», «Super papà»…): stesso stile degli illustrati. Si aggiungono dal pannello Decori (anche con una scritta propria); selezionandoli, il pannello a destra permette di cambiare **testo** (anche su più righe), **forma** (etichetta, nastro, timbro, fumetto, cartellino, esplosione, cuore, nuvola), **colori**, **carattere**, misura e rotazione. Doppio clic sullo sticker per scrivere subito.
+- **Libri salvati prima**: nel progetto è salvato solo il riferimento allo sticker, il disegno sta nell'app. Riaprendo un libro fatto prima di questi sticker, l'app propone una sola volta di inserirli: «Metti gli sticker» sostituisce solo quelli automatici, «Li scelgo io» apre il pannello Decori, «No, grazie» non lo chiede più. Con Ctrl+Z si annulla tutto.
+- **Nuovi disegni**: gli sticker delle cartelle (tranne Natale, che sono file forniti) sono generati da `tools/stickers/sets/*.mjs` con `node tools/stickers/make.mjs` (forme, ombre e bordo fustellato in `tools/stickers/lib.mjs`). Si possono anche aggiungere SVG a mano in una cartella `stickers <tema>`; a quali temi appartiene una cartella si indica in `src/js/48-art.js`. Poi si rifà la build (Netlify la rifà a ogni push).
 
 ## Struttura del libro
 

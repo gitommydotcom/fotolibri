@@ -254,6 +254,7 @@ stage.addEventListener('wheel',e=>{
   clearTimeout(wheelT);wheelT=setTimeout(()=>{commit();renderProps();},300);
 },{passive:false});
 cv.addEventListener('dblclick',e=>{const p=toMM(e);if(hitText(p)){const ta=$('#props textarea');if(ta){ta.focus();ta.select();}return;}
+  const hd=hitDeco(p);if(hd&&hd.txt!=null){sel={type:'deco',id:hd.id};renderProps();draw();const ta=$('#props textarea');if(ta){ta.focus();ta.select();}return;}
   const c=hitCell(p);if(c&&!c.ph){pickFor=c.id;$('#fileIn').click();}});
 function dragIds(e){try{const j=e.dataTransfer.getData('text/x-imgs');if(j)return JSON.parse(j).filter(id=>LIB.has(id));}catch(err){}return[];}
 let dragKind=null;
@@ -265,6 +266,8 @@ cv.addEventListener('drop',async e=>{
   e.preventDefault();e.stopPropagation();const p=toMM(e),multi=dragKind==='multi';
   const art=e.dataTransfer.getData('text/x-art');
   if(art){dropTarget=null;dropPage=null;dragKind=null;addArt(art,p.x/spW(cur()),p.y/pgH(cur()));return;}
+  const bdg=e.dataTransfer.getData('text/x-badge');
+  if(bdg){dropTarget=null;dropPage=null;dragKind=null;try{addBadge(JSON.parse(bdg),p.x/spW(cur()),p.y/pgH(cur()));}catch(err){}return;}
   const mot=e.dataTransfer.getData('text/x-motif');
   if(mot){dropTarget=null;dropPage=null;dragKind=null;addDeco(mot,p.x/spW(cur()),p.y/pgH(cur()));return;}
   dropTarget=null;dropPage=null;dragKind=null;

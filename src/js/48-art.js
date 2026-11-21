@@ -1,9 +1,14 @@
 /* ============ sticker illustrati (SVG) dalle cartelle "stickers <tema>" del progetto ============
    Nel progetto salvato c'è solo il riferimento (d.art = id): i disegni stanno nell'app, quindi valgono anche
    per i libri salvati prima e per quelli che verranno. */
-const ART_SERIES={aaa:{name:'Cartoon',shadow:false},risorsa:{name:'Disegnati a mano',shadow:true}};
+const ART_SERIES={aaa:{name:'Cartoon',shadow:false},cartoon:{name:'Cartoon',shadow:false},risorsa:{name:'Disegnati a mano',shadow:true}};
 /* a quali temi appartiene ogni cartella */
-const ART_THEMES={natale:['natale','nordico']};
+const ART_THEMES={natale:['natale','nordico'],amore:['valentino'],papa:['papa'],mamma:['mamma'],compleanno:['compleanno'],matrimonio:['matrimonio'],
+  'nascita azzurro':['bimbo'],'nascita rosa':['bimba'],estate:['estate'],pasqua:['pasqua'],laurea:['laurea'],autunno:['autunno'],ricordi:['neutro','avorio','galleria']};
+/* nome della cartella come la vede chi usa l'app */
+const ART_FOLDER_NAMES={natale:'Natale',amore:'San Valentino',papa:'Festa del papà',mamma:'Festa della mamma',compleanno:'Compleanno',matrimonio:'Matrimonio',
+  'nascita azzurro':'Nascita azzurro','nascita rosa':'Nascita rosa',estate:'Estate e viaggi',pasqua:'Pasqua',laurea:'Laurea',autunno:'Autunno',ricordi:'Ricordi'};
+const artFolderName=f=>ART_FOLDER_NAMES[f]||f.charAt(0).toUpperCase()+f.slice(1);
 const ART_NAMES={
   'natale/AAA 2':'Regalo','natale/AAA 3':'Stella','natale/AAA 4':'Pallina','natale/AAA 5':'Pupazzo di neve','natale/AAA 6':'Babbo Natale','natale/AAA 7':'Renna',
   'natale/AAA 8':'Candela','natale/AAA 9':'Albero','natale/AAA 10':'Fiocco di neve','natale/AAA 11':'Campana','natale/AAA 12':'Calza','natale/AAA 13':'Agrifoglio',
@@ -13,7 +18,7 @@ const ART=new Map();
 (function(){for(const a of(window.__ART||[])){
   const series=a.file.replace(/\s*\d+$/,'').trim().toLowerCase()||'altri',S=ART_SERIES[series]||{name:a.file.replace(/\s*\d+$/,''),shadow:true};
   const id=(a.folder+'/'+a.file).toLowerCase().replace(/\s+/g,'-');
-  ART.set(id,{id,folder:a.folder,series,sname:S.name,shadow:S.shadow,name:ART_NAMES[a.folder+'/'+a.file]||a.file,w:a.w,h:a.h,
+  ART.set(id,{id,folder:a.folder,series,sname:S.name,shadow:S.shadow,name:ART_NAMES[a.folder+'/'+a.file]||a.name||a.file,w:a.w,h:a.h,
     url:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(a.svg),img:null,ready:false});}})();
 /* caricamento: una volta sola all'avvio; export e anteprime aspettano questa promessa */
 const ART_READY=Promise.all([...ART.values()].map(a=>new Promise(res=>{const im=new Image();im.decoding='async';
@@ -24,7 +29,7 @@ function artFor(themeId,series){const fs=new Set(artFolders(themeId));return[...
 function artSeries(themeId){const m=new Map();for(const a of artFor(themeId))if(!m.has(a.series))m.set(a.series,a.sname);return[...m];}
 const artAspect=d=>{const a=ART.get(d.art);return a?a.w/a.h:1;};
 /* mezza larghezza e mezza altezza (mm) di una decorazione, per selezione e maniglie */
-function decoHalf(d){if(d.art)return[d.s*artAspect(d)/2,d.s/2];if(d.txt){const B=badgeBox(d,1);return[B.w/2+d.s*.3,B.h/2];}return[d.s/2,d.s/2];}
+function decoHalf(d){if(d.art)return[d.s*artAspect(d)/2,d.s/2];if(d.txt!=null){const B=badgeBox(d,1);return[B.w/2,B.h/2];}return[d.s/2,d.s/2];}
 function drawArt(ctx,d,x,y,s){
   const a=ART.get(d.art);if(!a||!a.ready)return;const h=d.s*s,w=h*a.w/a.h;
   ctx.save();ctx.translate(x,y);if(d.rot)ctx.rotate(d.rot*Math.PI/180);if(d.flip)ctx.scale(-1,1);ctx.globalAlpha*=d.op==null?1:d.op;
